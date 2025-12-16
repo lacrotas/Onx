@@ -2,26 +2,61 @@
     position: relative;
     z-index: 30;
     display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 900px;
-    height: 440px;
-    // top: calc(50vh - 220px);
+    max-height: 80vh; // ← убрали фикс. высоту, добавили ограничение
     background: white;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     font-family: 'Montserrat', sans-serif;
 
+    // Кнопка закрытия
+    .contact-close-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #888;
+        padding: 6px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+
+        &:hover {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+    }
+
+    // Прокручиваемая область
+    .contact-scrollable {
+        display: flex;
+        height: 100%;
+        max-height: 100%;
+        overflow: auto; // ← скролл при необходимости
+        gap: 20px;
+        box-sizing: border-box;
+    }
+
     .contacts-section,
     .map-section {
         flex: 1;
-        padding: 30px;
+        padding: 0; // ← убираем внутренние padding — они теперь в content
     }
 
     .contacts-section {
         background: linear-gradient(135deg, #f8f9fa, #e9ecef);
         display: flex;
         flex-direction: column;
+        margin: 0;
+        height: 410px;
+        padding: 20px; // ← padding внутри секций
     }
 
     .section-title {
@@ -118,9 +153,12 @@
     .map-section {
         display: flex;
         flex-direction: column;
+        padding: 20px;
+        border-radius: 16px;
 
         .map-container {
             flex: 1;
+            min-height: 250px;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -129,7 +167,6 @@
             iframe {
                 width: 100%;
                 height: 100%;
-                min-height: 250px;
                 border: none;
             }
         }
@@ -166,40 +203,34 @@
     }
 }
 
-// Адаптив для мобильных устройств
+// Адаптив
 @media (max-width: 768px) {
     .contact_content {
-        flex-direction: column;
-        max-width: 95%;
+        max-height: 90vh;
 
-        .contacts-section,
-        .map-section {
-            padding: 25px;
+        .contact-close-btn {
+            top: 12px;
+            right: 12px;
         }
 
-        .map-section {
-            .map-container {
-                height: 250px;
-            }
+        .contact-scrollable {
+            flex-direction: column;
+        }
+
+        .map-section .map-container {
+            min-height: 220px;
         }
     }
 }
 
 @media (max-width: 480px) {
     .contact_content {
-
-        .contacts-section,
-        .map-section {
-            padding: 20px;
-        }
-
         .contact-method {
             flex-direction: column;
             align-items: flex-start;
 
             .contact-icon {
                 margin-bottom: 10px;
-                margin-right: 0;
             }
         }
 

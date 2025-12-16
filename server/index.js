@@ -14,20 +14,24 @@ const app = express();
 const corsOptions = {
     origin: [
         'http://localhost:80',
-        'http://91.197.98.31:80',
-        'http://91.197.98.31:5000',
-        'http://localhost:5000'
+        'http://localhost:5000',
+        'http://45.128.205.97',
+        'http://45.128.205.97:5000',
+        'http://onx.by',
+        'https://onx.by',
+        'http://www.onx.by',
+        'https://www.onx.by'
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept, Authorization',
     credentials: true,
     optionsSuccessStatus: 204
 };
-// app.use(cors(corsOptions));
-app.use(cors({
-    origin: "*",  // разрешить все домены (только для теста!)
-    credentials: true,
-}));
+app.use(cors(corsOptions));
+// app.use(cors({
+//     origin: "*",  // разрешить все домены (только для теста!)
+//     credentials: true,
+// }));
 app.options('*', cors(corsOptions));  // ← обрабатывает ВСЕ OPTIONS-запросы
 
 app.use((req, res, next) => {

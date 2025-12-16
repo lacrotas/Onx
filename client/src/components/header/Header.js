@@ -83,6 +83,10 @@ export default function Header({ isAdminHeader }) {
         setIsModalActive(true);
         setModalType(type);
     }
+    function openCategoryMobile() {
+        setMobileMenuOpen(false)
+        setIsCategoryActive(true)
+    }
 
     useEffect(() => {
         if (isModalActive || isCategotyActive) {
@@ -95,10 +99,6 @@ export default function Header({ isAdminHeader }) {
         };
     }, [isModalActive, isCategotyActive]);
 
-    function handleBurgerClose(myFunck, value) {
-        setIsBurgerOpen(false);
-        myFunck(value);
-    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -219,7 +219,7 @@ export default function Header({ isAdminHeader }) {
             )}
 
             <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
-                <button className="mobile-menu-link">
+                <button className="mobile-menu-link" onClick={() => openCategoryMobile()}>
                     <FiList className="icon" />
                     Категории
                 </button>

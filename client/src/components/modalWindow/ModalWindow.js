@@ -27,7 +27,7 @@ function ModalWindow({ setIsModalActive, type, value, addImageToArray, itemsArr 
                         : type === "addMainCategory" ?
                             <AddMainCategory value={value} />
                             : type === "delivery" ?
-                                <Delivery />
+                                <Delivery closeModal={setIsModalActive} />
                                 : type === "order" ?
                                     <Order closeModal={setIsModalActive} value={value} itemsArr={itemsArr} />
                                     : type === "addCategory" ?

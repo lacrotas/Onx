@@ -1,7 +1,26 @@
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+#root {
+  flex: 1; // Занимает всё доступное пространство
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // Важно для вложенных flex-элементов
+}
+
 body {
   margin: 0;
   width: 100vw;
+  min-height: 100vh;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -10,8 +29,35 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #f8f9fa;
-  // background-color: #F5F5F5;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+
+.App {
+  width: 100vw;
+  height: 100vh;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.app_container {
+  width: 100%;
+  max-width: 1440px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/* Для WebKit-браузеров (Chrome, Safari) */
+::-webkit-scrollbar {
+  display: none;
+}
+
 
 // animation
 .animated-border {
@@ -87,65 +133,6 @@ body {
 
 // end
 
-html {
-  box-sizing: border-box;
-}
-
-*,
-*:before,
-*:after {
-  box-sizing: inherit;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-// #root {
-//   min-height: 100vh;
-//   display: flex;
-//   flex-direction: column;
-// }
-
-.app_container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-#root {
-  flex: 1; // Занимает всё доступное пространство
-  display: flex;
-  flex-direction: column;
-  min-height: 0; // Важно для вложенных flex-элементов
-}
-
-.App {
-  flex: 1; // Растягивается на всю высоту
-  display: flex;
-  flex-direction: column;
-}
-
-/* Для WebKit-браузеров (Chrome, Safari) */
-::-webkit-scrollbar {
-  display: none;
-}
-
-/* Для Firefox */
-body {
-  scrollbar-width: none;
-}
-
-/* Для IE и Edge */
-body {
-  -ms-overflow-style: none;
-}
-
 
 // fonts family
 @font-face {
@@ -163,62 +150,9 @@ body {
   src: url("./assets/fonts/SFCompactDisplay-Thin.otf");
 }
 
-.common_reg {
-  font-family: "Montserrat_reg";
-}
-
-.common_bold {
-  font-family: "Jura_bold";
-}
-
-.title_bold {
-  font-family: "Montserrat_bold";
-}
-
 a {
   text-decoration: none;
   color: #000;
-}
-
-// paragraph
-.super_tiny_p {
-  font-size: 12px;
-}
-
-.tiny_p {
-  font-size: 14px;
-}
-
-
-.small_p {
-  // font-family: "Montserrat_reg";
-  font-size: 16px;
-}
-
-.medium_p {
-  // font-family: "Montserrat_reg";
-  font-size: 18px;
-}
-
-.large_p {
-  font-size: 24px;
-  // font-family: "Jura_bold";
-}
-
-// titles
-.small_h {
-  // font-family: "Montserrat_bold";
-  font-size: 18pt;
-}
-
-.medium_h {
-  // font-family: "Montserrat_bold";
-  font-size: 26px;
-}
-
-.large_h {
-  // font-family: "Montserrat_bold";
-  font-size: 36px;
 }
 
 // buttons
@@ -228,77 +162,7 @@ a {
   border: none;
 }
 
-@media screen and (max-width: 900px) {
-  .small_h {
-    font-size: 20px;
-  }
 
-  .jura_medium_bold {
-    font-size: 20px;
-  }
-
-  .small_p {
-    font-size: 16px;
-  }
-
-  .medium_p {
-    font-size: 20px;
-  }
-
-  .large_p {
-    font-size: 20px;
-  }
-
-  .tiny_p {
-    font-size: 14px;
-  }
-
-  .medium_h {
-    font-size: 28px;
-  }
-
-  .jura_semi-medium_p {
-    font-size: 16px;
-  }
-
-  .description_p {
-    font-size: 14px;
-  }
-
-  .super_large_p {
-    font-size: 26px;
-  }
-}
-
-@media screen and (max-width: 720px) {
-  .medium_p {
-    font-size: 16px;
-  }
-
-  .jura_medium_bold {
-    font-size: 16px;
-  }
-
-  .small_h {
-    font-size: 16px;
-  }
-
-  .small_p {
-    font-size: 14px;
-  }
-
-  .large_p {
-    font-size: 16px;
-  }
-
-  .tiny_p {
-    font-size: 14px;
-  }
-
-  .super_large_p {
-    font-size: 22px;
-  }
-}
 
 // text
 .my_h1 {
@@ -348,5 +212,44 @@ a {
 
   span:first-child {
     color: #2563eb;
+  }
+}
+
+@media (max-width: 768px) {
+  .my_h1 {
+    font-size: 16pt;
+    font-family: "Montserrat_bold";
+
+  }
+
+  .my_h2 {
+    font-size: 14pt;
+    font-family: "Montserrat_bold";
+  }
+
+  // h3 for kategory and qwestion
+  .my_h3 {
+    font-size: 12pt;
+    font-family: "Montserrat_bold";
+  }
+
+  .my_p {
+    font-size: 10pt;
+    font-family: "Montserrat_reg";
+  }
+
+  // for copyright
+  .my_p_small {
+    font-size: 8pt;
+    font-family: "Montserrat_reg";
+  }
+
+  .my_p_small,
+  .my_p,
+  .my_h3,
+  .my_h2,
+  .my_h1 {
+    margin: 0;
+    padding: 0;
   }
 }
