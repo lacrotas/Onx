@@ -1,0 +1,210 @@
+.contact_content {
+    position: relative;
+    z-index: 30;
+    display: flex;
+    width: 100%;
+    max-width: 900px;
+    height: 440px;
+    // top: calc(50vh - 220px);
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    font-family: 'Montserrat', sans-serif;
+
+    .contacts-section,
+    .map-section {
+        flex: 1;
+        padding: 30px;
+    }
+
+    .contacts-section {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .section-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #2c3e50;
+        position: relative;
+
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #33A9FF, #8e44ad);
+        }
+    }
+
+    .contacts-block {
+        margin-bottom: 30px;
+    }
+
+    .contact-method {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+
+        .contact-info {
+            h3 {
+                font-size: 16px;
+                font-weight: 600;
+                margin-bottom: 5px;
+                color: #34495e;
+            }
+
+            a,
+            p {
+                display: block;
+                color: #555;
+                margin-bottom: 3px;
+                text-decoration: none;
+                font-size: 14px;
+                transition: color 0.2s ease;
+
+                &:hover {
+                    color: #33A9FF;
+                }
+            }
+        }
+    }
+
+    .social-links {
+        display: flex;
+        gap: 12px;
+        margin-top: auto;
+
+        .social-link {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+            &.tg {
+                background: #0088cc;
+            }
+
+            &.vk {
+                background: #4a76a8;
+            }
+
+            &.inst {
+                background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            }
+
+            &.viber {
+                background: #7360f2;
+            }
+
+            &:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            }
+        }
+    }
+
+    .map-section {
+        display: flex;
+        flex-direction: column;
+
+        .map-container {
+            flex: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+
+            iframe {
+                width: 100%;
+                height: 100%;
+                min-height: 250px;
+                border: none;
+            }
+        }
+
+        .faq-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(90deg, #33A9FF, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            .arrow {
+                margin-left: 8px;
+                transition: transform 0.3s ease;
+            }
+
+            &:hover {
+                background: linear-gradient(90deg, #1d93ff, #7d3d98);
+                box-shadow: 0 5px 15px rgba(51, 169, 255, 0.3);
+
+                .arrow {
+                    transform: translateX(3px);
+                }
+            }
+        }
+    }
+}
+
+// Адаптив для мобильных устройств
+@media (max-width: 768px) {
+    .contact_content {
+        flex-direction: column;
+        max-width: 95%;
+
+        .contacts-section,
+        .map-section {
+            padding: 25px;
+        }
+
+        .map-section {
+            .map-container {
+                height: 250px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .contact_content {
+
+        .contacts-section,
+        .map-section {
+            padding: 20px;
+        }
+
+        .contact-method {
+            flex-direction: column;
+            align-items: flex-start;
+
+            .contact-icon {
+                margin-bottom: 10px;
+                margin-right: 0;
+            }
+        }
+
+        .social-links {
+            justify-content: center;
+        }
+    }
+}

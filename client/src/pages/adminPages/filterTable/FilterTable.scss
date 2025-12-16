@@ -1,0 +1,262 @@
+// FilterTable.scss (остается без изменений, так как вы предоставили полный CSS)
+.adminFilterTable {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    .admin-header {
+        margin-bottom: 30px;
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+
+            .search-input {
+                width: 100%;
+                max-width: 400px;
+                padding: 12px 16px;
+                border: 2px solid #e1e5e9;
+                border-radius: 8px;
+                font-size: 16px;
+                transition: border-color 0.3s ease;
+
+                &:focus {
+                    outline: none;
+                    border-color: #3498db;
+                }
+            }
+        }
+
+        .add-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            }
+        }
+    }
+
+    .table-container {
+        overflow-x: auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+        .categories-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+
+            th {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                padding: 16px 20px;
+                text-align: left;
+                font-weight: 600;
+                color: #2c3e50;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            td {
+                padding: 16px 20px;
+                border-bottom: 1px solid #e9ecef;
+                color: #495057;
+
+                &.action-buttons {
+                    display: flex;
+                    gap: 10px;
+
+                    .edit-button,
+                    .delete-button {
+                        padding: 8px 16px;
+                        border: none;
+                        border-radius: 6px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    }
+
+                    .edit-button {
+                        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+                        color: white;
+
+                        &:hover {
+                            background: linear-gradient(135deg, #2980b9 0%, #2573a7 100%);
+                            transform: translateY(-1px);
+                        }
+                    }
+
+                    .delete-button {
+                        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                        color: white;
+
+                        &:hover {
+                            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+                            transform: translateY(-1px);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+
+            h2 {
+                margin-bottom: 24px;
+                color: #2c3e50;
+                font-size: 24px;
+                font-weight: 600;
+            }
+
+            form {
+                .form-group {
+                    margin-bottom: 20px;
+
+                    label {
+                        display: block;
+                        margin-bottom: 8px;
+                        font-weight: 600;
+                        color: #2c3e50;
+                    }
+
+                    .form-input {
+                        width: 100%;
+                        padding: 12px 16px;
+                        border: 2px solid #e1e5e9;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        transition: border-color 0.3s ease;
+
+                        &:focus {
+                            outline: none;
+                            border-color: #3498db;
+                        }
+                    }
+
+                    .form-select {
+                        width: 100%;
+                        padding: 12px 16px;
+                        border: 2px solid #e1e5e9;
+                        border-radius: 8px;
+                        font-size: 16px;
+                        background-color: white;
+                        transition: border-color 0.3s ease;
+
+                        &:focus {
+                            outline: none;
+                            border-color: #3498db;
+                        }
+                    }
+                }
+
+                .modal-buttons {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: flex-end;
+                    margin-top: 20px;
+
+                    .cancel-button,
+                    .save-button {
+                        padding: 12px 24px;
+                        border: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    }
+
+                    .cancel-button {
+                        background: #6c757d;
+                        color: white;
+
+                        &:hover {
+                            background: #5a6268;
+                        }
+                    }
+
+                    .save-button {
+                        background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+                        color: white;
+
+                        &:hover {
+                            background: linear-gradient(135deg, #219653 0%, #1e8449 100%);
+                            transform: translateY(-2px);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @media (max-width: 768px) {
+        padding: 15px;
+
+        .admin-header h1 {
+            font-size: 24px;
+        }
+
+        .table-container .categories-table {
+
+            th,
+            td {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+
+            td.action-buttons {
+                flex-direction: column;
+
+                .edit-button,
+                .delete-button {
+                    width: 100%;
+                }
+            }
+        }
+
+        .modal-overlay .modal-content {
+            form {
+                .form-group {
+
+                    .form-select,
+                    .form-input {
+                        font-size: 14px;
+                        padding: 10px 14px;
+                    }
+                }
+            }
+        }
+    }
+}

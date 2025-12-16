@@ -1,0 +1,137 @@
+.filter-item {
+    width: 100%;
+
+    .price_slider-description {
+        .custom_button {
+            margin-top: 20px;
+            width: 100px;
+            text-align: center;
+            margin-left: calc(50% - 70px);
+        }
+    }
+
+    .slider-container {
+        position: relative;
+        width: 100%;
+        margin: 15px 0;
+    }
+
+    .slider {
+        position: relative;
+        width: 100%;
+    }
+
+    .slider__track,
+    .slider__range {
+        position: absolute;
+        border-radius: 3px;
+        height: 5px;
+    }
+
+    .slider__track {
+        background-color: #ced4da;
+        width: 100%;
+        z-index: 1;
+    }
+
+    .slider__range {
+        background-color: #9fe5e1;
+        z-index: 2;
+    }
+
+    .thumb {
+        pointer-events: none;
+        position: absolute;
+        height: 0;
+        width: 100%;
+        outline: none;
+    }
+
+    .thumb--left {
+        z-index: 3;
+    }
+
+    .thumb--right {
+        z-index: 4;
+    }
+
+    .thumb::-webkit-slider-thumb {
+        pointer-events: all;
+        position: relative;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: #fff;
+        border: 2px solid #9fe5e1;
+        cursor: pointer;
+        -webkit-appearance: none;
+    }
+
+    .thumb::-moz-range-thumb {
+        pointer-events: all;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background-color: #fff;
+        border: 2px solid #9fe5e1;
+        cursor: pointer;
+    }
+
+    .price-inputs {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+        gap: 10px;
+    }
+
+    .price-input {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex: 1;
+        margin-top: 20px;
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: left;
+
+            /* Убираем стрелки для браузеров на WebKit */
+            &::-webkit-outer-spin-button,
+            &::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+            /* Убираем стрелки для Firefox */
+            -moz-appearance: textfield;
+
+            /* Для других браузеров */
+            appearance: textfield;
+
+            &:focus {
+                outline: none;
+                border-color: #9fe5e1;
+            }
+        }
+    }
+
+    .custom_button_price {
+        padding: 10px 20px;
+        background-color: #33A9FF;
+        border-radius: 10px;
+        color: #fff;
+        width: 125px;
+        margin: 15px auto 0;
+        .custom_button_text {
+            margin: 0;
+        }
+
+        &:hover {
+            cursor: pointer;
+            background-color: #197dc4;
+        }
+    }
+}

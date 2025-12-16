@@ -1,0 +1,161 @@
+.delivery-compact {
+    position: relative;
+    background-color: #ffffff;
+    z-index: 30;
+    display: flex;
+    height: 100%;
+    max-height: 80vh;
+    // top: calc(50vh - 250px);
+    width: 100%;
+    max-width: 900px;
+    gap: 20px;
+    padding: 40px;
+    border-radius: 15px;
+
+    .delivery-map {
+        flex: 1;
+        min-width: 0; // Фикс для flexbox
+        display: flex;
+        flex-direction: column;
+
+        .map-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            
+            .header-icon {
+                color: #33A9FF;
+                font-size: 24px;
+                margin-right: 10px;
+            }
+            
+            h3 {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+            }
+        }
+
+        .map-address {
+            margin: 0 0 15px 0;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .map-container {
+            flex: 1;
+            min-height: 0; // Фикс для flexbox
+            border-radius: 12px;
+            overflow: hidden;
+            
+            iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+        }
+    }
+
+    .delivery-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+
+        .info-block {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+
+            .block-header {
+                display: flex;
+                align-items: center;
+                margin-bottom: 12px;
+                
+                .header-icon {
+                    color: #33A9FF;
+                    font-size: 20px;
+                    margin-right: 10px;
+                }
+                
+                h3 {
+                    margin: 0;
+                    font-size: 16px;
+                    font-weight: 600;
+                }
+            }
+
+            p {
+                margin: 0;
+                color: #555;
+                font-size: 14px;
+                line-height: 1.5;
+                flex: 1;
+            }
+
+            &.payment-methods {
+                .payment-icons {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 12px;
+                    margin-top: auto;
+                    
+                    .payment-icon {
+                        width: 50px;
+                        height: 30px;
+                        background-size: contain;
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        
+                        &.visa {
+                            background-image: url('../../../../assets/images/payment/viza.png');
+                        }
+                        
+                        &.mastercard {
+                            background-image: url('../../../../assets/images/payment/master.png');
+                        }
+                        
+                        &.mir {
+                            background-image: url('../../../../assets/images/payment/mir.png');
+                        }
+                        
+                        &.maestro {
+                            background-image: url('../../../../assets/images/payment/maestro.png');
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .delivery-compact {
+        flex-direction: column;
+        max-height: 90vh;
+        
+        .delivery-map {
+            .map-container {
+                height: 250px;
+            }
+        }
+        
+        .delivery-info {
+            .info-block {
+                padding: 15px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .delivery-compact {
+        .payment-icons {
+            justify-content: center;
+        }
+    }
+}

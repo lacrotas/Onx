@@ -1,0 +1,20 @@
+.login_form{
+    display: flex;
+    width: 350px;
+    background-color: #fff;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 240px;
+    margin-top: calc(50vh - 120px);
+    border-radius: 20px;
+    margin-left: calc(50% - 175px);
+    .login_form_input{
+        outline: none;
+        border: none;
+        box-sizing: border-box;
+        width: 250px;
+        border-bottom: 1px solid #000;
+        margin-bottom: 20px;
+    }
+}

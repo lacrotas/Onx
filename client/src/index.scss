@@ -1,0 +1,352 @@
+body {
+  margin: 0;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f8f9fa;
+  // background-color: #F5F5F5;
+}
+
+// animation
+.animated-border {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: repeat;
+}
+
+/* Волны внизу */
+.layer.waves {
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIwMCA2MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgNDAwUTMwMCAyMDAgNjAwIDQwMFQxMjAwIDQwMFY2MDBIMFoiIGZpbGw9IiNkM2QzZDMiIG9wYWNpdHk9IjAuMTUiLz48L3N2Zz4=");
+  background-size: 1200px 600px;
+  background-position: 0 bottom;
+  animation: driftWave 28s linear infinite;
+}
+
+/* Геометрия по краям */
+.layer.geo {
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIwMCAxMjAwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxjaXJjbGUgY3g9IjE1MCIgY3k9IjMwMCIgcj0iNjAiIGZpbGw9IiNkMGRkZGQiIG9wYWNpdHk9IjAuMTgiLz48cmVjdCB4PSI2MCIgeT0iNTAwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjYwIiByeD0iMjAiIGZpbGw9IiNjNWM1YzUiIG9wYWNpdHk9IjAuMTUiLz48Y2lyY2xlIGN4PSIxMDUwIiBjeT0iNDAwIiByPSc3NScgZmlsbD0iI2NjY2NjYyIgb3BhY2l0eT0iMC4xMiIvPjxlbGxpcHNlIGN4PSIxMDUwIiBjeT0iODAwIiByeD0iOTAiIHJ5PSIzNSIgZmlsbD0iI2Q0ZDRkNCIgb3BhY2l0eT0iMC4xNyIvPjwvc3ZnPg==");
+  background-size: 1200px 1200px;
+  animation: driftGeo 36s linear -4s infinite;
+}
+
+/* Детали по углам */
+.layer.details {
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIwMCAxMjAwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik01MCA1MCBRMTAwIDIwIDE1MCA1MCIgc3Ryb2tlPSIjY2NjY2NjIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjAuMTQiLz48Y2lyY2xlIGN4PSIxMTMwIiBjeT0iMTEwMCIgcj0iMzAiIGZpbGw9IiNkN2Q3ZDciIG9wYWNpdHk9IjAuMTYiLz48L3N2Zz4=");
+  background-size: 1200px 1200px;
+  animation: driftDetails 42s linear -8s infinite;
+}
+
+@keyframes driftWave {
+  0% {
+    background-position-x: 0;
+  }
+
+  100% {
+    background-position-x: 1200px;
+  }
+}
+
+@keyframes driftGeo {
+  0% {
+    background-position-x: 0;
+  }
+
+  100% {
+    background-position-x: 1200px;
+  }
+}
+
+@keyframes driftDetails {
+  0% {
+    background-position-x: 0;
+  }
+
+  100% {
+    background-position-x: 1200px;
+  }
+}
+
+// end
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+// #root {
+//   min-height: 100vh;
+//   display: flex;
+//   flex-direction: column;
+// }
+
+.app_container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#root {
+  flex: 1; // Занимает всё доступное пространство
+  display: flex;
+  flex-direction: column;
+  min-height: 0; // Важно для вложенных flex-элементов
+}
+
+.App {
+  flex: 1; // Растягивается на всю высоту
+  display: flex;
+  flex-direction: column;
+}
+
+/* Для WebKit-браузеров (Chrome, Safari) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Для Firefox */
+body {
+  scrollbar-width: none;
+}
+
+/* Для IE и Edge */
+body {
+  -ms-overflow-style: none;
+}
+
+
+// fonts family
+@font-face {
+  font-family: "Jura_bold";
+  src: url("./assets/fonts/Jura-Bold.ttf");
+}
+
+@font-face {
+  font-family: "Montserrat_bold";
+  src: url("./assets/fonts/SF-Pro-Display-Bold.otf");
+}
+
+@font-face {
+  font-family: "Montserrat_reg";
+  src: url("./assets/fonts/SFCompactDisplay-Thin.otf");
+}
+
+.common_reg {
+  font-family: "Montserrat_reg";
+}
+
+.common_bold {
+  font-family: "Jura_bold";
+}
+
+.title_bold {
+  font-family: "Montserrat_bold";
+}
+
+a {
+  text-decoration: none;
+  color: #000;
+}
+
+// paragraph
+.super_tiny_p {
+  font-size: 12px;
+}
+
+.tiny_p {
+  font-size: 14px;
+}
+
+
+.small_p {
+  // font-family: "Montserrat_reg";
+  font-size: 16px;
+}
+
+.medium_p {
+  // font-family: "Montserrat_reg";
+  font-size: 18px;
+}
+
+.large_p {
+  font-size: 24px;
+  // font-family: "Jura_bold";
+}
+
+// titles
+.small_h {
+  // font-family: "Montserrat_bold";
+  font-size: 18pt;
+}
+
+.medium_h {
+  // font-family: "Montserrat_bold";
+  font-size: 26px;
+}
+
+.large_h {
+  // font-family: "Montserrat_bold";
+  font-size: 36px;
+}
+
+// buttons
+.button {
+  padding: 15px 20px;
+  border-radius: 10px;
+  border: none;
+}
+
+@media screen and (max-width: 900px) {
+  .small_h {
+    font-size: 20px;
+  }
+
+  .jura_medium_bold {
+    font-size: 20px;
+  }
+
+  .small_p {
+    font-size: 16px;
+  }
+
+  .medium_p {
+    font-size: 20px;
+  }
+
+  .large_p {
+    font-size: 20px;
+  }
+
+  .tiny_p {
+    font-size: 14px;
+  }
+
+  .medium_h {
+    font-size: 28px;
+  }
+
+  .jura_semi-medium_p {
+    font-size: 16px;
+  }
+
+  .description_p {
+    font-size: 14px;
+  }
+
+  .super_large_p {
+    font-size: 26px;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  .medium_p {
+    font-size: 16px;
+  }
+
+  .jura_medium_bold {
+    font-size: 16px;
+  }
+
+  .small_h {
+    font-size: 16px;
+  }
+
+  .small_p {
+    font-size: 14px;
+  }
+
+  .large_p {
+    font-size: 16px;
+  }
+
+  .tiny_p {
+    font-size: 14px;
+  }
+
+  .super_large_p {
+    font-size: 22px;
+  }
+}
+
+// text
+.my_h1 {
+  font-size: 18pt;
+  // font-family: "Jura_bold";
+  font-family: "Montserrat_bold";
+
+}
+
+.my_h2 {
+  font-size: 16pt;
+  font-family: "Montserrat_bold";
+}
+
+// h3 for kategory and qwestion
+.my_h3 {
+  font-size: 14pt;
+  font-family: "Montserrat_bold";
+}
+
+.my_p {
+  font-size: 12pt;
+  font-family: "Montserrat_reg";
+}
+
+// for copyright
+.my_p_small {
+  font-size: 9pt;
+  font-family: "Montserrat_reg";
+}
+
+.my_p_small,
+.my_p,
+.my_h3,
+.my_h2,
+.my_h1 {
+  margin: 0;
+  padding: 0;
+}
+
+// logo text
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: #334155;
+
+  span:first-child {
+    color: #2563eb;
+  }
+}

@@ -1,0 +1,23 @@
+.stars-container {
+    display: flex;
+}
+
+.star {
+    margin-right: 5px;
+}
+
+.star.full {
+    fill: #FFD700; // Полная звезда
+}
+
+.star.half path:first-child {
+    fill: #FFD700; // Левая часть полузвезды
+}
+
+.star.half path:last-child {
+    fill: #DDDDDD; // Правая часть полузвезды
+}
+
+.star.empty {
+    fill: #DDDDDD; // Пустая звезда
+}

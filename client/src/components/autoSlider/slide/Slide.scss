@@ -1,0 +1,79 @@
+// Slide.scss
+.slider_item {
+    width: 100%;
+    height: 600px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity 1s ease, transform 1s ease;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    color: #ffffff;
+
+    .item_container {
+        position: absolute;
+        bottom: 100px;
+        left: 50px;
+        width: calc(100% - 100px);
+        transition: transform 1s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+
+        &.current {
+            transform: translateY(0);
+        }
+
+        &.next {
+            transform: translateY(50px);
+        }
+    }
+}
+
+.current {
+    opacity: 1;
+    transform: translateX(0);
+    z-index: 2;
+}
+
+.next {
+    opacity: 0;
+    transform: translateX(50px);
+    z-index: 1;
+}
+
+.none {
+    opacity: 0;
+    z-index: 0;
+}
+
+
+.slider_button {
+    padding: 12px 30px;
+    border: 2px solid #ffffff;
+    border-radius: 10px;
+    background-color: rgba($color: #000000, $alpha: 0.3);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        transform: translateY(-3px);
+    }
+}
+
+.slider_item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0) 100%);
+}

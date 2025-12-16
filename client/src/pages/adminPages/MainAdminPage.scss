@@ -1,0 +1,48 @@
+.mainAdminPage {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
+    position: relative;
+    
+    &.header-active {
+        .main-content {
+            margin-left: 280px;
+            width: calc(100vw - 280px);
+            transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+    }
+    
+    &.header-hidden {
+        .main-content {
+            margin-left: 0;
+            width: 100vw;
+            transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+    }
+}
+
+.main-content {
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+    .mainAdminPage {
+        &.header-active {
+            .main-content {
+                margin-left: 250px;
+                width: calc(100vw - 250px);
+            }
+        }
+        
+        &.header-hidden {
+            .main-content {
+                margin-left: 0;
+                width: 100vw;
+            }
+        }
+    }
+}

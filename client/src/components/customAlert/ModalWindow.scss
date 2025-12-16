@@ -1,0 +1,40 @@
+.alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    min-height: 100vh;
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+
+    .alert_content {
+        margin-top: calc(50vh - 95px);
+        margin-left: calc(50vw - 170px);
+        position: relative;
+        z-index: 5;
+        background-color: #fff;
+        min-height: 150px;
+        border-radius: 20px;
+        width: 300px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        text-align: center;
+    }
+
+    .modal_back {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba($color: #000000, $alpha: 0.7);
+    }
+}
+
+body.modal {
+    overflow: hidden;
+}

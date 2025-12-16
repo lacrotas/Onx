@@ -1,0 +1,27 @@
+.windowBlock {
+    width: 260px;
+    padding: 20px;
+    height: 250px;
+    background-color: #fff;
+    border-radius: 20px;
+
+    h3 {
+        margin: 0;
+    }
+
+    .windowBlock_image {
+        float: right;
+        width: 32px;
+        height: 32px;
+    }
+
+    &:hover {
+        cursor: pointer;
+        background-color: #292D32;
+        color: #fff;
+
+        .windowBlock_image {
+            filter: invert(1);
+        }
+    }
+}

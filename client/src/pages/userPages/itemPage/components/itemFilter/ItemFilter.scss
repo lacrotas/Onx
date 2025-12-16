@@ -1,0 +1,74 @@
+// .itemPage_filter {
+//     .itemPage_filter-header {
+//         display: flex;
+//         align-items: center;
+//         cursor: pointer;
+//         margin-top: 20px;
+//         .filter_image {
+//             width: 28px;
+//             height: 28px;
+//         }
+
+//         .filter_paragraph {
+//             margin: 0;
+//             margin-left: 15px;
+//         }
+//     }
+//     .itemPage_filter-description.unactive {
+//         transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+//         max-height: 0;
+//         overflow: hidden;
+//     }
+
+//     .itemPage_filter-description.active {
+//         transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+//         max-height: 200px;
+//         padding: 10px 0;
+//     }
+// }
+
+.filter-item {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 15px;
+
+    &:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .filter-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        padding: 8px 0;
+
+        .filter-item-title {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .filter-item-toggle {
+            font-size: 18px;
+            font-weight: 500;
+            color: #33A9FF;
+            width: 20px;
+            text-align: center;
+        }
+    }
+
+    .filter-item-values {
+        padding-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .no-values {
+        color: #999;
+        font-size: 14px;
+        padding: 5px 0;
+    }
+}

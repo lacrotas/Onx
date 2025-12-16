@@ -1,0 +1,15 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Установка зависимостей
+COPY package*.json ./
+RUN npm install --production
+
+# Копирование исходного кода
+COPY . .
+
+EXPOSE 5000
+
+# Запуск сервера
+CMD ["node", "index.js"]

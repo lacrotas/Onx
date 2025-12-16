@@ -1,0 +1,153 @@
+.review_section {
+    margin-top: 30px;
+    width: 100%;
+    margin-left: 0px;
+
+    .section_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .header_procent {
+            width: 157px;
+            background-color: #F2F2F2;
+            padding: 20px;
+
+            .procent_paragraph {
+                margin: 5px;
+            }
+        }
+
+        .section_header_marks {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+
+            .mark_paragragraph {
+                color: #535353;
+            }
+        }
+
+        .section_header_procentmarks {
+            width: 300px;
+
+            .header_procentMarks {
+                display: flex;
+                align-items: center;
+
+                .procentMarks_paragraph {
+                    margin: 5px 10px;
+                    white-space: nowrap;
+                }
+            }
+        }
+    }
+
+    .section_description {
+        .section_description_container {
+            margin: 30px 0;
+
+            .description_paragraph {
+                margin: 0;
+            }
+
+            .description_container {
+                margin: 10px 0;
+                display: flex;
+                align-items: center;
+
+                .container_paragraph {
+                    margin: 0;
+                    margin-left: 10px;
+                    color: #535353;
+                }
+            }
+        }
+    }
+
+    .section_flex-none {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 50px;
+        .flex_paragraph{
+            width: calc(100% - 200px);
+        }
+    }
+}
+@media screen and (max-width: 760px) {
+    .review_section {
+        margin-top: 30px;
+        width: calc(100% - 40px);
+        margin-left: 20px;
+    
+        .section_header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+    
+            .header_procent {
+                width: 157px;
+                background-color: #F2F2F2;
+                padding: 20px;
+    
+                .procent_paragraph {
+                    margin: 5px;
+                }
+            }
+    
+            .section_header_marks {
+                display: flex;
+                align-items: center;
+                flex-direction: column;
+    
+                .mark_paragragraph {
+                    color: #535353;
+                }
+            }
+    
+            .section_header_procentmarks {
+                width: 300px;
+    
+                .header_procentMarks {
+                    display: flex;
+                    align-items: center;
+    
+                    .procentMarks_paragraph {
+                        margin: 5px 10px;
+                        white-space: nowrap;
+                    }
+                }
+            }
+        }
+    
+        .section_description {
+            .section_description_container {
+                margin: 30px 0;
+    
+                .description_paragraph {
+                    margin: 0;
+                }
+    
+                .description_container {
+                    margin: 10px 0;
+                    display: flex;
+                    align-items: center;
+    
+                    .container_paragraph {
+                        margin: 0;
+                        margin-left: 10px;
+                        color: #535353;
+                    }
+                }
+            }
+        }
+    
+        .section_flex-none {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 50px;
+        }
+    }
+}

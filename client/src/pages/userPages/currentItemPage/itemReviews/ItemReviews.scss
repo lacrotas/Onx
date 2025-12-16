@@ -1,0 +1,175 @@
+.review_section {
+    width: 100%;
+
+    .load-more-button {
+        width: auto;
+        margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    // Общая кнопка "Написать отзыв"
+    .flex_review_button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 170px;
+        padding: 10px 20px;
+        background-color: #2563eb;
+        color: #fff;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+            background-color: #6894f2;
+        }
+    }
+
+    // Заголовок секции (когда есть отзывы)
+    .section_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 30px;
+
+        @media (max-width: 760px) {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .header_procent {
+            width: 157px;
+            padding: 20px;
+            background-color: #F0F0F0;
+            border-radius: 5px;
+
+            .procent_paragraph {
+                margin: 5px 0;
+            }
+        }
+
+        .section_header_marks {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            white-space: nowrap;
+            gap: 5px;
+
+            .section_header_marks_label {
+                color: #333;
+            }
+
+            .mark_paragragraph {
+                color: #333;
+                margin: 4px 0;
+            }
+        }
+
+        .section_header_procentmarks {
+            width: 200px;
+
+            .header_procentMarks {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+                color: #333;
+
+                .procentMarks_paragraph-left {
+                    margin-right: 5px;
+                    padding: 0;
+                }
+
+                .procentMarks_paragraph-right {
+                    margin-left: 5px;
+                    padding: 0;
+                }
+            }
+        }
+    }
+
+    // Список отзывов
+    .section_description {
+        .section_description_container {
+            margin: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+
+            .description_paragraph {
+                margin: 0 0 10px 0;
+            }
+
+            .description_container {
+                display: flex;
+                align-items: center;
+                margin-bottom: 10px;
+
+                .container_paragraph {
+                    margin: 0 0 0 10px;
+                    color: #535353;
+                }
+            }
+
+            //   картинки
+            .review-images {
+                display: flex;
+                gap: 8px;
+                margin-top: 12px;
+                overflow-x: auto;
+                padding: 4px 0;
+                -webkit-overflow-scrolling: touch;
+
+                /* Убираем стрелки скролла в WebKit */
+                &::-webkit-scrollbar {
+                    height: 6px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background: #ccc;
+                    border-radius: 3px;
+                }
+
+                &::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 3px;
+                }
+
+                .review-image {
+                    height: 80px; // фиксированная высота
+                    min-width: 80px; // сохраняем пропорции
+                    object-fit: cover;
+                    border-radius: 8px;
+                    flex-shrink: 0; // не сжимать фото
+                    border: 1px solid #eee;
+                    transition: transform 0.2s ease;
+
+                    &:hover {
+                        transform: scale(1.05);
+                        z-index: 1;
+                        position: relative;
+                    }
+                }
+            }
+        }
+    }
+
+    // Блок, когда отзывов нет
+    .section_flex-none {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 50px;
+        gap: 20px;
+
+        @media (max-width: 760px) {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .flex_paragraph {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+}

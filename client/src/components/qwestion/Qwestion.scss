@@ -1,0 +1,89 @@
+.qwestion {
+    background-color: #fff;
+    padding: 50px 0 50px 0;
+    display: flex;
+    justify-content: center;
+    max-width: 1920px;
+    width: 100vw;
+    .qwestion_list {
+        text-decoration: none;
+        list-style: none;
+        padding: 0;
+        max-width: 800px;
+
+        .list_item.unactive {
+            .qwestion_description {
+                transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+                max-height: 0;
+                overflow: hidden;
+            }
+
+            .qwestion_header {
+                .header_image-closed {
+                    display: block;
+                }
+
+                .header_image-open {
+                    display: none;
+                }
+            }
+        }
+
+        .list_item.active {
+            .qwestion_description {
+                transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+                max-height: 200px;
+                padding: 0 0 10px 0;
+            }
+
+            .qwestion_header {
+
+                .header_image-closed {
+                    display: none;
+                }
+
+                .header_image-open {
+                    display: block;
+                }
+            }
+        }
+
+        .list_item {
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+
+            .qwestion_header {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                cursor: pointer;
+
+                .header_image {
+                    width: 30px;
+                    height: 30px;
+                }
+
+                .header_label {
+                    margin: 10px;
+                    margin-left: 15px;
+                }
+            }
+
+            .qwestion_description {
+                margin-left: 45px;
+
+                .description_text {
+                    color: #757575;
+                }
+            }
+        }
+    }
+}
+
+@media screen and (max-width: 720px) {
+    .qwestion {
+        width: calc(100vw - 40px);
+        padding: 20px;
+    }
+
+}

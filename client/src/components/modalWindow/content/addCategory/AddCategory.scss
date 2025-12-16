@@ -1,0 +1,15 @@
+.modal_add_category {
+    position: relative;
+    z-index: 10;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    height: 250px !important;
+    margin-top: calc(50vh - 125px) !important;
+    display:  flex;
+    flex-direction: column;
+    align-items: center;
+    .category_button{
+        margin-top: 10px;
+    }
+}
