@@ -5,6 +5,12 @@
     justify-content: center;
     width: 100%;
 
+    @media (min-width: 1450px) {
+        margin-bottom: 50px;
+        border-radius: 10px;
+        box-shadow: 0 3px 3px rgba(0, 0, 0, 0.2);
+    }
+
     .qwestion_list {
         width: calc(100% - 80px);
         text-decoration: none;
@@ -87,5 +93,4 @@
             width: calc(100% - 40px);
         }
     }
-
 }

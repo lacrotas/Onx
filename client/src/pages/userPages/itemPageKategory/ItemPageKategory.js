@@ -11,6 +11,8 @@ import { NavLink } from "react-router-dom";
 import { useHistory } from 'react-router-dom';
 import { FaSort } from "react-icons/fa";
 import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import { LiaFilterSolid } from "react-icons/lia";
+import { FiX } from "react-icons/fi";
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
 import { ITEM_MAIN_ROUTE } from "../../appRouter/Const";
 
@@ -29,6 +31,7 @@ const ItemPageKategory = () => {
     const [mainCategory, setMainCategory] = useState(null);
     // фильтры
     const [openFilters, setOpenFilters] = useState({});
+    const [mobileFilters, setMobileFilters] = useState(false);
     const toggleFilter = (filterId) => {
         setOpenFilters(prev => ({
             ...prev,
@@ -297,117 +300,131 @@ const ItemPageKategory = () => {
     return (
         <>
             <Header isAdminHeader={false} />
+            <div onClick={() => setMobileFilters(!mobileFilters)} className={mobileFilters ? 'filters-list_back open' : 'filters-list_back close'}></div>
+
             <div className="item-page-kategory">
-                <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategory.name, path: ITEM_MAIN_ROUTE + "/" + mainCategory.id }, { title: category.name }]} />
 
                 <div className="main-layout">
                     {/* Левая панель с фильтрами */}
-                    <div className="filters-list">
+                    {filteredAndSortedItems.length > 0 ?
+                        <>
+                            <div onClick={() => setMobileFilters(!mobileFilters)} className={!mobileFilters ? 'filters-list_button open' : 'filters-list_button close'}>
+                                <LiaFilterSolid className="icon" />
+                            </div>
+                            <div className={mobileFilters ? 'filters-list open' : 'filters-list close'}>
+                                <div onClick={() => setMobileFilters(!mobileFilters)} className="filters-list_close">
+                                    <FiX size={24} />
+                                </div>
 
-                        {filters.map(filter => {
-                            const isOpen = openFilters[filter.id] || false;
+                                {filters.map(filter => {
+                                    const isOpen = openFilters[filter.id] || false;
 
-                            if (filter.buttonType === 'select') {
-                                const filterValues = getFilterValues(filter);
-                                const selectedValues = selectedFilters[filter.id] || [];
-                                const isOpen = openFilters[filter.id] || false;
+                                    if (filter.buttonType === 'select') {
+                                        const filterValues = getFilterValues(filter);
+                                        const selectedValues = selectedFilters[filter.id] || [];
+                                        const isOpen = openFilters[filter.id] || false;
 
-                                return (
-                                    <div key={filter.id} className="filter-item">
-                                        <div
-                                            className="filter-header"
-                                            onClick={() => toggleFilter(filter.id)}
-                                        >
-                                            <h4 className='my_p_small'>
-                                                {filter.name}
-                                                {selectedValues.length > 0 && (
-                                                    <span className="filter-count"> ({selectedValues.length})</span>
+                                        return (
+                                            <div key={filter.id} className="filter-item">
+                                                <div
+                                                    className="filter-header"
+                                                    onClick={() => toggleFilter(filter.id)}
+                                                >
+                                                    <h4 className='my_p_small'>
+                                                        {filter.name}
+                                                        {selectedValues.length > 0 && (
+                                                            <span className="filter-count"> ({selectedValues.length})</span>
+                                                        )}
+                                                    </h4>
+                                                    {isOpen ? <IoIosArrowDown className='filter-header_icon' /> : <IoIosArrowUp className='filter-header_icon' />}
+                                                </div>
+                                                {isOpen && (
+                                                    <div className="filter-select-options">
+                                                        {filterValues.map((value) => (
+                                                            <label key={value} className="filter-option my_p_small">
+                                                                <input
+                                                                    className='my_p_small'
+                                                                    type="checkbox"
+                                                                    checked={selectedValues.includes(value)}
+                                                                    onChange={(e) => handleFilterChange(filter.id, value, e.target.checked)}
+                                                                />
+                                                                {value}
+                                                            </label>
+                                                        ))}
+                                                    </div>
                                                 )}
-                                            </h4>
-                                            {isOpen ? <IoIosArrowDown className='filter-header_icon' /> : <IoIosArrowUp className='filter-header_icon' />}
-                                        </div>
-                                        {isOpen && (
-                                            <div className="filter-select-options">
-                                                {filterValues.map((value) => (
-                                                    <label key={value} className="filter-option my_p_small">
+                                            </div>
+                                        );
+                                    } else if (filter.buttonType === 'number') {
+                                        const { min, max } = getNumberRange(filter);
+                                        const currentValues = selectedFilters[filter.id] || { min: '', max: '' };
+                                        return (
+                                            <div key={filter.id} className="filter-item">
+                                                <div
+                                                    className="filter-header"
+                                                    onClick={() => toggleFilter(filter.id)}
+                                                >
+                                                    <h4 className='my_p_small'>{`${filter.name} (${filter.addition})`}</h4>
+                                                    {isOpen ? <IoIosArrowDown className='filter-header_icon' /> : <IoIosArrowUp className='filter-header_icon' />}
+                                                </div>
+                                                {isOpen && (
+                                                    <div className="number-range-filter">
+                                                        <div className="range-input">
+                                                            <input
+                                                                type="number"
+                                                                placeholder={`от ${min}`}
+                                                                value={currentValues.min}
+                                                                onChange={(e) => handleFilterChange(filter.id, 'min', e.target.value)}
+                                                                min={min}
+                                                                max={max}
+                                                                className="range-input-field left my_p_small"
+                                                            />
+                                                            <input
+                                                                type="number"
+                                                                placeholder={`до ${max}`}
+                                                                value={currentValues.max}
+                                                                onChange={(e) => handleFilterChange(filter.id, 'max', e.target.value)}
+                                                                min={min}
+                                                                max={max}
+                                                                className="range-input-field right my_p_small"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    } else if (filter.buttonType === 'check') {
+                                        // Чекбоксы остаются всегда видимыми — без раскрывания
+                                        return (
+                                            <div key={filter.id} className="filter-item">
+                                                <div className="filter-check">
+                                                    <label>
                                                         <input
                                                             className='my_p_small'
                                                             type="checkbox"
-                                                            checked={selectedValues.includes(value)}
-                                                            onChange={(e) => handleFilterChange(filter.id, value, e.target.checked)}
+                                                            checked={selectedFilters[filter.id] || false}
+                                                            onChange={(e) => handleFilterChange(filter.id, e.target.checked)}
                                                         />
-                                                        {value}
+                                                        {filter.name}
                                                     </label>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            } else if (filter.buttonType === 'number') {
-                                const { min, max } = getNumberRange(filter);
-                                const currentValues = selectedFilters[filter.id] || { min: '', max: '' };
-                                return (
-                                    <div key={filter.id} className="filter-item">
-                                        <div
-                                            className="filter-header"
-                                            onClick={() => toggleFilter(filter.id)}
-                                        >
-                                            <h4 className='my_p_small'>{`${filter.name} (${filter.addition})`}</h4>
-                                            {isOpen ? <IoIosArrowDown className='filter-header_icon' /> : <IoIosArrowUp className='filter-header_icon' />}
-                                        </div>
-                                        {isOpen && (
-                                            <div className="number-range-filter">
-                                                <div className="range-input">
-                                                    <input
-                                                        type="number"
-                                                        placeholder={`от ${min}`}
-                                                        value={currentValues.min}
-                                                        onChange={(e) => handleFilterChange(filter.id, 'min', e.target.value)}
-                                                        min={min}
-                                                        max={max}
-                                                        className="range-input-field left my_p_small"
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        placeholder={`до ${max}`}
-                                                        value={currentValues.max}
-                                                        onChange={(e) => handleFilterChange(filter.id, 'max', e.target.value)}
-                                                        min={min}
-                                                        max={max}
-                                                        className="range-input-field right my_p_small"
-                                                    />
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            } else if (filter.buttonType === 'check') {
-                                // Чекбоксы остаются всегда видимыми — без раскрывания
-                                return (
-                                    <div key={filter.id} className="filter-item">
-                                        <div className="filter-check">
-                                            <label>
-                                                <input
-                                                    className='my_p_small'
-                                                    type="checkbox"
-                                                    checked={selectedFilters[filter.id] || false}
-                                                    onChange={(e) => handleFilterChange(filter.id, e.target.checked)}
-                                                />
-                                                {filter.name}
-                                            </label>
-                                        </div>
-                                    </div>
-                                );
-                            } else {
-                                return null;
-                            }
-                        })}
-                    </div>
-
+                                        );
+                                    } else {
+                                        return null;
+                                    }
+                                })}
+                                <div className="filter-item filter-item_button my_p_small" onClick={() => setSelectedFilters({})}>
+                                    Сбросить фильтры
+                                </div>
+                            </div>
+                        </>
+                        : <></>}
                     {/* Основной контент */}
                     <div className="item-page-kategory_main-content">
+                        <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategory.name, path: ITEM_MAIN_ROUTE + "/" + mainCategory.id }, { title: category.name }]} />
                         <div className='main-content_header'>
-                            <h1 className='item-page-kategory_label my_h1'>{category ? category.name : 'Категория'}</h1>
+                            <h1 className='item-page-kategory_label my_h2'>{category ? category.name : 'Категория'}</h1>
                             {/* Блок с сортировкой */}
                             <div className="sorting-section" ref={sortRef}>
                                 <div
@@ -462,58 +479,59 @@ const ItemPageKategory = () => {
                             {itemsLoading ? (
                                 <div className="loading">Загрузка товаров...</div>
                             ) : (
-                                <div className="items-grid">
-                                    {filteredAndSortedItems.length > 0 ? (
-                                        filteredAndSortedItems.map(item => (
-                                            <NavLink
-                                                className="subcategory-title"
-                                                to={{
-                                                    pathname: `${ITEM_PREVIEW_ROUTE}/${item.id}`,
-                                                    state: { path: [item.id] }
-                                                }}
-                                                onClick={() => handleClick([item.id])}
-                                            >
-                                                <div key={item.id} className="item-card">
-                                                    <div className="item-image">
-                                                        {item.images && Array.isArray(item.images) && item.images.length > 0 ? (
-                                                            <img
-                                                                src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`}
-                                                                alt={item.name}
-                                                                onError={(e) => {
-                                                                    e.target.src = '/placeholder-image.jpg';
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <div className="no-image">Нет изображения</div>
-                                                        )}
-                                                    </div>
-                                                    <div className="item-rating">
-                                                        <div className="stars">
-                                                            {renderStars(item.rating)}
-                                                        </div>
-                                                    </div>
-                                                    <div className="item-info">
-                                                        <h3 className="item-name">{item.name}</h3>
-                                                        <div className="item-status">
-                                                            {item.isExist ? (
-                                                                <span className="in-stock">В наличии</span>
+                                <>
+                                    <div className="no-items">
+                                        Товары не найдены
+                                    </div>
+                                    <div className="items-grid">
+                                        {
+                                            filteredAndSortedItems.map(item => (
+                                                <NavLink
+                                                    className="subcategory-title"
+                                                    to={{
+                                                        pathname: `${ITEM_PREVIEW_ROUTE}/${item.id}`,
+                                                        state: { path: [item.id] }
+                                                    }}
+                                                    onClick={() => handleClick([item.id])}
+                                                >
+                                                    <div key={item.id} className="item-card">
+                                                        <div className="item-image">
+                                                            {item.images && Array.isArray(item.images) && item.images.length > 0 ? (
+                                                                <img
+                                                                    src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`}
+                                                                    alt={item.name}
+                                                                    onError={(e) => {
+                                                                        e.target.src = '/placeholder-image.jpg';
+                                                                    }}
+                                                                />
                                                             ) : (
-                                                                <span className="out-of-stock">Нет в наличии</span>
+                                                                <div className="no-image">Нет изображения</div>
                                                             )}
                                                         </div>
-                                                        <div className="item-price">
-                                                            {item.price} руб.
+                                                        <div className="item-rating">
+                                                            <div className="stars">
+                                                                {renderStars(item.rating)}
+                                                            </div>
+                                                        </div>
+                                                        <div className="item-info">
+                                                            <h3 className="item-name">{item.name}</h3>
+                                                            <div className="item-status">
+                                                                {item.isExist ? (
+                                                                    <span className="in-stock">В наличии</span>
+                                                                ) : (
+                                                                    <span className="out-of-stock">Нет в наличии</span>
+                                                                )}
+                                                            </div>
+                                                            <div className="item-price">
+                                                                {item.price} руб.
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </NavLink>
-                                        ))
-                                    ) : (
-                                        <div className="no-items">
-                                            Товары не найдены
-                                        </div>
-                                    )}
-                                </div>
+                                                </NavLink>
+                                            ))
+                                        }
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>

@@ -32,7 +32,8 @@ const BusketPage = () => {
     };
 
     const loadBasketFromLocalStorage = () => {
-        const saved = localStorage.getItem(BASKET_LOCAL_STORAGE_KEY);
+        const saved = localStorage.getItem(BASKET_LOCAL_STORAGE_KEY) || [];
+        localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, saved);
         return saved ? JSON.parse(saved) : [];
     };
 
@@ -240,7 +241,7 @@ const BusketPage = () => {
             <Header isAdminHeader={false} />
             <div className="basket-page">
                 <div className="container">
-                    <h1 className="page-title">Мои заказы</h1>
+                    <h1 className="page-title my_h1">Мои заказы</h1>
 
                     {items.length === 0 ? (
                         <div className="empty-basket">
@@ -272,30 +273,34 @@ const BusketPage = () => {
                                                 )}
                                             </div>
                                             <div className="item-info">
-                                                <h3 className="item-name">{item.name}</h3>
-                                                <div className="item-price">
+                                                <h3 className="item-name my_h3">{item.name}</h3>
+                                                {/* <div className="item-price">
                                                     {item.price} ₽
-                                                </div>
-                                                <div className="item-quantity-control">
-                                                    <div className="quantity-selector">
-                                                        <button
-                                                            className="quantity-btn"
-                                                            onClick={() => handleQuantityChange(item.id, currentQuantity - 1)}
-                                                            disabled={currentQuantity <= 1}
-                                                        >
-                                                            -
-                                                        </button>
-                                                        <span className="quantity-value">{currentQuantity}</span>
-                                                        <button
-                                                            className="quantity-btn"
-                                                            onClick={() => handleQuantityChange(item.id, currentQuantity + 1)}
-                                                        >
-                                                            +
-                                                        </button>
+                                                </div> */}
+
+                                                <div className='item-info_prise-container'>
+                                                    <div className="item-total my_h3">
+                                                        {totalPrice} р.
                                                     </div>
-                                                </div>
-                                                <div className="item-total">
-                                                    {totalPrice} р.
+                                                    <div className="item-quantity-control">
+                                                        <div className="quantity-selector">
+                                                            <button
+                                                                className="quantity-btn"
+                                                                onClick={() => handleQuantityChange(item.id, currentQuantity - 1)}
+                                                                disabled={currentQuantity <= 1}
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <span className="quantity-value">{currentQuantity}</span>
+                                                            <button
+                                                                className="quantity-btn"
+                                                                onClick={() => handleQuantityChange(item.id, currentQuantity + 1)}
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
                                                 </div>
                                             </div>
                                             <button
@@ -313,18 +318,18 @@ const BusketPage = () => {
                             <div className="basket-summary-fixed">
                                 <div className="summary-info">
                                     <div className="summary-row">
-                                        <span>Товаров:</span>
-                                        <span>{calculateTotalItems()} шт.</span>
+                                        <span className='my_p'>Товаров:</span>
+                                        <span className='my_h3'>{calculateTotalItems()} шт.</span>
                                     </div>
                                     <div className="summary-row total-row">
-                                        <span>Итого:</span>
-                                        <span className="total-price">{calculateTotal().toFixed(2)} ₽</span>
+                                        <span className='my_p'>Итого:</span>
+                                        <span className="total-price my_h3">{calculateTotal().toFixed(2)} ₽</span>
                                     </div>
                                 </div>
 
                                 <div className="basket-actions">
                                     <button
-                                        className="checkout-btn"
+                                        className="checkout-btn my_p"
                                         onClick={handleCheckout}
                                     >
                                         Оформить заказ

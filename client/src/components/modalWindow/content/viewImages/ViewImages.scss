@@ -1,6 +1,7 @@
 .view-images {
   position: relative;
   display: flex;
+  flex-direction: row;
   z-index: 30;
   gap: 20px;
   width: 100%;
@@ -14,25 +15,22 @@
   // Крестик закрытия
   .view-images-close {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
+    top: 5px;
+    right: 5px;
+    background: none;
     border: none;
-    border-radius: 50%;
-    font-size: 20px;
-    font-weight: bold;
     cursor: pointer;
+    color: #888;
+    padding: 6px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 40;
-    transition: background 0.2s;
+    z-index: 10;
 
     &:hover {
-      background: rgba(0, 0, 0, 0.8);
+      background-color: #f0f0f0;
+      color: #333;
     }
   }
 
@@ -98,8 +96,8 @@
       transform: translateY(-50%);
       background: rgba(255, 255, 255, 0.8);
       border: none;
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -107,17 +105,18 @@
       cursor: pointer;
       z-index: 35;
       transition: background 0.2s;
+      color: #888;
 
       &:hover {
         background: white;
       }
 
       &--prev {
-        left: 10px;
+        left: 0px;
       }
 
       &--next {
-        right: 10px;
+        right: 0px;
       }
     }
 
@@ -135,4 +134,20 @@
   padding: 40px;
   color: #888;
   font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .view-images {
+    flex-direction: column-reverse;
+
+    .view-images-main {
+      .view-images-main-img {
+        max-height: 50vh; 
+      }
+    }
+
+    .view-images-thumbnails {
+      flex-direction: row;
+    }
+  }
 }

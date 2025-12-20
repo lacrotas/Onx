@@ -168,8 +168,13 @@
         }
 
         .flex_paragraph {
+            color: #333;
             flex: 1;
             min-width: 0;
+
+            @media (max-width: 760px) {
+                width: 80%;
+            }
         }
     }
 }

@@ -75,7 +75,7 @@ const ItemSearchPage = () => {
 
                 <div className="search-main-content">
                     <h1 className="search-title my_h1">
-                        Результаты поиска: <span className="query-highlight">"{query}"</span>
+                        Результаты поиска: <span className="query-highlight my_h1">"{query}"</span>
                     </h1>
 
                     <div className="items-section">

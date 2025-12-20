@@ -1,30 +1,51 @@
 // Slide.scss
+
 .slider_item {
     width: 100%;
-    height: 600px;
+    height: 400px;
     position: absolute;
     top: 0;
     left: 0;
     transition: opacity 1s ease, transform 1s ease;
+    
+    /* Затемнение (overlay) должно быть под текстом, но над картинкой */
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0) 100%);
+        z-index: 1; /* Слой затемнения */
+    }
 
     img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        position: relative;
+        z-index: 0; /* Картинка в самом низу */
     }
 
     color: #ffffff;
 
     .item_container {
         position: absolute;
-        bottom: 100px;
-        left: 50px;
-        width: calc(100% - 100px);
-        transition: transform 1s ease;
+        bottom: 70px;
+        left: 0;
+        width: 100%; /* Растягиваем на всю ширину экрана */
+        z-index: 2; /* Текст поверх затемнения */
+        
+        /* Центрирование контента */
         display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-
+        justify-content: center; 
+        padding: 0 20px; /* Безопасные отступы по бокам для мобилок */
+        
+        transition: transform 1s ease;
+        .container_text .container_text-paragraph{
+            margin-top: 10px;
+        }
         &.current {
             transform: translateY(0);
         }
@@ -32,6 +53,15 @@
         &.next {
             transform: translateY(50px);
         }
+    }
+
+    /* Внутренняя обертка для контента, чтобы ограничить ширину */
+    .content_wrapper {
+        width: 100%;
+        max-width: 1440px; /* Ваша ширина контейнера */
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
     }
 }
 
@@ -52,7 +82,6 @@
     z-index: 0;
 }
 
-
 .slider_button {
     padding: 12px 30px;
     border: 2px solid #ffffff;
@@ -62,18 +91,10 @@
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    white-space: nowrap; /* Чтобы текст кнопки не переносился */
 
     &:hover {
         transform: translateY(-3px);
+        background-color: rgba($color: #ffffff, $alpha: 0.2);
     }
-}
-
-.slider_item::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0) 100%);
 }

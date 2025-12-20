@@ -1,6 +1,7 @@
 // ViewImages.jsx
 import React, { useState } from 'react';
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { FiX } from "react-icons/fi";
 import './ViewImages.scss';
 
 function ViewImages({ images = [], setIsModalActive }) {
@@ -31,13 +32,10 @@ function ViewImages({ images = [], setIsModalActive }) {
   return (
     <div className="view-images" tabIndex={0} onKeyDown={handleKeyDown}>
       {/* Крестик закрытия */}
-      <button
-        className="view-images-close"
-        onClick={() => setIsModalActive(false)}
-        aria-label="Закрыть галерею"
-      >
-        ×
-      </button>
+      <div className="view-images-close"
+        onClick={() => setIsModalActive(false)}>
+        <FiX size={20} />
+      </div>
 
       {/* Миниатюры слева */}
       <div className="view-images-thumbnails">

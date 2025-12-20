@@ -77,6 +77,8 @@ const ItemPageMainKategory = () => {
 
                         </div>
                     ))}
+                    {!categories.length > 0 ?
+                        <p className='categories_section_no-item my_p'>Категорий пока нет</p> : <></>}
                 </section>
             </div>
             <Footer />

@@ -1,12 +1,12 @@
-// Header.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useHistory } from 'react-router-dom';
 import { FiMenu, FiX, FiSearch, FiShoppingCart, FiTruck, FiPhone, FiList, FiUser } from 'react-icons/fi';
 import './Header.scss';
-import { MAIN_ROUTE, BUSKET_ROUTE, LOGIN_ROUTE } from "../../pages/appRouter/Const";
+import { MAIN_ROUTE, BUSKET_ROUTE, LOGIN_ROUTE, ITEM_SEARCH_ROUTE } from "../../pages/appRouter/Const";
 import ModalWindow from "../modalWindow/ModalWindow";
 import CatalogInfoSlide from "../catalogInfoSlide/CatalogInfoSlide";
 import jwt_decode from 'jwt-decode';
+import LogoImg from "../../assets/images/logoNew.png";
 
 export default function Header({ isAdminHeader }) {
     const history = useHistory();
@@ -15,6 +15,46 @@ export default function Header({ isAdminHeader }) {
     const [cartItemsCount, setCartItemsCount] = useState(0);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
+    // --- ЛОГИКА ПОИСКА ---
+    const [isSearchActive, setIsSearchActive] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const searchInputRef = useRef(null);
+
+    const performSearch = () => {
+        if (searchQuery.trim()) {
+            const encodedQuery = encodeURIComponent(searchQuery.trim());
+            // Редирект как в вашем примере Search.js
+            history.push(`${ITEM_SEARCH_ROUTE}?q=${encodedQuery}`);
+
+            // Опционально: закрываем поле поиска после перехода или оставляем
+            setIsSearchActive(false);
+            setSearchQuery("");
+        }
+    };
+
+    const handleSearchClick = () => {
+        if (isSearchActive) {
+            // Если поле уже открыто, кнопка "Поиск" работает как submit
+            performSearch();
+        } else {
+            // Если закрыто - открываем
+            setIsSearchActive(true);
+            setTimeout(() => {
+                searchInputRef.current?.focus();
+            }, 100);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+        if (e.key === 'Escape') {
+            setIsSearchActive(false);
+            setSearchQuery("");
+        }
+    };
+    // ---------------------
 
     const updateCartCount = () => {
         const basket = localStorage.getItem("basket") || "false";
@@ -32,23 +72,19 @@ export default function Header({ isAdminHeader }) {
             if (!token) {
                 return 'Пользователь';
             }
-
             const decodedToken = jwt_decode(token);
-
             const currentTime = Date.now() / 1000;
             if (decodedToken.exp < currentTime) {
                 localStorage.removeItem('token');
                 return 'Пользователь';
             }
-
             return decodedToken.login || 'Пользователь';
-
         } catch (error) {
             console.error('Ошибка декодирования токена:', error);
             return 'Пользователь';
         }
     };
-    // для обновленния корзины при добаавлении довара (в товаре вызывается window.dispatchEvent(new Event('cartUpdated'));)
+
     useEffect(() => {
         updateCartCount();
         const handleStorageChange = () => {
@@ -72,7 +108,6 @@ export default function Header({ isAdminHeader }) {
     const [isModalActive, setIsModalActive] = useState(false);
     const [modalType, setModalType] = useState("");
     const [isCategotyActive, setIsCategoryActive] = useState(false);
-    const [isBurgerOpen, setIsBurgerOpen] = useState(false);
 
     function openModal(type) {
         setIsModalActive(true);
@@ -87,6 +122,18 @@ export default function Header({ isAdminHeader }) {
         setMobileMenuOpen(false)
         setIsCategoryActive(true)
     }
+
+    // Закрытие поиска при клике вне хедера
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isSearchActive && !event.target.closest('.main-header')) {
+                setIsSearchActive(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isSearchActive]);
+
 
     useEffect(() => {
         if (isModalActive || isCategotyActive) {
@@ -116,7 +163,7 @@ export default function Header({ isAdminHeader }) {
             history.push(BUSKET_ROUTE + "/" + userToken.id);
         }
     }
-    // Закрываем меню пользователя при клике вне его
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (isUserMenuOpen) {
@@ -135,7 +182,7 @@ export default function Header({ isAdminHeader }) {
 
     return (
         <>
-            <header className="main-header">
+            <header className={`main-header ${isSearchActive ? 'search-active' : ''}`}>
                 <div className="container">
                     <div className="header-content">
                         <button className="categories-btn" onClick={() => setIsCategoryActive(true)}>
@@ -143,16 +190,48 @@ export default function Header({ isAdminHeader }) {
                             <span className="my_p_small">Категории</span>
                         </button>
 
-                        <NavLink to="/" className="logo">
-                            <span>ONX</span>STORE
-                        </NavLink>
+                        {/* Логотип скрывается при поиске */}
+                        {!isSearchActive && (
+                            // <NavLink to="/">
+                            //     <img className="logo" src={LogoImg} alt='logo' />
+                            // </NavLink>
+                            <NavLink to="/" className="logo">
+                                <span>ON</span>X
+                            </NavLink>
+                        )}
+
+                        {/* Поле поиска */}
+                        {isSearchActive && (
+                            <div className="desktop-search-container">
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    placeholder="Введите название товара..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                />
+                                {/* Иконка лупы внутри инпута для запуска поиска */}
+                                <FiSearch
+                                    className="search-submit-icon"
+                                    onClick={performSearch}
+                                />
+                            </div>
+                        )}
 
                         <nav className="main-nav">
                             <div className="action-buttons">
-                                <button className="action-btn" onClick={() => openModal("search")}>
-                                    <FiSearch className="icon" />
-                                    <span className="my_p_small">Поиск</span>
-                                </button>
+                                {!isSearchActive &&
+                                    (<button
+                                        className={`action-btn ${isSearchActive ? 'active' : ''}`}
+                                        onClick={handleSearchClick}
+                                    >
+                                        <FiSearch className="icon" />
+                                        <span className="my_p_small">Поиск</span>
+                                    </button>
+                                    )
+                                }
+
                                 <button className="action-btn" onClick={() => openModal("delivery")}>
                                     <FiTruck className="icon" />
                                     <span className="my_p_small">Доставка</span>
@@ -170,7 +249,7 @@ export default function Header({ isAdminHeader }) {
                                     </NavLink>
                                 )}
                             </div>
-                            {/* <NavLink to={BUSKET_ROUTE + userToken ? ("/" + userToken.id) : null} className="cart-btn"> */}
+
                             <div onClick={() => handleBusket()} className="cart-btn">
                                 <FiShoppingCart className="icon" />
                                 {cartItemsCount > 0 && (
@@ -200,7 +279,7 @@ export default function Header({ isAdminHeader }) {
                 </div>
             </header>
 
-            {/* Выпадающее меню пользователя */}
+            {/* Остальной код без изменений */}
             {hasToken() && isUserMenuOpen && (
                 <div className="user-dropdown">
                     <div className="user-dropdown-content">
@@ -208,12 +287,7 @@ export default function Header({ isAdminHeader }) {
                             <FiUser className="user-icon" />
                             <span className="user-name">{getUserLogin()}</span>
                         </div>
-                        <button
-                            className="logout-btn"
-                            onClick={handleLogout}
-                        >
-                            Выйти
-                        </button>
+                        <button className="logout-btn" onClick={handleLogout}>Выйти</button>
                     </div>
                 </div>
             )}
@@ -235,10 +309,7 @@ export default function Header({ isAdminHeader }) {
                     <FiPhone className="icon" />
                     Контакты
                 </button>
-                <div
-                    onClick={() => handleBusket()}
-                    className="mobile-menu-link"
-                >
+                <div onClick={() => handleBusket()} className="mobile-menu-link">
                     <FiShoppingCart className="icon" />
                     Корзина
                     {cartItemsCount > 0 && (
@@ -251,12 +322,7 @@ export default function Header({ isAdminHeader }) {
                             <FiUser className="icon" />
                             <span>{getUserLogin()}</span>
                         </div>
-                        <button
-                            className="mobile-logout-btn"
-                            onClick={handleLogout}
-                        >
-                            Выйти
-                        </button>
+                        <button className="mobile-logout-btn" onClick={handleLogout}>Выйти</button>
                     </div>
                 )}
                 {!hasToken() && (

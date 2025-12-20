@@ -17,12 +17,10 @@ export default function CatalogItem({ itemId, counter, image, label, item_counte
     return (
         <NavLink to={{ pathname: ITEM_MAIN_ROUTE + "/" + itemId, state: { path: { name: label } } }} onClick={() => window.scrollTo(0, 0)}>
             <div className="catalog_item">
-                <div className="item_container">
-                    <div className="item_text_container">
-                        <p className="item_paragraph--counter my_p">{item_counter} {`${getWordEnding(item_counter, endings)}`}</p>
-                        <p className="item_paragraph--name my_h3">{label}</p>
-                    </div>
-                    <img className="item_image" src={process.env.REACT_APP_API_URL + "static/images/" + image} alt="catalog" />
+                <img className="item_image" src={process.env.REACT_APP_API_URL + "static/images/" + image} alt="catalog" />
+                <div className="item_text_container">
+                    <p className="item_paragraph--counter my_p">{item_counter} {`${getWordEnding(item_counter, endings)}`}</p>
+                    <p className="item_paragraph--name my_h3 card">{label}</p>
                 </div>
             </div>
         </NavLink >

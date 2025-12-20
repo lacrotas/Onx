@@ -1,13 +1,14 @@
 // BusketPage.scss
 .basket-page {
     padding: 20px 0;
-    min-height: calc(100vh - 200px);
+    width: 100vw;
+    max-width: 1440px;
+    min-height: calc(100vh - 100px);
     
     &.loading,
     &.error {
         text-align: center;
         padding: 60px 20px;
-        font-size: 18px;
         color: #6c757d;
     }
     
@@ -24,8 +25,6 @@
     .page-title {
         margin-bottom: 30px;
         color: #2c3e50;
-        font-size: 24px;
-        font-weight: 600;
         text-align: left;
     }
     
@@ -34,7 +33,6 @@
         padding: 60px 20px;
         
         p {
-            font-size: 18px;
             color: #6c757d;
             margin-bottom: 20px;
         }
@@ -46,7 +44,6 @@
             color: white;
             text-decoration: none;
             border-radius: 8px;
-            font-weight: 600;
             transition: transform 0.2s ease;
             
             &:hover {
@@ -107,8 +104,6 @@
             align-items: center;
             justify-content: center;
             color: #6c757d;
-            font-size: 12px;
-            font-style: italic;
         }
     }
     
@@ -116,23 +111,24 @@
         flex: 1;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
         gap: 8px;
         
         .item-name {
             margin: 0;
-            font-size: 15px;
-            font-weight: 600;
             color: #2c3e50;
-            line-height: 1.3;
             display: -webkit-box;
-            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        .item-info_prise-container{
+            display: flex;
+            margin-top: 10px;
+            justify-content: space-between;
+        }
         
         .item-price {
-            font-size: 14px;
-            font-weight: 600;
             color: #e03d3d;
         }
         
@@ -149,8 +145,6 @@
                 border: 1px solid #ced4da;
                 background: white;
                 border-radius: 4px;
-                font-size: 14px;
-                font-weight: bold;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
@@ -172,15 +166,11 @@
             .quantity-value {
                 min-width: 25px;
                 text-align: center;
-                font-size: 13px;
-                font-weight: 600;
                 color: #2c3e50;
             }
         }
         
         .item-total {
-            font-size: 14px;
-            font-weight: 600;
             color: #2c3e50;
         }
     }
@@ -228,8 +218,7 @@
         display: flex;
         justify-content: space-between;
         padding: 6px 0;
-        font-size: 14px;
-        color: #495057;
+        color: #333;
         
         &.total-row {
             border-top: 1px solid #e9ecef;
@@ -237,9 +226,7 @@
             padding-top: 12px;
             
             .total-price {
-                font-weight: 700;
-                font-size: 18px;
-                color: #e03d3d;
+                color: #333;
             }
         }
     }
@@ -255,8 +242,6 @@
         padding: 12px;
         border: none;
         border-radius: 8px;
-        font-size: 15px;
-        font-weight: 600;
         cursor: pointer;
         text-align: center;
     }
@@ -285,6 +270,11 @@
     .basket-page {
         .basket-item {
             padding: 12px;
+            .remove-item-icon{
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
         }
         
         .item-image {
@@ -292,45 +282,24 @@
             height: 70px;
         }
         
-        .item-name {
-            font-size: 14px;
-        }
-        
         .item-quantity-control {
             .quantity-btn {
                 width: 22px;
                 height: 22px;
-                font-size: 12px;
             }
             
             .quantity-value {
-                font-size: 12px;
                 min-width: 22px;
             }
-        }
-        
-        .item-total {
-            font-size: 13px;
         }
         
         .basket-summary-fixed {
             padding: 16px;
         }
         
-        .summary-row {
-            font-size: 13px;
-            
-            &.total-row {
-                .total-price {
-                    font-size: 16px;
-                }
-            }
-        }
-        
         .clear-basket-btn,
         .checkout-btn {
             padding: 10px;
-            font-size: 14px;
         }
     }
 }

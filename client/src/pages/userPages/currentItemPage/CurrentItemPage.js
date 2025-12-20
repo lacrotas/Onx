@@ -127,7 +127,7 @@ const CurrentItemPage = () => {
     };
 
     const scrollToFullDetails = () => {
-        document.getElementById('full-details')?.scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('full-spec')?.scrollIntoView({ behavior: 'smooth' });
     };
 
     if (loading) {
@@ -168,7 +168,7 @@ const CurrentItemPage = () => {
                     setIsModalActive={setIsImageView} />}
             <Header />
             <div className="wb-container">
-                <h1 className="wb-product-header my_h1">{item.name}</h1>
+                <h1 className="wb-product-header my_h2">{item.name}</h1>
                 {mainKategory && kategory && item &&
                     <Breadcrumbs items={[
                         { title: "Главная", path: "/" },
@@ -178,63 +178,64 @@ const CurrentItemPage = () => {
                     ]} />
                 }
                 <div className="wb-main-content">
-                    {/* Слайды */}
-                    <div className="wb-thumbnails-column">
-                        {item.images.map((image, index) => (
-                            <button
-                                key={index}
-                                className={`wb-thumb ${index === currentImageIndex ? 'active' : ''}`}
-                                onClick={() => handleImageClick(index)}
-                                type="button"
-                                aria-label={`Изображение ${index + 1}`}
-                            >
+                    <div className='wb-content_image'>
+                        {/* Слайды */}
+                        <div className="wb-thumbnails-column">
+                            {item.images.map((image, index) => (
+                                <button
+                                    key={index}
+                                    className={`wb-thumb ${index === currentImageIndex ? 'active' : ''}`}
+                                    onClick={() => handleImageClick(index)}
+                                    type="button"
+                                    aria-label={`Изображение ${index + 1}`}
+                                >
+                                    <img
+                                        src={`${process.env.REACT_APP_API_URL}static/images/${image}`}
+                                        alt=""
+                                        onError={(e) => {
+                                            e.target.src = '/placeholder-image.jpg';
+                                        }}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Главная картинка */}
+                        <div className="wb-image-column">
+                            <div className="wb-main-image" ref={mainImageRef} onClick={() => setIsImageView(true)}>
                                 <img
-                                    src={`${process.env.REACT_APP_API_URL}static/images/${image}`}
-                                    alt=""
+                                    src={`${process.env.REACT_APP_API_URL}static/images/${item.images[currentImageIndex]}`}
+                                    alt={item.name}
                                     onError={(e) => {
                                         e.target.src = '/placeholder-image.jpg';
                                     }}
                                 />
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Главная картинка */}
-                    <div className="wb-image-column">
-                        <div className="wb-main-image" ref={mainImageRef} onClick={() => setIsImageView(true)}>
-                            <img
-                                src={`${process.env.REACT_APP_API_URL}static/images/${item.images[currentImageIndex]}`}
-                                alt={item.name}
-                                onError={(e) => {
-                                    e.target.src = '/placeholder-image.jpg';
-                                }}
-                            />
-                            {item.images.length > 1 && (
-                                <>
-                                    <button
-                                        className="wb-nav-arrow wb-nav-prev"
-                                        onClick={handlePrevImage}
-                                        aria-label="Предыдущее изображение"
-                                    >
-                                        ‹
-                                    </button>
-                                    <button
-                                        className="wb-nav-arrow wb-nav-next"
-                                        onClick={handleNextImage}
-                                        aria-label="Следующее изображение"
-                                    >
-                                        ›
-                                    </button>
-                                </>
-                            )}
-                            {!item.isExist && (
-                                <div className="wb-out-of-stock my_p_small">
-                                    Нет в наличии
-                                </div>
-                            )}
+                                {item.images.length > 1 && (
+                                    <>
+                                        <button
+                                            className="wb-nav-arrow wb-nav-prev"
+                                            onClick={handlePrevImage}
+                                            aria-label="Предыдущее изображение"
+                                        >
+                                            ‹
+                                        </button>
+                                        <button
+                                            className="wb-nav-arrow wb-nav-next"
+                                            onClick={handleNextImage}
+                                            aria-label="Следующее изображение"
+                                        >
+                                            ›
+                                        </button>
+                                    </>
+                                )}
+                                {!item.isExist && (
+                                    <div className="wb-out-of-stock my_p_small">
+                                        Нет в наличии
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-
                     {/* Правая колонка - информация */}
                     <div className="wb-info-column">
                         {/* Блок покупки */}
@@ -266,13 +267,13 @@ const CurrentItemPage = () => {
                                 <div className="wb-specs-list">
                                     {Object.entries(item.specificationsJSONB).slice(0, 6).map(([key, value]) => (
                                         <div key={key} className="wb-spec-item">
-                                            <span className="wb-spec-key my_p_small">{key}:</span>
-                                            <span className="wb-spec-val my_p_small">{value}</span>
+                                            <span className="wb-spec-key my_p">{key}:</span>
+                                            <span className="wb-spec-val my_p">{value}</span>
                                         </div>
                                     ))}
 
                                 </div>
-                                <div className="wb-view-all-btn my_p_small" onClick={scrollToFullDetails}>
+                                <div className="wb-view-all-btn my_p" onClick={() => scrollToFullDetails()}>
                                     Все характеристики
                                 </div>
                             </div>
@@ -282,8 +283,30 @@ const CurrentItemPage = () => {
 
                 {/* Полный блок внизу */}
                 <div className="wb-full-details">
+                    {item.description && (
+                        <div className="wb-description wb-description-full">
+                            <div
+                                className="spec_full_header"
+                                onClick={() => setOpenDescription(!openDescription)}
+                            >
+                                <h3 className="wb-desc-title my_h3">Полное описание</h3>
+                                {!openDescription ? (
+                                    <IoIosArrowDown className="header_icon-item" />
+                                ) : (
+                                    <IoIosArrowUp className="header_icon-item" />
+                                )}
+                            </div>
+                            <div ref={specsListRef}
+                                className={`wb-specs-list-descrption ${openDescription ? 'open' : ''}`}
+                            >
+                                {item.description.split('\r\n').map((paragraph, index) => (
+                                    <p className="wb-description_text my_p" key={index}>{paragraph}</p>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     {item.specificationsJSONB && Object.keys(item.specificationsJSONB).length > 0 && (
-                        <div className="wb-specs wb-specs-full">
+                        <div id='full-spec' className="wb-specs wb-specs-full">
                             <div
                                 className="spec_full_header"
                                 onClick={() => setOpenInfor(!openInfor)}
@@ -310,28 +333,7 @@ const CurrentItemPage = () => {
                         </div>
                     )}
 
-                    {item.description && (
-                        <div className="wb-description wb-description-full">
-                            <div
-                                className="spec_full_header"
-                                onClick={() => setOpenDescription(!openDescription)}
-                            >
-                                <h3 className="wb-desc-title my_h3">Полное описание</h3>
-                                {!openDescription ? (
-                                    <IoIosArrowDown className="header_icon-item" />
-                                ) : (
-                                    <IoIosArrowUp className="header_icon-item" />
-                                )}
-                            </div>
-                            <div ref={specsListRef}
-                                className={`wb-specs-list-descrption ${openDescription ? 'open' : ''}`}
-                            >
-                                {item.description.split('\r\n').map((paragraph, index) => (
-                                    <p className="my_p" key={index}>{paragraph}</p>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+
                     {/* отзывыв */}
                     {item.description && (
                         <div className="wb-description wb-description-full">

@@ -8,8 +8,8 @@ function MainPage() {
     return (
         <div className="App">
             <Headers />
+            <AutoSlider />
             <div className="app_container">
-                <AutoSlider />
                 <Catalog />
                 <Qwestion />
             </div>

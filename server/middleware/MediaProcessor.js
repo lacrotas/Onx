@@ -11,21 +11,24 @@ class MediaProcessor {
         try {
             console.log('Processing image:', imageFile.name);
 
-            const fileName = uuid.v4() + ".png";
-            const outputPath = path.resolve(__dirname, '..', 'static', outputDir, fileName);
-
-            // Создаем sharp instance
+            // Создаем sharp instance сразу
             let sharpInstance = sharp(imageFile.data);
 
-            // Получаем метаданные для проверки формата
+            // Получаем метаданные
             const metadata = await sharpInstance.metadata();
             console.log('Image format:', metadata.format);
             console.log('Has alpha channel:', metadata.hasAlpha);
 
-            // Если изображение с прозрачностью, сохраняем как PNG
+            let fileName;
+            let extension;
+
+            // Определяем расширение и формат
             if (metadata.hasAlpha) {
                 console.log('Processing as PNG with transparency');
-                await sharpInstance
+                extension = '.png';
+                
+                // Настраиваем обработку
+                sharpInstance = sharpInstance
                     .resize(800, 600, {
                         fit: 'inside',
                         withoutEnlargement: true
@@ -33,13 +36,14 @@ class MediaProcessor {
                     .png({
                         compressionLevel: 9,
                         adaptiveFiltering: true,
-                        force: true // Принудительно сохраняем как PNG
-                    })
-                    .toFile(outputPath);
+                        force: true
+                    });
             } else {
-                // Если нет прозрачности, сохраняем как JPEG
                 console.log('Processing as JPEG');
-                await sharpInstance
+                extension = '.jpg'; // Меняем расширение на jpg
+
+                // Настраиваем обработку
+                sharpInstance = sharpInstance
                     .resize(800, 600, {
                         fit: 'inside',
                         withoutEnlargement: true
@@ -47,10 +51,16 @@ class MediaProcessor {
                     .jpeg({
                         quality: 80,
                         progressive: true,
-                        force: false
-                    })
-                    .toFile(outputPath);
+                        force: true
+                    });
             }
+
+            // Генерируем имя с правильным расширением
+            fileName = uuid.v4() + extension;
+            const outputPath = path.resolve(__dirname, '..', 'static', outputDir, fileName);
+
+            // Сохраняем
+            await sharpInstance.toFile(outputPath);
 
             console.log('Image processed successfully:', fileName);
             return fileName;
