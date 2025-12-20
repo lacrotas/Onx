@@ -428,6 +428,13 @@ const ItemTable = () => {
             window.location.reload();
         } catch (error) {
             console.error('Error saving item:', error);
+
+            if (error.response && error.response.status === 413) {
+                alert("Ошибка: Слишком большой размер загружаемых файлов! Попробуйте загрузить меньше изображений или уменьшить их размер.");
+            } else {
+                // Обработка других ошибок (опционально)
+                alert("Произошла ошибка при сохранении. Проверьте консоль для деталей.");
+            }
         }
     };
 

@@ -480,9 +480,12 @@ const ItemPageKategory = () => {
                                 <div className="loading">Загрузка товаров...</div>
                             ) : (
                                 <>
-                                    <div className="no-items">
-                                        Товары не найдены
-                                    </div>
+                                    {!filteredAndSortedItems.length > 0 ?
+                                        < div className="no-items">
+                                            Товары не найдены
+                                        </div>
+                                        : <></>
+                                    }
                                     <div className="items-grid">
                                         {
                                             filteredAndSortedItems.map(item => (
@@ -536,7 +539,7 @@ const ItemPageKategory = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
             <Footer />
         </>
     );

@@ -3,36 +3,41 @@ const ApiError = require('../error/ApiError');
 const { Op } = require('sequelize');
 const { mediaProcessor } = require('../middleware/MediaProcessor');
 
-async function filterAndUpdateImages(currentImages, allImagesFromFrontend, newProcessedImages) {
+async function filterAndUpdateImages(currentImagesFromDB, imageStringsFromFrontend, newProcessedImages) {
     try {
-        const allImages = Array.isArray(allImagesFromFrontend) ? allImagesFromFrontend : currentImages;
+        // 1. Нормализация входных данных (гарантируем массивы)
+        const currentImages = Array.isArray(currentImagesFromDB) ? currentImagesFromDB : [];
 
-        const imagesToKeep = currentImages.filter(oldImage => {
-            return allImages.some(frontendImage => {
-                if (typeof frontendImage === 'string') {
-                    return frontendImage === oldImage;
-                }
-                return frontendImage.filename === oldImage.filename || frontendImage === oldImage;
-            });
-        });
-
-        const imagesToDelete = currentImages.filter(oldImage => {
-            return !allImages.some(frontendImage => {
-                if (typeof frontendImage === 'string') {
-                    return frontendImage === oldImage;
-                }
-                return frontendImage.filename === oldImage.filename || frontendImage === oldImage;
-            });
-        });
-
-        if (imagesToDelete.length > 0) {
-            console.log('Deleting old images from server:', imagesToDelete);
-            await mediaProcessor.deleteOldFiles(
-                imagesToDelete.map(img => typeof img === 'string' ? img : img.filename),
-                'images'
-            );
+        let frontendImages = [];
+        if (Array.isArray(imageStringsFromFrontend)) {
+            frontendImages = imageStringsFromFrontend;
+        } else if (imageStringsFromFrontend) {
+            frontendImages = [imageStringsFromFrontend];
         }
 
+        // 2. Определяем, какие старые файлы нужно оставить
+        // Логика: Проходим по старым файлам из БД. Если имя файла содержится в каком-либо URL с фронта, значит файл остался.
+        const imagesToKeep = currentImages.filter(dbImageName => {
+            return frontendImages.some(frontendUrl => {
+                // frontendUrl может быть "http://.../image.jpg" или "blob:..."
+                // Если это blob, то это новая картинка, она нас тут не интересует
+                if (frontendUrl.startsWith('blob:')) return false;
+
+                // Проверяем, содержится ли имя файла из БД в URL с фронта
+                return frontendUrl.includes(dbImageName);
+            });
+        });
+
+        // 3. Определяем, какие файлы нужно удалить (те, что были в БД, но не попали в imagesToKeep)
+        const imagesToDelete = currentImages.filter(dbImageName => !imagesToKeep.includes(dbImageName));
+
+        // 4. Удаляем лишние файлы
+        if (imagesToDelete.length > 0) {
+            console.log('Deleting old images from server:', imagesToDelete);
+            await mediaProcessor.deleteOldFiles(imagesToDelete, 'images');
+        }
+
+        // 5. Формируем итоговый массив: (Оставшиеся старые) + (Новые обработанные)
         const finalImages = [...imagesToKeep, ...newProcessedImages];
 
         return finalImages;
@@ -253,7 +258,7 @@ class itemController {
 
         try {
             const { id } = req.params;
-            const {
+            let { // Используем let, чтобы можно было перезаписать imageStrings
                 itemGroupId,
                 name,
                 price,
@@ -263,33 +268,35 @@ class itemController {
                 specificationsJSONB,
                 isExist,
                 isShowed,
-                imageStrings // ВСЕ изображения (старые + новые blob URLs)
+                imageStrings
             } = req.body;
 
             console.log('=== updateItemById START ===');
-            console.log('imageStrings from frontend:', imageStrings);
+
+            // ВАЖНО: Если imageStrings undefined (все старые удалены), делаем пустой массив
+            if (!imageStrings) {
+                imageStrings = [];
+            }
 
             currentItem = await Item.findOne({ where: { id } });
             if (!currentItem) {
+                // Если запись не найдена, нужно удалить новые загруженные файлы, чтобы не мусорить
+                if (req.processedImages) await mediaProcessor.deleteOldFiles(req.processedImages, 'images');
                 return res.status(404).json({ message: 'Запись не найдена' });
             }
 
             const oldImages = currentItem.images || [];
             const oldVideo = currentItem.video;
 
-            console.log('Old images from DB:', oldImages);
-
-            // Обрабатываем только НОВЫЕ изображения из FormData
+            // Новые файлы, обработанные middleware
             newProcessedImages = req.processedImages || [];
             newVideo = req.processedVideo || oldVideo;
 
-            console.log('New processed images:', newProcessedImages);
-
-            // Вызываем функцию (теперь она определена)
+            // === ВЫЗОВ ОБНОВЛЕННОЙ ФУНКЦИИ ===
             const finalImages = await filterAndUpdateImages(
                 oldImages,
-                imageStrings, // все изображения из фронтенда
-                newProcessedImages // только новые обработанные
+                imageStrings,
+                newProcessedImages
             );
 
             let specifications = specificationsJSONB;
@@ -304,16 +311,16 @@ class itemController {
 
             const [updatedRowsCount, updatedRows] = await Item.update(
                 {
-                    itemGroupId: itemGroupId,
-                    name: name,
-                    price: price,
-                    isExist: isExist,
-                    isShowed: isShowed,
-                    description: description,
+                    itemGroupId,
+                    name,
+                    price,
+                    isExist,
+                    isShowed,
+                    description,
                     specificationsJSONB: specifications,
                     video: newVideo,
-                    rating: rating,
-                    reviewNumber: reviewNumber,
+                    rating,
+                    reviewNumber,
                     images: finalImages,
                 },
                 {
@@ -326,34 +333,19 @@ class itemController {
                 console.log('Item updated successfully');
                 res.status(200).json({ message: 'Данные успешно обновлены', updatedRows });
             } else {
-                console.log('Item update failed - no rows affected');
+                // Если обновление не прошло, удаляем новые файлы
                 if (newProcessedImages.length > 0) {
                     await mediaProcessor.deleteOldFiles(newProcessedImages, 'images');
-                    console.log('New images deleted because update failed:', newProcessedImages);
                 }
-                if (req.processedVideo) {
-                    await mediaProcessor.deleteOldFiles(req.processedVideo, 'video');
-                    console.log('New video deleted because update failed:', req.processedVideo);
-                }
-                res.status(404).json({ message: 'Запись не найдена' });
+                res.status(400).json({ message: 'Не удалось обновить данные' });
             }
         } catch (error) {
             console.error('Error in updateItemById:', error);
+            // Очистка при ошибке
             if (newProcessedImages.length > 0) {
                 try {
                     await mediaProcessor.deleteOldFiles(newProcessedImages, 'images');
-                    console.log('New images deleted after update error:', newProcessedImages);
-                } catch (deleteError) {
-                    console.error('Error deleting new images after update failure:', deleteError);
-                }
-            }
-            if (req.processedVideo) {
-                try {
-                    await mediaProcessor.deleteOldFiles(req.processedVideo, 'video');
-                    console.log('New video deleted after update error:', req.processedVideo);
-                } catch (deleteError) {
-                    console.error('Error deleting new video after update failure:', deleteError);
-                }
+                } catch (e) { console.error(e); }
             }
             res.status(500).json({ message: 'Ошибка сервера', error: error.message });
         }

@@ -13,7 +13,7 @@ const app = express();
 
 const corsOptions = {
     origin: [
-        'http://localhost', 
+        'http://localhost',
         'http://localhost:3000',
         'http://localhost:80',
         'http://localhost:5000',
@@ -45,7 +45,10 @@ new ImageDeletionService();
 
 app.use(express.json());
 app.use('/static', express.static(path.resolve(__dirname, 'static')));
-app.use(fileUpload({}));
+app.use(fileUpload({
+    limits: { fileSize: 50 * 1024 * 1024 }, // Ограничение 50 МБ
+    abortOnLimit: true // Если файл больше, сразу вернуть ошибку
+}));
 app.use('/api', router);
 
 //error boundry
