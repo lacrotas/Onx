@@ -177,7 +177,7 @@ const FilterTable = () => {
             } else {
                 await postFilterForKategory(myFormData);
             }
-            alert("дынные успешно добавлены");
+            alert('Данные успешно добавлены');
             loadFilters();
 
         } catch (error) {

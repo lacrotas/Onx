@@ -143,13 +143,12 @@ const MainCategoryTable = () => {
 
         await postMainKategory(myFormData);
       }
-
+      alert('Данные успешно добавлены');
       closeModal();
       window.location.reload();
 
     } catch (error) {
-      console.error('Error saving category:', error);
-      alert('Что-то пошло не так. Пожалуйста, попробуйте еще раз.');
+      alert('Ошибка добавления сделай скрин и отправь мне:', error);
     }
   };
   const handleSubmitWithoutClose = async (e) => {

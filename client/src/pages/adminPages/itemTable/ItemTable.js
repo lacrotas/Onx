@@ -252,6 +252,7 @@ const ItemTable = () => {
         setFiltersForCategory([]);
         setCategoriesByMain([]);
     };
+    
     const confirmAndCloseModal = () => {
         if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
             closeModal();
@@ -402,7 +403,6 @@ const ItemTable = () => {
             myFormData.append('kategoryId', filter.kategoryId);
             myFormData.append('addition', filter.addition || '');
             myFormData.append('attributeValues', JSON.stringify(attributeValues));
-
             await updateFilter(filter.id, myFormData);
         }
     };
@@ -443,14 +443,16 @@ const ItemTable = () => {
                 myFormData.append("isExist", formData.isExist);
                 myFormData.append("isShowed", formData.isShowed);
                 await postItem(myFormData);
+                alert('Данные успешно добавлены');
+
             }
 
             await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
-
+            alert('Данные успешно добавлены');
             closeModal();
             window.location.reload();
         } catch (error) {
-            console.error('Error saving item:', error);
+            alert('Ошибка добавления сделай скрин и отправь мне:', error);
             if (error.response && error.response.status === 413) {
                 alert("Ошибка: Слишком большой размер загружаемых файлов!");
             } else {
@@ -498,10 +500,10 @@ const ItemTable = () => {
             }
 
             await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
+            alert('Данные успешно добавлены');
 
-            window.location.reload();
         } catch (error) {
-            console.error('Error saving item:', error);
+            alert('Ошибка добавления сделай скрин и отправь мне:', error);
             if (error.response && error.response.status === 413) {
                 alert("Ошибка: Слишком большой размер загружаемых файлов!");
             } else {
