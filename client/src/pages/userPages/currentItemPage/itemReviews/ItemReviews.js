@@ -45,7 +45,6 @@ function ItemReviews({ itemId }) {
     useEffect(() => {
         fetchReviewByItemIdAndIsShowed(itemId).then(data => {
             setReviews(data || []);
-            console.log(data);
         });
     }, [itemId]);
 

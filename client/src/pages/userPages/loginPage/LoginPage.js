@@ -14,7 +14,6 @@ function LoginPage() {
             const response = await signIn(login, password);
             history.push('/admin');
             window.location.reload();
-            console.log(login + "\n" + password);
         } catch (e) {
             alert("Неправильный логин или пароль");
         }

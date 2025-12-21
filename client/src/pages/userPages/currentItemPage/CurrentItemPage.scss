@@ -41,6 +41,7 @@
             cursor: pointer;
             padding: 0;
             transition: border-color 0.2s ease;
+            position: relative; // Для позиционирования бейджа видео
 
             &:hover {
                 border-color: #2563eb;
@@ -55,6 +56,37 @@
                 height: 100%;
                 object-fit: cover;
                 border-radius: 2px;
+            }
+
+            // Стили для миниатюры видео
+            .video-thumb-wrapper {
+                width: 100%;
+                height: 100%;
+                position: relative;
+
+                .thumb-video {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 2px;
+                }
+
+                .video-badge {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(0, 0, 0, 0.6);
+                    color: white;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 10px;
+                    pointer-events: none;
+                }
             }
         }
     }
@@ -77,6 +109,9 @@
             background: white;
             aspect-ratio: 1 / 1;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
             img {
                 width: 100%;
@@ -84,6 +119,14 @@
                 object-fit: contain;
                 background: white;
                 transition: transform 0.3s ease;
+            }
+
+            // Стили для основного видеоплеера
+            .main-video-player {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                background: #000; // Черный фон для видео
             }
 
             .wb-nav-arrow {
@@ -412,6 +455,18 @@
         width: calc(100% - 40px);
         margin-bottom: 30px;
         margin-top: 30px;
+        .wb-content_image{
+            flex-direction: column-reverse;
+        }
+        .wb-main-content .wb-thumbnails-column{
+            flex-direction: row;
+            overflow: scroll;
+            width: 100%;
+            height: 50px;
+            .wb-thumb{
+                height: 50px;
+            }
+        }
     }
 
     .wb-main-content {
@@ -423,11 +478,17 @@
                 .actions_down {
                     gap: 10px;
                 }
+
                 .wb-add-to-cart-btn {
                     width: 140px;
                 }
             }
         }
+    }
+
+    .wb-full-details .wb-specs .wb-specs-list,
+    .wb-full-details .wb-description .wb-specs-list .wb-spec-item_full {
+        width: 100%;
     }
 
     .wb-main-content .wb-info-column {

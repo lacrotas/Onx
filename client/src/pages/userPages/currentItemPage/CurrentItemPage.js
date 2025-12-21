@@ -1,4 +1,3 @@
-// CurrentItemPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { fetchItemId } from '../../../http/itemApi';
@@ -10,7 +9,7 @@ import { BUSKET_ROUTE } from "../../appRouter/Const";
 import "./CurrentItemPage.scss";
 import jwt_decode from 'jwt-decode';
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
-import { FiShoppingCart } from 'react-icons/fi';
+import { FiShoppingCart, FiCheck } from 'react-icons/fi'; // Добавил иконку галочки
 import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
 import { ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
 import ItemReviews from './itemReviews/ItemReviews';
@@ -22,23 +21,90 @@ const CurrentItemPage = () => {
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // Состояние: товар уже в корзине?
+    const [isInCart, setIsInCart] = useState(false);
+
+    // Индекс текущего медиа (видео или картинки)
+    const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+
     const mainImageRef = useRef(null);
     const [mainKategory, setMainKategory] = useState(null);
     const [kategory, setKategory] = useState(null);
-    // характеристки
+
+    // Характеристики
     const [openInfor, setOpenInfor] = useState(true);
     const specsInforListRef = useRef(null);
-    // описание
+
+    // Описание
     const [openDescription, setOpenDescription] = useState(true);
     const specsListRef = useRef(null);
-    // отзывы
+
+    // Отзывы
     const [openReviews, setOpenReviews] = useState(true);
     const specsReviewListRef = useRef(null);
+
     const [isImageView, setIsImageView] = useState(false);
 
+    // Проверка наличия товара в корзине + Синхронизация с localStorage
+    const checkItemInCart = async () => {
+        // Сбрасываем состояние перед проверкой
+        setIsInCart(false);
 
+        try {
+            const userId = localStorage.getItem('token');
+            let isFound = false;
+
+            if (userId) {
+                // --- ЛОГИКА ДЛЯ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ ---
+                const busket = await fetchBusketByUserId(jwt_decode(userId).id);
+                const currentItems = busket.itemsJsonb || [];
+
+                console.log("Корзина с сервера:", currentItems);
+
+                // === ВАЖНО: СИНХРОНИЗАЦИЯ СЕРВЕРА С LOCALSTORAGE ===
+                // Преобразуем формат сервера (itemId) в формат localStorage (id)
+                const itemsForLocalStorage = currentItems.map(item => ({
+                    id: item.itemId || item.id, // Берем itemId, если есть, иначе id
+                    count: item.count || 1
+                }));
+
+                // Сохраняем актуальную корзину с сервера в память браузера
+                localStorage.setItem('basket', JSON.stringify(itemsForLocalStorage));
+                // Генерируем событие, чтобы шапка сайта (если она слушает) обновилась
+                window.dispatchEvent(new Event('cartUpdated'));
+
+                if (currentItems && Array.isArray(currentItems)) {
+                    isFound = currentItems.some(item => {
+                        const idInBasket = item.itemId || item.id;
+                        return String(idInBasket) === String(itemId);
+                    });
+                }
+            } else {
+                const savedBasket = localStorage.getItem('basket');
+                if (savedBasket) {
+                    const parsedBasket = JSON.parse(savedBasket);
+
+                    if (Array.isArray(parsedBasket)) {
+                        isFound = parsedBasket.some(item => {
+                            const idInBasket = item.itemId || item.id;
+                            return String(idInBasket) === String(itemId);
+                        });
+                    }
+                }
+            }
+
+            setIsInCart(isFound);
+
+        } catch (e) {
+            console.error("Ошибка проверки корзины:", e);
+            setIsInCart(false);
+        }
+    };
     useEffect(() => {
+        // Сбрасываем состояние СРАЗУ при смене товара, до начала любых загрузок
+        setIsInCart(false);
+
         const loadData = async () => {
             try {
                 const itemData = await fetchItemId(itemId);
@@ -47,6 +113,9 @@ const CurrentItemPage = () => {
                 setItem(itemData);
                 setMainKategory(mainKategoryData);
                 setKategory(KategoryData);
+
+                // Запускаем проверку корзины
+                await checkItemInCart();
             } catch (err) {
                 console.error('Ошибка загрузки товара:', err);
                 setError('Ошибка загрузки товара');
@@ -58,21 +127,30 @@ const CurrentItemPage = () => {
         if (itemId) {
             loadData();
         }
+        // eslint-disable-next-line
     }, [itemId]);
 
-    const handleImageClick = (index) => {
-        setCurrentImageIndex(index);
+    // Формируем единый список медиа-контента
+    const mediaItems = item ? [
+        ...(item.video ? [{ type: 'video', src: item.video }] : []),
+        ...(item.images ? item.images.map(img => ({ type: 'image', src: img })) : [])
+    ] : [];
+
+    const handleMediaClick = (index) => {
+        setCurrentMediaIndex(index);
     };
 
-    const handlePrevImage = () => {
-        setCurrentImageIndex(prev =>
-            prev === 0 ? (item.images.length - 1) : prev - 1
+    const handlePrevMedia = (e) => {
+        if (e) e.stopPropagation();
+        setCurrentMediaIndex(prev =>
+            prev === 0 ? (mediaItems.length - 1) : prev - 1
         );
     };
 
-    const handleNextImage = () => {
-        setCurrentImageIndex(prev =>
-            prev === (item.images.length - 1) ? 0 : prev + 1
+    const handleNextMedia = (e) => {
+        if (e) e.stopPropagation();
+        setCurrentMediaIndex(prev =>
+            prev === (mediaItems.length - 1) ? 0 : prev + 1
         );
     };
 
@@ -83,27 +161,40 @@ const CurrentItemPage = () => {
                 const busket = await fetchBusketByUserId(jwt_decode(userId).id);
                 const currentItems = busket.itemsJsonb ? [...busket.itemsJsonb] : [];
                 const existingItemIndex = currentItems.findIndex(item => item.itemId === parseInt(itemId));
+
                 if (existingItemIndex >= 0) {
-                    currentItems[existingItemIndex] = {
-                        ...currentItems[existingItemIndex],
-                        count: currentItems[existingItemIndex].count + count,
-                    };
+                    // Если товар уже есть, мы просто обновляем стейт (хотя кнопка не должна давать сюда зайти)
+                    setIsInCart(true);
+                    return true;
                 } else {
                     currentItems.push({ itemId: parseInt(itemId), count });
                 }
                 await updateBusket(busket.id, { itemsJsonb: currentItems });
             }
-            const existingBasket = JSON.parse(localStorage.getItem('basket')) || [];
+
+            // Логика для localStorage
+            let existingBasket = [];
+            const savedBasket = localStorage.getItem('basket');
+            if (savedBasket) {
+                try {
+                    existingBasket = JSON.parse(savedBasket);
+                } catch (e) {
+                    existingBasket = [];
+                }
+            }
+
             const existingItemIndex = existingBasket.findIndex(item =>
-                String(item.id) === String(itemId)
+                String(item.itemId) === String(itemId)
             );
 
             if (existingItemIndex === -1) {
-                const updatedBasket = [...existingBasket, { id: itemId, count: 1 }];
+                const updatedBasket = [...existingBasket, { itemId: itemId, count: 1 }];
                 localStorage.setItem('basket', JSON.stringify(updatedBasket));
-                console.log('Товар добавлен');
             }
+
+            console.log('Товар добавлен');
             window.dispatchEvent(new Event('cartUpdated'));
+            setIsInCart(true);
             return true;
         } catch (error) {
             console.error('Ошибка добавления в корзину:', error);
@@ -113,17 +204,23 @@ const CurrentItemPage = () => {
     };
 
     const handleAddToCart = async () => {
+        if (isInCart) {
+            // Если уже в корзине, переходим в корзину
+            history.push(BUSKET_ROUTE);
+            return;
+        }
+
         const success = await addToCart(1);
         if (success) {
-            alert('Товар добавлен в корзину!');
+            // alert('Товар добавлен в корзину!'); // Можно убрать алерт, так как кнопка меняется
         }
     };
 
     const handleBuyNow = async () => {
-        const success = await addToCart(1);
-        if (success) {
-            history.push(BUSKET_ROUTE);
+        if (!isInCart) {
+            await addToCart(1);
         }
+        history.push(BUSKET_ROUTE);
     };
 
     const scrollToFullDetails = () => {
@@ -179,50 +276,73 @@ const CurrentItemPage = () => {
                 }
                 <div className="wb-main-content">
                     <div className='wb-content_image'>
-                        {/* Слайды */}
+                        {/* Слайды (Миниатюры) */}
                         <div className="wb-thumbnails-column">
-                            {item.images.map((image, index) => (
+                            {mediaItems.map((media, index) => (
                                 <button
                                     key={index}
-                                    className={`wb-thumb ${index === currentImageIndex ? 'active' : ''}`}
-                                    onClick={() => handleImageClick(index)}
+                                    className={`wb-thumb ${index === currentMediaIndex ? 'active' : ''}`}
+                                    onClick={() => handleMediaClick(index)}
                                     type="button"
-                                    aria-label={`Изображение ${index + 1}`}
+                                    aria-label={`Медиа ${index + 1}`}
                                 >
-                                    <img
-                                        src={`${process.env.REACT_APP_API_URL}static/images/${image}`}
-                                        alt=""
-                                        onError={(e) => {
-                                            e.target.src = '/placeholder-image.jpg';
-                                        }}
-                                    />
+                                    {media.type === 'video' ? (
+                                        <div className="video-thumb-wrapper">
+                                            <video
+                                                src={`${process.env.REACT_APP_API_URL}static/video/${media.src}`}
+                                                className="thumb-video"
+                                                muted
+                                                preload="metadata"
+                                            />
+                                            <div className="video-badge">▶</div>
+                                        </div>
+                                    ) : (
+                                        <img
+                                            src={`${process.env.REACT_APP_API_URL}static/images/${media.src}`}
+                                            alt=""
+                                            onError={(e) => {
+                                                e.target.src = '/placeholder-image.jpg';
+                                            }}
+                                        />
+                                    )}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Главная картинка */}
+                        {/* Главный просмотрщик */}
                         <div className="wb-image-column">
-                            <div className="wb-main-image" ref={mainImageRef} onClick={() => setIsImageView(true)}>
-                                <img
-                                    src={`${process.env.REACT_APP_API_URL}static/images/${item.images[currentImageIndex]}`}
-                                    alt={item.name}
-                                    onError={(e) => {
-                                        e.target.src = '/placeholder-image.jpg';
-                                    }}
-                                />
-                                {item.images.length > 1 && (
+                            <div className="wb-main-image" ref={mainImageRef}>
+                                {mediaItems[currentMediaIndex]?.type === 'video' ? (
+                                    <video
+                                        controls
+                                        autoPlay
+                                        src={`${process.env.REACT_APP_API_URL}static/video/${mediaItems[currentMediaIndex].src}`}
+                                        className="main-video-player"
+                                    />
+                                ) : (
+                                    <img
+                                        onClick={() => setIsImageView(true)}
+                                        src={`${process.env.REACT_APP_API_URL}static/images/${mediaItems[currentMediaIndex]?.src}`}
+                                        alt={item.name}
+                                        onError={(e) => {
+                                            e.target.src = '/placeholder-image.jpg';
+                                        }}
+                                    />
+                                )}
+
+                                {mediaItems.length > 1 && (
                                     <>
                                         <button
                                             className="wb-nav-arrow wb-nav-prev"
-                                            onClick={handlePrevImage}
-                                            aria-label="Предыдущее изображение"
+                                            onClick={handlePrevMedia}
+                                            aria-label="Предыдущее"
                                         >
                                             ‹
                                         </button>
                                         <button
                                             className="wb-nav-arrow wb-nav-next"
-                                            onClick={handleNextImage}
-                                            aria-label="Следующее изображение"
+                                            onClick={handleNextMedia}
+                                            aria-label="Следующее"
                                         >
                                             ›
                                         </button>
@@ -249,14 +369,19 @@ const CurrentItemPage = () => {
                                 )}
                             </div>
                             <div className='actions_down'>
-                                <div onClick={handleAddToCart} className='wb-add-to-cart-btn'>
+                                {/* КНОПКА В КОРЗИНУ */}
+                                <div
+                                    onClick={() => handleAddToCart()}
+                                    className={`wb-add-to-cart-btn ${isInCart ? 'in-cart' : ''}`}
+                                    style={isInCart ? { backgroundColor: '#3aa41d', borderColor: '#3aa41d' } : {}}
+                                >
                                     <p className="my_p_small">
-                                        В корзину
+                                        {isInCart ? 'В корзине' : 'В корзину'}
                                     </p>
-                                    <FiShoppingCart className="icon" />
-
+                                    {isInCart ? <FiCheck className="icon" /> : <FiShoppingCart className="icon" />}
                                 </div>
-                                <button onClick={handleAddToCart} className="wb-add-to-cart-btn byu_im my_p_small">
+
+                                <button onClick={() => handleBuyNow()} className="wb-add-to-cart-btn byu_im my_p_small">
                                     Купить сейчас
                                 </button>
                             </div>

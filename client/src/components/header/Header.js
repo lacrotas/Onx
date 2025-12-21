@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { NavLink, useHistory } from 'react-router-dom';
 import { FiMenu, FiX, FiSearch, FiShoppingCart, FiTruck, FiPhone, FiList, FiUser } from 'react-icons/fi';
 import './Header.scss';
-import { MAIN_ROUTE, BUSKET_ROUTE, LOGIN_ROUTE, ITEM_SEARCH_ROUTE } from "../../pages/appRouter/Const";
+import { MAIN_ROUTE, BUSKET_ROUTE, LOGIN_ROUTE, ITEM_SEARCH_ROUTE, AMIN_MAIN_ROUTE } from "../../pages/appRouter/Const";
 import ModalWindow from "../modalWindow/ModalWindow";
 import CatalogInfoSlide from "../catalogInfoSlide/CatalogInfoSlide";
 import jwt_decode from 'jwt-decode';
@@ -23,10 +23,7 @@ export default function Header({ isAdminHeader }) {
     const performSearch = () => {
         if (searchQuery.trim()) {
             const encodedQuery = encodeURIComponent(searchQuery.trim());
-            // Редирект как в вашем примере Search.js
             history.push(`${ITEM_SEARCH_ROUTE}?q=${encodedQuery}`);
-
-            // Опционально: закрываем поле поиска после перехода или оставляем
             setIsSearchActive(false);
             setSearchQuery("");
         }
@@ -34,10 +31,8 @@ export default function Header({ isAdminHeader }) {
 
     const handleSearchClick = () => {
         if (isSearchActive) {
-            // Если поле уже открыто, кнопка "Поиск" работает как submit
             performSearch();
         } else {
-            // Если закрыто - открываем
             setIsSearchActive(true);
             setTimeout(() => {
                 searchInputRef.current?.focus();
@@ -56,15 +51,36 @@ export default function Header({ isAdminHeader }) {
     };
     // ---------------------
 
+    // Обновленная функция подсчета (безопасная)
     const updateCartCount = () => {
-        const basket = localStorage.getItem("basket") || "false";
-        const items = JSON.parse(basket);
-        setCartItemsCount(items.length);
+        try {
+            const basket = localStorage.getItem("basket");
+            if (basket) {
+                const items = JSON.parse(basket);
+                if (Array.isArray(items)) {
+                    setCartItemsCount(items.length);
+                } else {
+                    setCartItemsCount(0);
+                }
+            } else {
+                setCartItemsCount(0);
+            }
+        } catch (e) {
+            console.error("Ошибка парсинга корзины:", e);
+            setCartItemsCount(0);
+        }
     };
 
     const hasToken = () => {
         return !!localStorage.getItem('token');
     };
+    const userRole = () => {
+        try {
+            return jwt_decode(localStorage.getItem('token')).role === "admin";
+        } catch (e) {
+            return false;
+        }
+    }
 
     const getUserLogin = () => {
         try {
@@ -85,14 +101,21 @@ export default function Header({ isAdminHeader }) {
         }
     };
 
+    // ВАЖНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ
     useEffect(() => {
+        // 1. Обновляем при загрузке
         updateCartCount();
-        const handleStorageChange = () => {
-            updateCartCount();
-        };
-        window.addEventListener('storage', handleStorageChange);
+
+        // 2. Слушаем наше кастомное событие (внутри той же вкладки)
+        const handleCustomUpdate = () => updateCartCount();
+        window.addEventListener('cartUpdated', handleCustomUpdate);
+
+        // 3. Слушаем событие storage (для других вкладок)
+        window.addEventListener('storage', handleCustomUpdate);
+
         return () => {
-            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('cartUpdated', handleCustomUpdate);
+            window.removeEventListener('storage', handleCustomUpdate);
         };
     }, []);
 
@@ -190,17 +213,12 @@ export default function Header({ isAdminHeader }) {
                             <span className="my_p_small">Категории</span>
                         </button>
 
-                        {/* Логотип скрывается при поиске */}
                         {!isSearchActive && (
-                            // <NavLink to="/">
-                            //     <img className="logo" src={LogoImg} alt='logo' />
-                            // </NavLink>
                             <NavLink to="/" className="logo">
                                 <span>ON</span>X
                             </NavLink>
                         )}
 
-                        {/* Поле поиска */}
                         {isSearchActive && (
                             <div className="desktop-search-container">
                                 <input
@@ -211,7 +229,6 @@ export default function Header({ isAdminHeader }) {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                 />
-                                {/* Иконка лупы внутри инпута для запуска поиска */}
                                 <FiSearch
                                     className="search-submit-icon"
                                     onClick={performSearch}
@@ -279,7 +296,6 @@ export default function Header({ isAdminHeader }) {
                 </div>
             </header>
 
-            {/* Остальной код без изменений */}
             {hasToken() && isUserMenuOpen && (
                 <div className="user-dropdown">
                     <div className="user-dropdown-content">
@@ -287,6 +303,7 @@ export default function Header({ isAdminHeader }) {
                             <FiUser className="user-icon" />
                             <span className="user-name">{getUserLogin()}</span>
                         </div>
+                        {userRole() && <NavLink to={AMIN_MAIN_ROUTE}> <p className='my_p_small user-dropdown_buttons'>Админка</p></NavLink>}
                         <button className="logout-btn" onClick={handleLogout}>Выйти</button>
                     </div>
                 </div>

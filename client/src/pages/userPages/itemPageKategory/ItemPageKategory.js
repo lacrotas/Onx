@@ -6,15 +6,16 @@ import { fetchKategoryById, fetchMainKategoryById } from "../../../http/Kategory
 import "./ItemPageKategory.scss";
 import Header from '../../../components/header/Header';
 import Footer from '../../../components/footer/Footer';
-import { ITEM_PREVIEW_ROUTE } from "../../appRouter/Const";
+import { ITEM_PREVIEW_ROUTE, BUSKET_ROUTE, ITEM_MAIN_ROUTE } from "../../appRouter/Const"; // Добавил BUSKET_ROUTE
 import { NavLink } from "react-router-dom";
 import { useHistory } from 'react-router-dom';
 import { FaSort } from "react-icons/fa";
 import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
 import { LiaFilterSolid } from "react-icons/lia";
-import { FiX } from "react-icons/fi";
+import { FiX, FiCheck, FiShoppingCart } from "react-icons/fi"; // Добавил FiCheck
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
-import { ITEM_MAIN_ROUTE } from "../../appRouter/Const";
+import jwt_decode from 'jwt-decode'; // Добавил для декодирования токена
+import { updateBusket, fetchBusketByUserId } from '../../../http/busketApi'; // Добавил API корзины
 
 const ItemPageKategory = () => {
     const history = useHistory();
@@ -26,21 +27,123 @@ const ItemPageKategory = () => {
     const [error, setError] = useState(null);
     const [sortOption, setSortOption] = useState('default');
     const [selectedFilters, setSelectedFilters] = useState({});
+    
+    // Храним ID товаров, которые уже в корзине (для быстрого поиска)
+    const [cartItemIds, setCartItemIds] = useState(new Set());
+
     // breadcrubs
     const [category, setCategory] = useState(null);
     const [mainCategory, setMainCategory] = useState(null);
     // фильтры
     const [openFilters, setOpenFilters] = useState({});
     const [mobileFilters, setMobileFilters] = useState(false);
+    
     const toggleFilter = (filterId) => {
         setOpenFilters(prev => ({
             ...prev,
             [filterId]: !prev[filterId]
         }));
     };
+    
     // сортировка
     const [isSortOpen, setIsSortOpen] = useState(false);
     const sortRef = useRef(null);
+
+    // --- ЛОГИКА КОРЗИНЫ ---
+
+    // 1. Функция загрузки содержимого корзины (возвращает Set из ID)
+    const fetchCartItems = async () => {
+        const idsInCart = new Set();
+        try {
+            const userId = localStorage.getItem('token');
+            
+            if (userId) {
+                // Авторизованный пользователь
+                const busket = await fetchBusketByUserId(jwt_decode(userId).id);
+                const currentItems = busket.itemsJsonb || [];
+                
+                // Синхронизация с localStorage (как мы делали в карточке товара)
+                const itemsForLocalStorage = currentItems.map(item => ({
+                    id: item.itemId || item.id,
+                    count: item.count || 1
+                }));
+                localStorage.setItem('basket', JSON.stringify(itemsForLocalStorage));
+
+                currentItems.forEach(item => {
+                    idsInCart.add(String(item.itemId || item.id));
+                });
+            } else {
+                // Гость
+                const savedBasket = localStorage.getItem('basket');
+                if (savedBasket) {
+                    const parsedBasket = JSON.parse(savedBasket);
+                    if (Array.isArray(parsedBasket)) {
+                        parsedBasket.forEach(item => {
+                            idsInCart.add(String(item.itemId || item.id));
+                        });
+                    }
+                }
+            }
+            setCartItemIds(idsInCart);
+        } catch (e) {
+            console.error("Ошибка при проверке корзины:", e);
+        }
+    };
+
+    // 2. Обработчик клика по кнопке "В корзину"
+    const handleAddToCart = async (e, item) => {
+        e.preventDefault(); // ВАЖНО: Предотвращаем переход по ссылке NavLink
+        e.stopPropagation(); // Останавливаем всплытие события
+
+        const itemIdStr = String(item.id);
+
+        // Если товар уже в корзине — переходим в корзину
+        if (cartItemIds.has(itemIdStr)) {
+            history.push(BUSKET_ROUTE);
+            return;
+        }
+
+        try {
+            const userId = localStorage.getItem('token');
+            
+            // Логика добавления (Сервер)
+            if (userId) {
+                const busket = await fetchBusketByUserId(jwt_decode(userId).id);
+                const currentItems = busket.itemsJsonb ? [...busket.itemsJsonb] : [];
+                
+                // Проверка на дубликат на всякий случай
+                if (!currentItems.some(i => String(i.itemId || i.id) === itemIdStr)) {
+                    currentItems.push({ itemId: item.id, count: 1 });
+                    await updateBusket(busket.id, { itemsJsonb: currentItems });
+                }
+            }
+
+            // Логика добавления (LocalStorage)
+            let existingBasket = [];
+            const savedBasket = localStorage.getItem('basket');
+            if (savedBasket) {
+                try { existingBasket = JSON.parse(savedBasket); } catch (e) {}
+            }
+            
+            if (!existingBasket.some(i => String(i.itemId || i.id) === itemIdStr)) {
+                const updatedBasket = [...existingBasket, { id: item.id, count: 1 }];
+                localStorage.setItem('basket', JSON.stringify(updatedBasket));
+            }
+
+            // Обновляем локальный стейт (чтобы кнопка сразу позеленела)
+            setCartItemIds(prev => new Set(prev).add(itemIdStr));
+            
+            // Событие для обновления хедера
+            window.dispatchEvent(new Event('cartUpdated'));
+
+        } catch (error) {
+            console.error('Ошибка добавления в корзину:', error);
+            alert('Ошибка при добавлении товара');
+        }
+    };
+
+    // --- КОНЕЦ ЛОГИКИ КОРЗИНЫ ---
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (sortRef.current && !sortRef.current.contains(event.target)) {
@@ -70,10 +173,8 @@ const ItemPageKategory = () => {
                     const filtersArray = Array.isArray(filtersData) ? filtersData : [];
                     setFilters(filtersArray);
 
-                    // 🟢 Открыть все фильтры по умолчанию
                     const initialOpenFilters = {};
                     filtersArray.forEach(filter => {
-                        // Только если это не checkbox (т.к. у них нет toggle-состояния)
                         if (filter.buttonType !== 'check') {
                             initialOpenFilters[filter.id] = true;
                         }
@@ -81,6 +182,8 @@ const ItemPageKategory = () => {
                     setOpenFilters(initialOpenFilters);
 
                     await loadItems();
+                    // Загружаем состояние корзины
+                    await fetchCartItems();
                 }
             } catch (err) {
                 console.error('Ошибка загрузки:', err);
@@ -91,6 +194,7 @@ const ItemPageKategory = () => {
         };
 
         loadData();
+        // eslint-disable-next-line
     }, [categoryId]);
 
     const loadItems = async () => {
@@ -123,7 +227,6 @@ const ItemPageKategory = () => {
         }
     };
 
-    // Получаем все уникальные значения для каждого фильтра типа select
     const getFilterValues = (filter) => {
         if (!filter.name) return [];
         const values = new Set();
@@ -135,7 +238,6 @@ const ItemPageKategory = () => {
         return Array.from(values);
     };
 
-    // Получаем min и max для фильтра типа number
     const getNumberRange = (filter) => {
         if (!filter.name) return { min: 0, max: 0 };
         let min = Infinity;
@@ -161,7 +263,6 @@ const ItemPageKategory = () => {
         if (!filter) return;
 
         if (filter.buttonType === 'number') {
-            // args: ['min', '150'] или ['max', '300']
             const [field, newValue] = args;
             setSelectedFilters(prev => {
                 const current = prev[filterId] || { min: '', max: '' };
@@ -169,13 +270,12 @@ const ItemPageKategory = () => {
                     ...prev,
                     [filterId]: {
                         ...current,
-                        [field]: newValue // 'min': '150'
+                        [field]: newValue
                     }
                 };
             });
         }
         else if (filter.buttonType === 'check') {
-            // args: [true] или [false]
             const [checked] = args;
             setSelectedFilters(prev => ({
                 ...prev,
@@ -183,7 +283,6 @@ const ItemPageKategory = () => {
             }));
         }
         else if (filter.buttonType === 'select') {
-            // args: ['Red', true] или ['Red', false]
             const [value, isChecked] = args;
             setSelectedFilters(prev => {
                 const currentValues = Array.isArray(prev[filterId]) ? prev[filterId] : [];
@@ -205,17 +304,14 @@ const ItemPageKategory = () => {
         }
     };
 
-    // Фильтрация товаров
     const filteredItems = useMemo(() => {
         let result = [...items];
 
-        // Применяем фильтры
         Object.entries(selectedFilters).forEach(([filterId, filterValue]) => {
             const filter = filters.find(f => f.id === parseInt(filterId));
             if (!filter || !filter.name) return;
 
             if (filter.buttonType === 'number') {
-                // Числовые фильтры
                 const { min, max } = filterValue;
                 if (min !== '' || max !== '') {
                     result = result.filter(item => {
@@ -232,7 +328,6 @@ const ItemPageKategory = () => {
                     });
                 }
             } else if (filter.buttonType === 'check') {
-                // Checkbox фильтры
                 if (filterValue) {
                     result = result.filter(item => {
                         const itemValue = item.specificationsJSONB?.[filter.name];
@@ -394,7 +489,6 @@ const ItemPageKategory = () => {
                                             </div>
                                         );
                                     } else if (filter.buttonType === 'check') {
-                                        // Чекбоксы остаются всегда видимыми — без раскрывания
                                         return (
                                             <div key={filter.id} className="filter-item">
                                                 <div className="filter-check">
@@ -425,7 +519,6 @@ const ItemPageKategory = () => {
                         <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategory.name, path: ITEM_MAIN_ROUTE + "/" + mainCategory.id }, { title: category.name }]} />
                         <div className='main-content_header'>
                             <h1 className='item-page-kategory_label my_h2'>{category ? category.name : 'Категория'}</h1>
-                            {/* Блок с сортировкой */}
                             <div className="sorting-section" ref={sortRef}>
                                 <div
                                     className="sort-toggle"
@@ -488,50 +581,73 @@ const ItemPageKategory = () => {
                                     }
                                     <div className="items-grid">
                                         {
-                                            filteredAndSortedItems.map(item => (
-                                                <NavLink
-                                                    className="subcategory-title"
-                                                    to={{
-                                                        pathname: `${ITEM_PREVIEW_ROUTE}/${item.id}`,
-                                                        state: { path: [item.id] }
-                                                    }}
-                                                    onClick={() => handleClick([item.id])}
-                                                >
-                                                    <div key={item.id} className="item-card">
-                                                        <div className="item-image">
-                                                            {item.images && Array.isArray(item.images) && item.images.length > 0 ? (
-                                                                <img
-                                                                    src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`}
-                                                                    alt={item.name}
-                                                                    onError={(e) => {
-                                                                        e.target.src = '/placeholder-image.jpg';
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <div className="no-image">Нет изображения</div>
-                                                            )}
-                                                        </div>
-                                                        <div className="item-rating">
-                                                            <div className="stars">
-                                                                {renderStars(item.rating)}
-                                                            </div>
-                                                        </div>
-                                                        <div className="item-info">
-                                                            <h3 className="item-name">{item.name}</h3>
-                                                            <div className="item-status">
-                                                                {item.isExist ? (
-                                                                    <span className="in-stock">В наличии</span>
+                                            filteredAndSortedItems.map(item => {
+                                                // Проверяем, есть ли этот товар в корзине
+                                                const isInCart = cartItemIds.has(String(item.id));
+
+                                                return (
+                                                    <NavLink
+                                                        key={item.id}
+                                                        className="subcategory-title"
+                                                        to={{
+                                                            pathname: `${ITEM_PREVIEW_ROUTE}/${item.id}`,
+                                                            state: { path: [item.id] }
+                                                        }}
+                                                        onClick={() => handleClick([item.id])}
+                                                    >
+                                                        <div className="item-card">
+                                                            <div className="item-image">
+                                                                {item.images && Array.isArray(item.images) && item.images.length > 0 ? (
+                                                                    <img
+                                                                        src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`}
+                                                                        alt={item.name}
+                                                                        onError={(e) => {
+                                                                            e.target.src = '/placeholder-image.jpg';
+                                                                        }}
+                                                                    />
                                                                 ) : (
-                                                                    <span className="out-of-stock">Нет в наличии</span>
+                                                                    <div className="no-image">Нет изображения</div>
                                                                 )}
                                                             </div>
-                                                            <div className="item-price">
-                                                                {item.price} руб.
+                                                            <div className="item-rating">
+                                                                <div className="stars">
+                                                                    {renderStars(item.rating)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="item-info">
+                                                                <div className="item-status">
+                                                                    {item.isExist ? (
+                                                                        <>
+                                                                            <span className="in-stock my_p_small">В наличии</span>
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <span className="out-of-stock  my_p_small">Нет в наличии</span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                                <h3 className="item-name">{item.name}</h3>
+                                                                <div className="item-price my_h3">
+                                                                    {item.price} Byn
+                                                                </div>
+                                                                <div className={item.isExist ? "item-buy" : "item-buy_no"}>
+                                                                    {/* КНОПКА В КОРЗИНУ */}
+                                                                    <div 
+                                                                        className='item-buy_button'
+                                                                        onClick={(e) => handleAddToCart(e, item)}
+                                                                        style={isInCart ? { backgroundColor: '#3aa41d', borderColor: '#3aa41d', color: 'white' } : {}}
+                                                                    >
+                                                                        {isInCart ? <FiCheck className='button_icon' size={15} /> : <FiShoppingCart className='button_icon' size={15} />}
+                                                                        <p className='item_status-button my_p_small'>
+                                                                            {isInCart ? 'В корзине' : 'В корзину'}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </NavLink>
-                                            ))
+                                                    </NavLink>
+                                                );
+                                            })
                                         }
                                     </div>
                                 </>

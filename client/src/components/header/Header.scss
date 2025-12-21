@@ -308,6 +308,14 @@
     right: 20px;
     z-index: 21;
 
+    .user-dropdown_buttons {
+        padding: 10px;
+
+        &:hover {
+            cursor: pointer;
+        }
+    }
+
     @media (max-width: 768px) {
         top: 50px;
         right: 10px;

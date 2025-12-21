@@ -23,36 +23,50 @@ const BusketPage = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemsToLoad, setItemsToLoad] = useState();
 
+    // Вспомогательная функция для сохранения полного списка товаров в LS
     const saveBasketToLocalStorage = (itemsList) => {
         const basketData = itemsList.map(item => ({
-            itemId: item.id,
+            itemId: item.id, // Сохраняем ID
+            id: item.id,     // Дублируем для надежности (для разных версий кода)
             count: item.count
         }));
         localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(basketData));
     };
 
     const loadBasketFromLocalStorage = () => {
-        const saved = localStorage.getItem(BASKET_LOCAL_STORAGE_KEY) || [];
-        localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, saved);
-        return saved ? JSON.parse(saved) : [];
+        const saved = localStorage.getItem(BASKET_LOCAL_STORAGE_KEY);
+        if (!saved) {
+            return [];
+        }
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error("Ошибка парсинга корзины из localStorage:", e);
+            return [];
+        }
     };
 
     const updateQuantityInLocalStorage = (itemId, newCount) => {
         const current = loadBasketFromLocalStorage();
+        let updated;
+        
         if (newCount < 1) {
-            const updated = current.filter(item => item.id !== itemId);
-            localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(updated));
-            return updated;
+            // Удаление
+            updated = current.filter(item => String(item.itemId) !== String(itemId) && String(item.id) !== String(itemId));
         } else {
-            const existingIndex = current.findIndex(item => item.id === itemId);
+            // Обновление
+            const existingIndex = current.findIndex(item => (String(item.itemId) === String(itemId)) || (String(item.id) === String(itemId)));
             if (existingIndex >= 0) {
                 current[existingIndex].count = newCount;
+                updated = current;
             } else {
-                current.push({ itemId: itemId, count: newCount });
+                current.push({ itemId: itemId, id: itemId, count: newCount });
+                updated = current;
             }
-            localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(current));
-            return current;
         }
+        
+        localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(updated));
+        return updated;
     };
 
     const loadBasket = async () => {
@@ -64,16 +78,28 @@ const BusketPage = () => {
                 const basketData = await fetchBusketByUserId(userId);
                 setBasket(basketData);
                 basketItems = basketData?.itemsJsonb || [];
-                localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(basketItems));
+                
+                // Синхронизируем серверную корзину с локальной при загрузке
+                // Это важно, чтобы Header сразу показал правильное число
+                const itemsForLS = basketItems.map(i => ({
+                    itemId: i.itemId || i.id,
+                    id: i.itemId || i.id,
+                    count: i.count
+                }));
+                localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(itemsForLS));
+                window.dispatchEvent(new Event('cartUpdated')); // Обновляем хедер при загрузке страницы
             } else {
                 basketItems = loadBasketFromLocalStorage();
                 setBasket(null);
             }
 
-            if (basketItems.length > 0) {
+            if (basketItems && basketItems.length > 0) {
                 const itemsPromises = basketItems.map(async (item) => {
                     try {
-                        const itemData = await fetchItemId(item.itemId);
+                        const idToFetch = item.itemId || item.id; 
+                        if(!idToFetch) return null;
+
+                        const itemData = await fetchItemId(idToFetch);
                         return {
                             ...itemData,
                             count: item.count,
@@ -83,6 +109,7 @@ const BusketPage = () => {
                         return null;
                     }
                 });
+                
                 const loadedItems = await Promise.all(itemsPromises);
                 const validItems = loadedItems.filter(item => item !== null);
                 setItems(validItems);
@@ -93,7 +120,6 @@ const BusketPage = () => {
                 });
                 setLocalQuantities(initialQuantities);
 
-                // Для неавторизованного — синхронизируем начальное состояние
                 if (!isAuth) {
                     saveBasketToLocalStorage(validItems);
                 }
@@ -111,38 +137,44 @@ const BusketPage = () => {
 
     useEffect(() => {
         loadBasket();
+        // eslint-disable-next-line
     }, [userId]);
 
-    // Обновление количества
+    // --- ОБНОВЛЕНИЕ КОЛИЧЕСТВА ---
     const handleQuantityChange = async (itemId, newCount) => {
         if (newCount < 1) return;
 
         setLocalQuantities(prev => ({ ...prev, [itemId]: newCount }));
 
+        // Обновляем стейт items, чтобы интерфейс был реактивным
+        const updatedItems = items.map(item =>
+            item.id === itemId ? { ...item, count: newCount } : item
+        );
+        setItems(updatedItems);
+
         if (isAuth && basket) {
-            // Обновляем на сервере
-            const updatedItems = items.map(item =>
-                item.id === itemId ? { ...item, count: newCount } : item
-            );
-            setItems(updatedItems);
+            // 1. Обновляем на сервере
             const busketItems = updatedItems.map(item => ({ itemId: item.id, count: item.count }));
             await updateBusket(basket.id, { itemId: basket.id, itemsJsonb: busketItems });
+            
+            // 2. ВАЖНО: Обновляем localStorage, чтобы Header был в курсе (даже если мы авторизованы)
+            saveBasketToLocalStorage(updatedItems);
         } else {
-            // Обновляем в localStorage
+            // Обновляем в localStorage (гость)
             updateQuantityInLocalStorage(itemId, newCount);
-            const updatedItems = items.map(item =>
-                item.id === itemId ? { ...item, count: newCount } : item
-            );
-            setItems(updatedItems);
         }
+        
+        // 3. Сообщаем хедеру об изменениях
+        window.dispatchEvent(new Event('cartUpdated'));
     };
 
-    // Удаление товара
+    // --- УДАЛЕНИЕ ТОВАРА ---
     const handleRemoveItem = async (itemId) => {
         if (!window.confirm('Вы действительно хотите удалить этот товар из корзины?')) {
             return;
         }
 
+        // 1. Сначала обновляем UI
         const updatedItems = items.filter(item => item.id !== itemId);
         setItems(updatedItems);
         setLocalQuantities(prev => {
@@ -152,54 +184,22 @@ const BusketPage = () => {
         });
 
         if (isAuth && basket) {
+            // 2. Обновляем сервер
             const busketItems = updatedItems.map(item => ({ itemId: item.id, count: item.count }));
             await updateBusket(basket.id, { itemId: basket.id, itemsJsonb: busketItems });
+            
+            // 3. ВАЖНО: Синхронизируем localStorage для авторизованного юзера
+            saveBasketToLocalStorage(updatedItems);
         } else {
-            updateQuantityInLocalStorage(itemId, 0); // удалит из localStorage
+            // 2. Обновляем localStorage для гостя
+            updateQuantityInLocalStorage(itemId, 0); 
         }
+
+        // 4. ГЛАВНОЕ: Отправляем событие для Header
+        window.dispatchEvent(new Event('cartUpdated'));
     };
 
-
-    // Оформление заказа
-    const handleCheckout = async () => {
-        const itemsOrderInfo = items.map(item => ({
-            id: item.id,
-            name: item.name,
-            images: item.images[0],
-            count: item.count,
-            price: item.price
-        }));
-        setItemsToLoad({ items: itemsOrderInfo, totalValue: calculateTotal(), totalCounter: calculateTotalItems(), userId: userId, basketId: basket.id })
-        setIsModalOpen(true)
-        // if (items.length === 0) {
-        //     alert('Корзина пуста');
-        //     return;
-        // }
-
-        // try {
-        //     if (isAuth && basket) {
-        //         // updateBusket(basket.id, { id: basket.id, itemsJsonb: [] });
-        //         // localStorage.removeItem(BASKET_LOCAL_STORAGE_KEY);
-        //         alert('Заказ оформлен успешно!');
-        //     } else {
-        //         // Неавторизованный: предложить войти или продолжить как гость
-        //         localStorage.removeItem(BASKET_LOCAL_STORAGE_KEY);
-        //         return;
-        //     }
-
-        //     // Очистка после заказа
-        //     setItems([]);
-        //     setLocalQuantities({});
-        //     if (!isAuth) {
-        //         localStorage.removeItem(BASKET_LOCAL_STORAGE_KEY);
-        //     }
-        // } catch (err) {
-        //     console.error('Ошибка оформления заказа:', err);
-        //     alert('Ошибка при оформлении заказа. Попробуйте еще раз.');
-        // }
-    };
-
-    // Расчёты (без изменений)
+    // Расчёты
     const calculateTotal = () => {
         return items.reduce((total, item) => {
             const price = parseFloat(item.price) || 0;
@@ -213,6 +213,26 @@ const BusketPage = () => {
             const quantity = localQuantities[item.id] || item.count;
             return total + quantity;
         }, 0);
+    };
+
+    // Оформление заказа
+    const handleCheckout = async () => {
+        const itemsOrderInfo = items.map(item => ({
+            id: item.id,
+            name: item.name,
+            images: item.images[0],
+            count: localQuantities[item.id] || item.count, 
+            price: item.price
+        }));
+        
+        setItemsToLoad({ 
+            items: itemsOrderInfo, 
+            totalValue: calculateTotal(), 
+            totalCounter: calculateTotalItems(), 
+            userId: userId, 
+            basketId: basket ? basket.id : null 
+        });
+        setIsModalOpen(true);
     };
 
     if (loading) {
@@ -274,10 +294,6 @@ const BusketPage = () => {
                                             </div>
                                             <div className="item-info">
                                                 <h3 className="item-name my_h3">{item.name}</h3>
-                                                {/* <div className="item-price">
-                                                    {item.price} ₽
-                                                </div> */}
-
                                                 <div className='item-info_prise-container'>
                                                     <div className="item-total my_h3">
                                                         {totalPrice} р.

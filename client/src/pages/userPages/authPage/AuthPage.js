@@ -62,6 +62,7 @@ const AuthPage = () => {
 
         try {
             await signIn(loginData.mail, loginData.password);
+            localStorage.removeItem("basket");
             history.push('/');
         } catch (err) {
             setError(err.response?.data?.message || 'Ошибка авторизации');
