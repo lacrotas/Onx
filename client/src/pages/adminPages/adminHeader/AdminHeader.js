@@ -35,7 +35,6 @@ export default function AdminHeader({ isAdminHeader, isVisible, onToggle, onMenu
             ]
         },
         { id: 'reviews', text: "Отзывы" },
-        { id: 'complaints', text: "Жалобы" },
     ];
 
     // Определяем, к какому родительскому меню принадлежит активный компонент

@@ -8,6 +8,7 @@ import ItemTable from "./itemTable/ItemTable";
 import ItemGroupTable from "./itemGroupTable/ItemGroupTable";
 import QuestionTable from "./qwestionTable/QuestionTable";
 import SliderTable from "./sliderTable/SliderTable";
+import ReviewTable from './reviewTable/ReviewTable';
 
 function MainAdminPage() {
     // Инициализируем состояния с значениями из localStorage
@@ -78,15 +79,7 @@ function MainAdminPage() {
                     <p>Список завершенных заказов</p>
                 </div>;
             case 'reviews':
-                return <div className="placeholder-component">
-                    <h2>Отзывы</h2>
-                    <p>Управление отзывами покупателей</p>
-                </div>;
-            case 'complaints':
-                return <div className="placeholder-component">
-                    <h2>Жалобы</h2>
-                    <p>Обработка жалоб от пользователей</p>
-                </div>;
+                return <ReviewTable />
             default:
                 return <ItemTable />;
         }

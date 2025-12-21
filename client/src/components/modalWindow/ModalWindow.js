@@ -37,7 +37,7 @@ function ModalWindow({ setIsModalActive, type, value, addImageToArray, itemsArr 
                                             : type === "reductImage" ?
                                                 <ReductImage value={value} addImageToArray={addImageToArray} setIsModalActive={setIsModalActive} />
                                                 : type === "reviewAdd" ?
-                                                    <AddReview itemId={value} />
+                                                    <AddReview itemId={value} closeModal={setIsModalActive} />
                                                     : type === "viewImages" ?
                                                         <ViewImages images={value} setIsModalActive={setIsModalActive} />
                                                         :

@@ -60,9 +60,6 @@ const CurrentItemPage = () => {
                 const busket = await fetchBusketByUserId(jwt_decode(userId).id);
                 const currentItems = busket.itemsJsonb || [];
 
-                console.log("Корзина с сервера:", currentItems);
-
-                // === ВАЖНО: СИНХРОНИЗАЦИЯ СЕРВЕРА С LOCALSTORAGE ===
                 // Преобразуем формат сервера (itemId) в формат localStorage (id)
                 const itemsForLocalStorage = currentItems.map(item => ({
                     id: item.itemId || item.id, // Берем itemId, если есть, иначе id
@@ -224,7 +221,21 @@ const CurrentItemPage = () => {
     };
 
     const scrollToFullDetails = () => {
-        document.getElementById('full-spec')?.scrollIntoView({ behavior: 'smooth' });
+        const element = document.getElementById('full-spec');
+        if (element) {
+            // 1. Получаем позицию элемента относительно верха страницы
+            // element.getBoundingClientRect().top - расстояние от верха окна до элемента
+            const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+
+            // 2. Вычитаем нужный отступ (50px)
+            const offsetPosition = elementPosition - 70;
+
+            // 3. Скроллим к вычисленной точке
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: "smooth"
+            });
+        }
     };
 
     if (loading) {

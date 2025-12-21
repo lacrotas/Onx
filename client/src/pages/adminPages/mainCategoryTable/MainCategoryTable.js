@@ -6,6 +6,10 @@ const MainCategoryTable = () => {
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // 1. Добавляем состояние для сортировки
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({ name: '', imageFile: null, imageUrl: '' });
@@ -15,21 +19,59 @@ const MainCategoryTable = () => {
     loadCategories();
   }, []);
 
+  // 2. Обновляем useEffect для фильтрации И сортировки
   useEffect(() => {
-    const filtered = categories.filter(category =>
+    // Сначала фильтруем
+    let result = categories.filter(category =>
       category.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setFilteredCategories(filtered);
-  }, [searchTerm, categories]);
+
+    // Затем сортируем
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        // Обработка null/undefined
+        if (aValue === null || aValue === undefined) aValue = '';
+        if (bValue === null || bValue === undefined) bValue = '';
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    setFilteredCategories(result);
+  }, [searchTerm, categories, sortConfig]); // Добавили sortConfig в зависимости
 
   const loadCategories = async () => {
     try {
       const data = await fetchAllMainKategory();
       setCategories(data);
-      setFilteredCategories(data);
+      // setFilteredCategories(data); // Убрали, так как useEffect сработает автоматически
     } catch (error) {
       console.error('Error loading categories:', error);
     }
+  };
+
+  // 3. Функция запроса сортировки
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Вспомогательная функция для индикатора
+  const getSortIndicator = (key) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
   };
 
   const handleSearch = (e) => {
@@ -56,7 +98,11 @@ const MainCategoryTable = () => {
     setIsModalOpen(false);
     setEditingCategory(null);
   };
-
+  const confirmAndCloseModal = () => {
+    if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
+      closeModal();
+    }
+  };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -106,10 +152,32 @@ const MainCategoryTable = () => {
       alert('Что-то пошло не так. Пожалуйста, попробуйте еще раз.');
     }
   };
+  const handleSubmitWithoutClose = async (e) => {
+    const myFormData = new FormData();
+
+    try {
+      if (editingCategory) {
+        myFormData.append("name", formData.name);
+        myFormData.append("image", formData.imageFile);
+
+        await updateMainKategory(editingCategory.id, myFormData);
+      } else {
+        myFormData.append("name", formData.name);
+        myFormData.append("image", formData.imageFile);
+
+        await postMainKategory(myFormData);
+      }
+      alert("дынные успешно добавлены");
+
+    } catch (error) {
+      alert('Произошла ошибка сделай скрин и скинь мне:', error);
+    }
+  };
 
   const handleDelete = (id) => {
     if (window.confirm('При удалении главной категории удалятся все товары, фильтры, категории которые с ней связанны?')) {
       deleteMainKategoryById(id)
+      window.location.reload();
     }
   };
 
@@ -135,9 +203,14 @@ const MainCategoryTable = () => {
       <div className="table-container">
         <table className="categories-table">
           <thead>
+            {/* 4. Добавляем onClick и стили курсора */}
             <tr>
-              <th>ID</th>
-              <th>Название</th>
+              <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
+                ID{getSortIndicator('id')}
+              </th>
+              <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
+                Название{getSortIndicator('name')}
+              </th>
               <th>Картинка</th>
               <th>Действия</th>
             </tr>
@@ -173,7 +246,7 @@ const MainCategoryTable = () => {
       </div>
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>{editingCategory ? 'Редактирование' : 'Добавление'}</h2>
             <form onSubmit={handleSubmit}>
@@ -222,9 +295,15 @@ const MainCategoryTable = () => {
                 </div>
               </div>
               <div className="modal-buttons">
-                <button type="button" onClick={closeModal} className="cancel-button">
+                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">
                   Отмена
                 </button>
+                {!editingCategory ?
+                  <button type="button" onClick={(e) => handleSubmitWithoutClose(e)} className="save-button">
+                    Добавить без сброса
+                  </button>
+                  : <></>
+                }
                 <button type="submit" className="save-button">
                   {editingCategory ? 'Обновить' : 'Добавить'}
                 </button>

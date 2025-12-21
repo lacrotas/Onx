@@ -1,4 +1,3 @@
-// ItemTable.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchAllMainKategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
 import { fetchAllItem, postItem, deleteItemById, updateItemById } from '../../../http/itemApi';
@@ -12,6 +11,10 @@ const ItemTable = () => {
     const [allCategories, setAllCategories] = useState([]); // все категории
     const [categoriesByMain, setCategoriesByMain] = useState([]); // категории по выбранной главной категории
     const [searchTerm, setSearchTerm] = useState('');
+
+    // 1. Добавляем состояние для сортировки
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [formData, setFormData] = useState({
@@ -40,28 +43,56 @@ const ItemTable = () => {
         loadAllCategories();
     }, []);
 
-    // Filter items based on search term
+    // 2. Обновляем useEffect для фильтрации И сортировки
     useEffect(() => {
-        const filtered = items.filter(item =>
+        // Сначала фильтруем
+        let result = items.filter(item =>
             item.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        setFilteredItems(filtered);
-    }, [searchTerm, items]);
 
-    // Загружаем категории при изменении главной категории в форме
-    useEffect(() => {
-        if (formData.mainKategoryId) {
-            loadCategoriesByMainCategory(formData.mainKategoryId);
-        } else {
-            setCategoriesByMain([]);
+        // Затем сортируем
+        if (sortConfig.key) {
+            result.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                // Специальная логика для разных типов полей
+                if (sortConfig.key === 'mainKategoryId') {
+                    // Сортируем по названию главной категории
+                    aValue = getMainCategoryName(a.mainKategoryId);
+                    bValue = getMainCategoryName(b.mainKategoryId);
+                } else if (sortConfig.key === 'kategoryId') {
+                    // Сортируем по названию категории
+                    aValue = getCategoryName(a.kategoryId);
+                    bValue = getCategoryName(b.kategoryId);
+                } else if (sortConfig.key === 'price') {
+                    // Преобразуем цену в число для корректного сравнения
+                    aValue = parseFloat(a.price) || 0;
+                    bValue = parseFloat(b.price) || 0;
+                }
+
+                // Обработка null/undefined
+                if (aValue === null || aValue === undefined) aValue = '';
+                if (bValue === null || bValue === undefined) bValue = '';
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
         }
-    }, [formData.mainKategoryId]);
+
+        setFilteredItems(result);
+    }, [searchTerm, items, sortConfig, mainCategories, allCategories]); // Добавили зависимости
 
     const loadItems = async () => {
         try {
             const data = await fetchAllItem();
             setItems(data);
-            setFilteredItems(data);
+            // setFilteredItems(data); // Убрали, так как useEffect сработает
         } catch (error) {
             console.error('Error loading items:', error);
         }
@@ -85,19 +116,18 @@ const ItemTable = () => {
         }
     };
 
+    // ... (остальные функции загрузки и модального окна без изменений) ...
     const loadCategoriesByMainCategory = async (mainCategoryId) => {
         try {
             const data = await fetchAllKategoryByMainKategoryId(mainCategoryId);
             setCategoriesByMain(data);
 
-            // Если текущая выбранная категория не принадлежит этой главной категории, сбрасываем её
             if (formData.kategoryId && !data.some(cat => cat.id === formData.kategoryId)) {
                 setFormData(prev => ({
                     ...prev,
                     kategoryId: data.length > 0 ? data[0].id : ''
                 }));
 
-                // Также сбрасываем фильтры
                 if (data.length > 0) {
                     loadFiltersForCategory(data[0].id);
                 } else {
@@ -121,14 +151,11 @@ const ItemTable = () => {
             const data = await fetchAllFiltersByKategoryId(kategoryId);
             setFiltersForCategory(data);
 
-            // Создаем новый объект спецификаций на основе фильтров
             const newSpecs = {};
             data.forEach(filter => {
-                // Используем существующее значение или пустую строку
                 newSpecs[filter.name] = existingSpecifications[filter.name] || '';
             });
 
-            console.log('Setting specifications:', newSpecs);
             setFormData(prev => ({
                 ...prev,
                 specifications: newSpecs
@@ -137,6 +164,21 @@ const ItemTable = () => {
             console.error('Error loading filters for category:', error);
             setFiltersForCategory([]);
         }
+    };
+
+    // 3. Функция запроса сортировки
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    // Вспомогательная функция для индикатора
+    const getSortIndicator = (key) => {
+        if (sortConfig.key !== key) return null;
+        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
     };
 
     const handleSearch = (e) => {
@@ -164,23 +206,18 @@ const ItemTable = () => {
         });
         setIsModalOpen(true);
 
-        // Загружаем категории для выбранной главной категории
         if (initialMainCategoryId) {
             loadCategoriesByMainCategory(initialMainCategoryId);
         }
     };
 
     const openEditModal = (item) => {
-        console.log('Editing item:', item);
-        console.log('Item specifications:', item.specificationsJSONB);
-
         setEditingItem(item);
 
         const itemImages = Array.isArray(item.images) ? item.images : [];
         const itemVideo = item.video || '';
         const itemSpecifications = item.specificationsJSONB || {};
 
-        // Сначала устанавливаем базовые данные
         const initialFormData = {
             name: item.name || '',
             mainKategoryId: item.mainKategoryId || '',
@@ -194,18 +231,16 @@ const ItemTable = () => {
             existingImages: itemImages,
             isExist: item.isExist ?? true,
             isShowed: item.isShowed ?? true,
-            specifications: itemSpecifications // сразу устанавливаем спецификации
+            specifications: itemSpecifications
         };
 
         setFormData(initialFormData);
         setIsModalOpen(true);
 
-        // Затем загружаем категории
         if (item.mainKategoryId) {
             loadCategoriesByMainCategory(item.mainKategoryId);
         }
 
-        // И сразу загружаем фильтры с существующими спецификациями
         if (item.kategoryId) {
             loadFiltersForCategory(item.kategoryId, itemSpecifications);
         }
@@ -216,6 +251,11 @@ const ItemTable = () => {
         setEditingItem(null);
         setFiltersForCategory([]);
         setCategoriesByMain([]);
+    };
+    const confirmAndCloseModal = () => {
+        if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
+            closeModal();
+        }
     };
 
     const handleInputChange = (e) => {
@@ -229,7 +269,6 @@ const ItemTable = () => {
         if (typeof filterNameOrFilter === 'string') {
             filterName = filterNameOrFilter;
         } else {
-            // Это объект фильтра
             filterName = filterNameOrFilter.name;
         }
 
@@ -247,15 +286,12 @@ const ItemTable = () => {
         setFormData(prev => ({
             ...prev,
             mainKategoryId: value,
-            kategoryId: '' // сбрасываем выбор категории при изменении главной категории
+            kategoryId: ''
         }));
-        // useEffect автоматически вызовет loadCategoriesByMainCategory
     };
 
     const handleCategoryChange = (e) => {
         const value = e.target.value;
-
-        // Сохраняем текущие спецификации
         const currentSpecs = formData.specifications;
 
         setFormData(prev => ({
@@ -263,7 +299,6 @@ const ItemTable = () => {
             kategoryId: value
         }));
 
-        // Передаем текущие спецификации при загрузке фильтров
         loadFiltersForCategory(value, currentSpecs);
     };
 
@@ -272,7 +307,6 @@ const ItemTable = () => {
         if (files.length > 0) {
             const newImageFiles = [...formData.imageFiles, ...files];
             const newImageUrls = newImageFiles.map(file => URL.createObjectURL(file));
-
             const allImages = [...formData.existingImages, ...newImageUrls];
 
             setFormData(prev => ({
@@ -341,38 +375,27 @@ const ItemTable = () => {
     };
 
     const updateFilterAttributeValues = async (newSpecifications, oldSpecifications = {}) => {
-        // Получаем все фильтры для текущей категории
         const allFilters = await fetchAllFiltersByKategoryId(formData.kategoryId);
 
-        // Для каждого фильтра обновляем его attributeValues
         for (const filter of allFilters) {
-            // Получаем все товары в этой категории
             const categoryItems = items.filter(item => item.kategoryId === formData.kategoryId);
-
-            // Собираем все значения для текущего фильтра
             const allValues = new Set();
 
-            // Добавляем значения из существующих товаров
             categoryItems.forEach(item => {
                 if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
                     allValues.add(item.specificationsJSONB[filter.name]);
                 }
             });
 
-            // Добавляем новое значение из текущего товара
             if (newSpecifications[filter.name]) {
                 allValues.add(newSpecifications[filter.name]);
             }
 
-            // Удаляем старое значение, если товар редактируется и значение изменилось
             if (editingItem && oldSpecifications[filter.name] && oldSpecifications[filter.name] !== newSpecifications[filter.name]) {
                 allValues.delete(oldSpecifications[filter.name]);
             }
 
-            // Преобразуем в массив
             const attributeValues = Array.from(allValues);
-
-            // Обновляем фильтр
             const myFormData = new FormData();
             myFormData.append('name', filter.name);
             myFormData.append('buttonType', filter.buttonType);
@@ -388,6 +411,7 @@ const ItemTable = () => {
         e.preventDefault();
         try {
             const myFormData = new FormData();
+            // ... (код отправки формы без изменений) ...
             if (editingItem) {
                 myFormData.append("mainKategoryId", formData.mainKategoryId);
                 myFormData.append("kategoryId", formData.kategoryId);
@@ -421,19 +445,67 @@ const ItemTable = () => {
                 await postItem(myFormData);
             }
 
-            // Обновляем attributeValues для фильтров
             await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
 
             closeModal();
             window.location.reload();
         } catch (error) {
             console.error('Error saving item:', error);
-
             if (error.response && error.response.status === 413) {
-                alert("Ошибка: Слишком большой размер загружаемых файлов! Попробуйте загрузить меньше изображений или уменьшить их размер.");
+                alert("Ошибка: Слишком большой размер загружаемых файлов!");
             } else {
-                // Обработка других ошибок (опционально)
-                alert("Произошла ошибка при сохранении. Проверьте консоль для деталей.");
+                alert("Произошла ошибка при сохранении.");
+            }
+        }
+    };
+
+    const handleSubmitWithoutClose = async (e) => {
+        e.preventDefault();
+        try {
+            const myFormData = new FormData();
+            // ... (код отправки формы без изменений) ...
+            if (editingItem) {
+                myFormData.append("mainKategoryId", formData.mainKategoryId);
+                myFormData.append("kategoryId", formData.kategoryId);
+                myFormData.append("name", formData.name);
+                formData.imageFiles.forEach(file => {
+                    myFormData.append("images", file);
+                });
+                formData.images.forEach(image => {
+                    myFormData.append('imageStrings', image);
+                });
+                myFormData.append("video", formData.video);
+                myFormData.append("price", formData.price);
+                myFormData.append("description", formData.description);
+                myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
+                myFormData.append("isExist", formData.isExist);
+                myFormData.append("isShowed", formData.isShowed);
+                await updateItemById(editingItem.id, myFormData)
+            } else {
+                myFormData.append("mainKategoryId", formData.mainKategoryId);
+                myFormData.append("kategoryId", formData.kategoryId);
+                myFormData.append("name", formData.name);
+                formData.imageFiles.forEach(file => {
+                    myFormData.append("images", file);
+                });
+                myFormData.append("video", formData.video);
+                myFormData.append("price", formData.price);
+                myFormData.append("description", formData.description);
+                myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
+                myFormData.append("isExist", formData.isExist);
+                myFormData.append("isShowed", formData.isShowed);
+                await postItem(myFormData);
+            }
+
+            await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
+
+            window.location.reload();
+        } catch (error) {
+            console.error('Error saving item:', error);
+            if (error.response && error.response.status === 413) {
+                alert("Ошибка: Слишком большой размер загружаемых файлов!");
+            } else {
+                alert("Произошла ошибка при сохранении.");
             }
         }
     };
@@ -441,45 +513,30 @@ const ItemTable = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Вы дейтвительно хотите удалить данный товар?')) {
             try {
-                // Получаем товар перед удалением для получения его спецификаций
                 const itemToDelete = items.find(item => item.id === id);
-
                 await deleteItemById(id);
 
-                // Обновляем attributeValues для фильтров после удаления
                 if (itemToDelete && itemToDelete.specificationsJSONB) {
-                    // Получаем все товары в той же категории
                     const categoryItems = items.filter(item => item.id !== id && item.kategoryId === itemToDelete.kategoryId);
-
-                    // Для каждого фильтра в категории обновляем attributeValues
                     const allFilters = await fetchAllFiltersByKategoryId(itemToDelete.kategoryId);
 
                     for (const filter of allFilters) {
                         const allValues = new Set();
-
-                        // Добавляем значения из оставшихся товаров
                         categoryItems.forEach(item => {
                             if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
                                 allValues.add(item.specificationsJSONB[filter.name]);
                             }
                         });
-
-                        // Преобразуем в массив
                         const attributeValues = Array.from(allValues);
-
-                        // Обновляем фильтр
                         const myFormData = new FormData();
                         myFormData.append('name', filter.name);
                         myFormData.append('buttonType', filter.buttonType);
                         myFormData.append('kategoryId', filter.kategoryId);
                         myFormData.append('addition', filter.addition || '');
                         myFormData.append('attributeValues', JSON.stringify(attributeValues));
-
                         await updateFilter(filter.id, myFormData);
                     }
                 }
-
-                // Обновляем локальный список товаров
                 setItems(items.filter(item => item.id !== id));
             } catch (error) {
                 console.error('Error deleting item:', error);
@@ -518,15 +575,30 @@ const ItemTable = () => {
             <div className="table-container">
                 <table className="categories-table">
                     <thead>
+                        {/* 4. Добавляем onClick и стили курсора */}
                         <tr>
-                            <th>ID</th>
-                            <th>Главная категория</th>
-                            <th>Категория</th>
-                            <th>Фото</th>
-                            <th>Название</th>
-                            <th>Цена</th>
-                            <th>В наличии</th>
-                            <th>Показан</th>
+                            <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
+                                ID{getSortIndicator('id')}
+                            </th>
+                            <th onClick={() => requestSort('mainKategoryId')} style={{ cursor: 'pointer' }}>
+                                Главная категория{getSortIndicator('mainKategoryId')}
+                            </th>
+                            <th onClick={() => requestSort('kategoryId')} style={{ cursor: 'pointer' }}>
+                                Категория{getSortIndicator('kategoryId')}
+                            </th>
+                            <th>Фото</th> {/* Фото обычно не сортируют */}
+                            <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
+                                Название{getSortIndicator('name')}
+                            </th>
+                            <th onClick={() => requestSort('price')} style={{ cursor: 'pointer' }}>
+                                Цена{getSortIndicator('price')}
+                            </th>
+                            <th onClick={() => requestSort('isExist')} style={{ cursor: 'pointer' }}>
+                                В наличии{getSortIndicator('isExist')}
+                            </th>
+                            <th onClick={() => requestSort('isShowed')} style={{ cursor: 'pointer' }}>
+                                Показан{getSortIndicator('isShowed')}
+                            </th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -566,10 +638,11 @@ const ItemTable = () => {
             </div>
 
             {isModalOpen && (
-                <div className="modal-overlay" onClick={closeModal}>
+                <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
                     <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
                         <h2>{editingItem ? 'Редактирования' : 'Добавление'}</h2>
                         <form onSubmit={handleSubmit} className="item-form">
+                            {/* ... (форма осталась без изменений) ... */}
                             <div className="form-row">
                                 <div className="form-group">
                                     <label htmlFor="name">Название:</label>
@@ -850,9 +923,15 @@ const ItemTable = () => {
                             )}
 
                             <div className="modal-buttons">
-                                <button type="button" onClick={closeModal} className="cancel-button">
+                                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">
                                     Отмена
                                 </button>
+                                {!editingItem ?
+                                    <button type="button" onClick={(e) => handleSubmitWithoutClose(e)} className="save-button">
+                                        Добавить без сброса
+                                    </button>
+                                    : <></>
+                                }
                                 <button type="submit" className="save-button">
                                     {editingItem ? 'Обновить' : 'Добавить'}
                                 </button>

@@ -6,8 +6,9 @@ import InteractiveRating from "../../../InteractiveRating/InteractiveRating";
 import { postReview } from "../../../../http/reviewApi";
 import CustomAlert from "../../../customAlert/CustomAlert";
 import jwtDecode from "jwt-decode";
+import { FiX } from "react-icons/fi"; // Импортируем иконку закрытия
 
-function AddReview({ itemId }) {
+function AddReview({ closeModal, itemId }) {
     const [itemDescription, setItemDescription] = useState("");
     const [itemRating, setItemRating] = useState(0);
     const [images, setImages] = useState([]);
@@ -102,6 +103,9 @@ function AddReview({ itemId }) {
             )}
 
             <div className="add-review-modal">
+                <button className="review-modal-close-btn" onClick={() => closeModal(false)}>
+                    <FiX size={24} />
+                </button>
 
                 <div className="add-review-form">
                     {/* Рейтинг */}

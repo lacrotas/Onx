@@ -65,7 +65,7 @@ export const fetchReviewByItemIdAndIsShowed = async (id) => {
     if (!id) {
         return null;
     } else {
-        const { data } = await $host.get('api/reviewRouter/getAllByItemId/' + id);
+        const { data } = await $host.get('api/reviewRouter/getAllByItemIdShown/' + id);
         return data;
     }
 }

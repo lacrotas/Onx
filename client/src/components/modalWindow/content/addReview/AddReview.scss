@@ -11,6 +11,27 @@
   max-height: calc(100vh - 80px);
   position: relative;
   z-index: 30;
+
+  .review-modal-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+
+    &:hover {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+  }
 }
 
 .add-review-title {

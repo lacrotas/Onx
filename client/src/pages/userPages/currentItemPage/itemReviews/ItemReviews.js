@@ -45,7 +45,9 @@ function ItemReviews({ itemId }) {
     useEffect(() => {
         fetchReviewByItemIdAndIsShowed(itemId).then(data => {
             setReviews(data || []);
+            console.log(data)
         });
+        
     }, [itemId]);
 
     // Расчёт статистики
@@ -87,7 +89,7 @@ function ItemReviews({ itemId }) {
                 <ModalWindow
                     type="reviewAdd"
                     value={itemId}
-                    setIsModalActive={setModalReviewPreview}
+                    setIsModalActive={setIsModalActive}
                 />
             )}
             {modalReviewPreview && (

@@ -3,6 +3,7 @@ const router = new Router();
 const reviewController = require('../controllers/reviewController');
 const { authenticateToken, requireAdmin } = require('../middleware/authMiddleware');
 const validateParams = require('../middleware/validateParams');
+const { processMultipleImages } = require('../middleware/MediaProcessor');
 
 router.get('/getAll', reviewController.getAllReview);
 router.get('/getById/:id', reviewController.getReviewById);
@@ -26,6 +27,7 @@ router.put('/update/:id',
     validateParams([
         { param: 'id', type: 'integer', min: 1, name: 'ID категории' }
     ]),
+    processMultipleImages('images', 'images'),
     authenticateToken, requireAdmin, reviewController.updateReviewById);
 
 module.exports = router; 

@@ -1,4 +1,3 @@
-// FilterTable.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchAllFilters, postFilterForKategory, updateFilter, deleteFilter } from '../../../http/filterApi';
 import { fetchAllKategory } from '../../../http/KategoryApi';
@@ -9,6 +8,10 @@ const FilterTable = () => {
     const [filteredFilters, setFilteredFilters] = useState([]);
     const [categories, setCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // 1. Добавляем состояние для сортировки
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingFilter, setEditingFilter] = useState(null);
     const [formData, setFormData] = useState({
@@ -25,19 +28,47 @@ const FilterTable = () => {
         loadCategories();
     }, []);
 
-    // Filter filters based on search term
+    // 2. Обновляем useEffect для фильтрации И сортировки
     useEffect(() => {
-        const filtered = filters.filter(filter =>
+        // Сначала фильтруем по поиску
+        let result = filters.filter(filter =>
             filter.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        setFilteredFilters(filtered);
-    }, [searchTerm, filters]);
+
+        // Затем сортируем, если есть конфигурация
+        if (sortConfig.key) {
+            result.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                // Специальная обработка для колонки "Категория", так как там ID, а сортировать хотим по названию
+                if (sortConfig.key === 'kategoryId') {
+                    aValue = getCategoryName(a.kategoryId);
+                    bValue = getCategoryName(b.kategoryId);
+                }
+
+                // Обработка null/undefined значений
+                if (aValue === null || aValue === undefined) aValue = '';
+                if (bValue === null || bValue === undefined) bValue = '';
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+
+        setFilteredFilters(result);
+    }, [searchTerm, filters, sortConfig, categories]); // Добавили sortConfig и categories в зависимости
 
     const loadFilters = async () => {
         try {
             const data = await fetchAllFilters();
             setFilters(data);
-            setFilteredFilters(data);
+            // setFilteredFilters(data); // Это больше не нужно здесь, так как useEffect сработает при изменении filters
         } catch (error) {
             console.error('Error loading filters:', error);
         }
@@ -53,6 +84,21 @@ const FilterTable = () => {
         } catch (error) {
             console.error('Error loading categories:', error);
         }
+    };
+
+    // 3. Функция запроса сортировки
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    // Вспомогательная функция для отображения стрелочки
+    const getSortIndicator = (key) => {
+        if (sortConfig.key !== key) return null;
+        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
     };
 
     const handleSearch = (e) => {
@@ -85,7 +131,11 @@ const FilterTable = () => {
         setIsModalOpen(false);
         setEditingFilter(null);
     };
-
+    const confirmAndCloseModal = () => {
+        if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
+            closeModal();
+        }
+    };
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -99,22 +149,46 @@ const FilterTable = () => {
             myFormData.append("buttonType", formData.buttonType);
             myFormData.append("kategoryId", formData.kategoryId);
             myFormData.append("addition", formData.addition);
-            
+
             if (editingFilter) {
                 await updateFilter(editingFilter.id, myFormData);
             } else {
                 await postFilterForKategory(myFormData);
             }
-            loadFilters(); // Обновляем список вместо перезагрузки страницы
+            loadFilters();
+            alert("дынные успешно добавлены");
             closeModal();
         } catch (error) {
-            console.error('Error saving filter:', error);
+            alert('Произошла ошибка сделай скрин и скинь мне:', error);
+        }
+    };
+
+    const handleSubmitWithoutClose = async (e) => {
+        e.preventDefault();
+        const myFormData = new FormData();
+        try {
+            myFormData.append("name", formData.name);
+            myFormData.append("buttonType", formData.buttonType);
+            myFormData.append("kategoryId", formData.kategoryId);
+            myFormData.append("addition", formData.addition);
+
+            if (editingFilter) {
+                await updateFilter(editingFilter.id, myFormData);
+            } else {
+                await postFilterForKategory(myFormData);
+            }
+            alert("дынные успешно добавлены");
+            loadFilters();
+
+        } catch (error) {
+            alert('Произошла ошибка сделай скрин и скинь мне:', error);
         }
     };
 
     const handleDelete = (id) => {
         if (window.confirm('Are you sure you want to delete this filter?')) {
             deleteFilter(id);
+            window.location.reload();
         }
     };
 
@@ -151,12 +225,23 @@ const FilterTable = () => {
             <div className="table-container">
                 <table className="categories-table">
                     <thead>
+                        {/* 4. Добавляем onClick и стили курсора */}
                         <tr>
-                            <th>ID</th>
-                            <th>Название</th>
-                            <th>Категория</th>
-                            <th>Тип</th>
-                            <th>Дополнение</th>
+                            <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
+                                ID{getSortIndicator('id')}
+                            </th>
+                            <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
+                                Название{getSortIndicator('name')}
+                            </th>
+                            <th onClick={() => requestSort('kategoryId')} style={{ cursor: 'pointer' }}>
+                                Категория{getSortIndicator('kategoryId')}
+                            </th>
+                            <th onClick={() => requestSort('buttonType')} style={{ cursor: 'pointer' }}>
+                                Тип{getSortIndicator('buttonType')}
+                            </th>
+                            <th onClick={() => requestSort('addition')} style={{ cursor: 'pointer' }}>
+                                Дополнение{getSortIndicator('addition')}
+                            </th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -189,7 +274,7 @@ const FilterTable = () => {
             </div>
 
             {isModalOpen && (
-                <div className="modal-overlay" onClick={closeModal}>
+                <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <h2>{editingFilter ? 'Обновить' : 'Добавить'}</h2>
                         <form onSubmit={handleSubmit}>
@@ -258,12 +343,19 @@ const FilterTable = () => {
                             )}
 
                             <div className="modal-buttons">
-                                <button type="button" onClick={closeModal} className="cancel-button">
+                                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">
                                     Отмена
                                 </button>
+                                {!editingFilter ?
+                                    <button type="button" onClick={(e) => handleSubmitWithoutClose(e)} className="save-button">
+                                        Добавить без сброса
+                                    </button>
+                                    : <></>
+                                }
                                 <button type="submit" className="save-button">
                                     {editingFilter ? 'Обновить' : 'Добавить'}
                                 </button>
+
                             </div>
                         </form>
                     </div>
