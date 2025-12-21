@@ -1,5 +1,10 @@
 # dependencies
 /node_modules
 
-static/*
-!static/.gitkeep
+# Игнорируем все файлы в папках images и video
+static/images/*
+static/video/*
+
+# Но делаем исключение для .gitkeep
+!static/images/.gitkeep
+!static/video/.gitkeep
