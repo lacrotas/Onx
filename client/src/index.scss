@@ -171,23 +171,23 @@ a {
 
 
 // text
-.my_h1 {
+.my_h1, h1 {
   font-size: 2.5rem;
   font-family: "Inter_Bold";
 }
 
-.my_h2 {
+.my_h2, h2 {
   font-size: 1.5rem;
   font-family: "Inter_Bold";
 }
 
 // h3 for kategory and qwestion
-.my_h3 {
+.my_h3, h3 {
   font-size: 1.2rem;
   font-family: "Inter_Bold";
 }
 
-.my_p {
+.my_p p {
   font-size: 1rem;
   font-family: "Roboto";
 }

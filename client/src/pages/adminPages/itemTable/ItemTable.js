@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchAllMainKategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
 import { fetchAllItem, postItem, deleteItemById, updateItemById } from '../../../http/itemApi';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'
 import { fetchAllFiltersByKategoryId, updateFilter } from '../../../http/filterApi';
 import "./ItemTable.scss";
 
@@ -252,7 +254,7 @@ const ItemTable = () => {
         setFiltersForCategory([]);
         setCategoriesByMain([]);
     };
-    
+
     const confirmAndCloseModal = () => {
         if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
             closeModal();
@@ -263,6 +265,9 @@ const ItemTable = () => {
         const { name, value, type, checked } = e.target;
         const val = type === 'checkbox' ? checked : value;
         setFormData(prev => ({ ...prev, [name]: val }));
+    };
+    const handleDescriptionChange = (value) => {
+        setFormData(prev => ({ ...prev, description: value }));
     };
 
     const handleSpecificationChange = (filterNameOrFilter, value) => {
@@ -749,12 +754,19 @@ const ItemTable = () => {
 
                             <div className="form-group full-width">
                                 <label>Описание:</label>
-                                <textarea
-                                    name="description"
+                                <ReactQuill
+                                    theme="snow"
                                     value={formData.description}
-                                    onChange={handleInputChange}
-                                    className="form-textarea"
-                                    rows="4"
+                                    onChange={handleDescriptionChange}
+                                    className="form-quill" 
+                                    modules={{
+                                        toolbar: [
+                                            [{ 'header': [1, 2, false] }],
+                                            ['bold', 'italic', 'underline', 'strike'],
+                                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                            ['clean'] // Кнопка очистки форматирования
+                                        ],
+                                    }}
                                 />
                             </div>
 

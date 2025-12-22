@@ -435,9 +435,7 @@ const CurrentItemPage = () => {
                             <div ref={specsListRef}
                                 className={`wb-specs-list-descrption ${openDescription ? 'open' : ''}`}
                             >
-                                {item.description.split('\r\n').map((paragraph, index) => (
-                                    <p className="wb-description_text my_p" key={index}>{paragraph}</p>
-                                ))}
+                                <div className="wb-description_text my_p" dangerouslySetInnerHTML={{ __html: item.description }} />
                             </div>
                         </div>
                     )}

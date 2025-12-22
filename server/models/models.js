@@ -78,7 +78,7 @@ const Item = sequelize.define('item', {
     },
     video: { type: DataTypes.STRING },
     price: { type: DataTypes.STRING },
-    description: { type: DataTypes.STRING(2000) },
+    description: { type: DataTypes.TEXT },
     rating: { type: DataTypes.STRING },
     reviewNumber: { type: DataTypes.STRING },
     specificationsJSONB: { type: DataTypes.JSONB },
