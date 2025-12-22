@@ -1,0 +1,116 @@
+.adminOrderTable {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    .admin-header {
+        margin-bottom: 30px;
+        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 28px; font-weight: 600; }
+        .search-container {
+            margin-bottom: 20px;
+            .search-input {
+                width: 100%; max-width: 400px; padding: 12px 16px;
+                border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px;
+                &:focus { outline: none; border-color: #3498db; }
+            }
+        }
+    }
+
+    .table-container {
+        overflow-x: auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        background: white;
+
+        .categories-table {
+            width: 100%; border-collapse: collapse; min-width: 900px;
+            th {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                padding: 16px 20px; text-align: left; font-weight: 600;
+                color: #2c3e50; border-bottom: 2px solid #dee2e6; cursor: pointer;
+                &:hover { background: #e2e6ea; }
+            }
+            td {
+                padding: 16px 20px; border-bottom: 1px solid #e9ecef; color: #495057; vertical-align: middle;
+                &.action-buttons {
+                    display: flex; gap: 8px;
+                    button {
+                        padding: 6px 12px; border: none; border-radius: 6px;
+                        font-weight: 600; font-size: 14px; cursor: pointer; color: white;
+                        &.edit-button { background: #3498db; }
+                        &.delete-button { background: #e74c3c; }
+                    }
+                }
+            }
+            tbody tr:nth-child(even) { background-color: #f8f9fa; }
+            tbody tr:hover { background-color: #f1f3f5; }
+        }
+    }
+
+    /* Статусы */
+    .status-badge {
+        padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase;
+        &.status-start { background: #e3f2fd; color: #1976d2; }
+        &.status-inProcess { background: #fff3e0; color: #f57c00; }
+        &.status-finished { background: #e8f5e9; color: #388e3c; }
+    }
+
+    /* Вкладки */
+    .tabs-container {
+        display: flex; gap: 10px; margin-bottom: 20px;
+        .tab-button {
+            padding: 10px 20px; border: 2px solid #e1e5e9; background: white;
+            color: #6c757d; border-radius: 8px; font-weight: 600; cursor: pointer;
+            &.active {
+                background: #3498db; color: white; border-color: #3498db;
+            }
+        }
+    }
+
+    /* Модальное окно */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.6); z-index: 1000;
+        display: flex; align-items: center; justify-content: center; padding: 20px;
+
+        .modal-content {
+            background: white; padding: 30px; border-radius: 16px;
+            width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto;
+            
+            h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+
+            .form-row-split {
+                display: flex; gap: 20px;
+                .form-group { flex: 1; }
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+                label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+                .form-input, .form-select {
+                    width: 100%; padding: 10px; border: 2px solid #e1e5e9; border-radius: 8px;
+                    &:focus { border-color: #3498db; outline: none; }
+                }
+            }
+
+            .order-items-preview {
+                background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;
+                h3 { margin: 0 0 10px 0; font-size: 16px; }
+                .order-item-row {
+                    display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;
+                    .dots { flex: 1; border-bottom: 1px dotted #ccc; margin: 0 10px; position: relative; top: -4px; }
+                }
+            }
+
+            .modal-buttons {
+                display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+                button {
+                    padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600;
+                    &.cancel-button { background: #f1f3f5; }
+                    &.save-button { background: #27ae60; color: white; }
+                }
+            }
+        }
+    }
+}

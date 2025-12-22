@@ -28,11 +28,11 @@ export default function AdminHeader({ isAdminHeader, isVisible, onToggle, onMenu
         {
             id: 'orders',
             text: "Заказы",
-            dropdown: [
-                { id: 'start', text: "Начатые" },
-                { id: 'inProcess', text: "В процессе" },
-                { id: 'finished', text: "Завершенные" },
-            ]
+            // dropdown: [
+            //     { id: 'start', text: "Начатые" },
+            //     { id: 'inProcess', text: "В процессе" },
+            //     { id: 'finished', text: "Завершенные" },
+            // ]
         },
         { id: 'reviews', text: "Отзывы" },
     ];

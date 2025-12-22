@@ -19,13 +19,69 @@ function Order({ value, itemsArr, closeModal }) {
     const [errors, setErrors] = useState({});
     const [isSuccess, setIsSuccess] = useState(false);
 
+    // --- Логика форматирования номера ---
+    const formatPhoneNumber = (input) => {
+        // Оставляем только цифры
+        const digits = input.replace(/\D/g, '');
+
+        if (!digits) return '';
+
+        // Ограничиваем длину, чтобы не ломать верстку (макс 15 цифр)
+        const limitedDigits = digits.substring(0, 15);
+        let formatted = '';
+
+        // Формат для 375 (Беларусь международный): 375 (XX) XXX-XX-XX
+        if (limitedDigits.startsWith('375')) {
+            formatted = '375';
+            if (limitedDigits.length > 3) formatted += ' (' + limitedDigits.substring(3, 5);
+            if (limitedDigits.length > 5) formatted += ') ' + limitedDigits.substring(5, 8);
+            if (limitedDigits.length > 8) formatted += '-' + limitedDigits.substring(8, 10);
+            if (limitedDigits.length > 10) formatted += '-' + limitedDigits.substring(10, 12);
+        }
+        // Формат для 80 (Беларусь внутренний): 80 (XX) XXX-XX-XX
+        else if (limitedDigits.startsWith('80')) {
+            formatted = '80';
+            if (limitedDigits.length > 2) formatted += ' (' + limitedDigits.substring(2, 4);
+            if (limitedDigits.length > 4) formatted += ') ' + limitedDigits.substring(4, 7);
+            if (limitedDigits.length > 7) formatted += '-' + limitedDigits.substring(7, 9);
+            if (limitedDigits.length > 9) formatted += '-' + limitedDigits.substring(9, 11);
+        }
+        // Для остальных номеров просто возвращаем цифры (или можно добавить +7 и т.д.)
+        else {
+            return limitedDigits;
+        }
+
+        return formatted;
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'phone') {
+            // При вводе телефона применяем форматирование
+            // Если пользователь стирает символы, мы пересчитываем маску на основе оставшихся цифр
+            const formatted = formatPhoneNumber(value);
+            setFormData(prev => ({ ...prev, [name]: formatted }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+
         // Очищаем ошибку при изменении поля
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
+    };
+
+    const validatePhoneNumber = (phone) => {
+        // Удаляем все нецифровые символы для проверки длины
+        const digits = phone.replace(/\D/g, '');
+
+        // Проверка для конкретных префиксов
+        if (digits.startsWith('375')) return digits.length === 12; // 375 29 111 22 33
+        if (digits.startsWith('80')) return digits.length === 11;  // 80 29 111 22 33
+
+        // Общая проверка для остальных
+        return digits.length >= 10 && digits.length <= 15;
     };
 
     const validateStep = (currentStep) => {
@@ -33,7 +89,13 @@ function Order({ value, itemsArr, closeModal }) {
 
         if (currentStep === 1) {
             if (!formData.name.trim()) newErrors.name = 'Пожалуйста, введите ФИО';
-            if (!formData.phone.trim()) newErrors.phone = 'Пожалуйста, введите телефон';
+
+            // --- Проверка телефона ---
+            if (!formData.phone.trim()) {
+                newErrors.phone = 'Пожалуйста, введите телефон';
+            } else if (!validatePhoneNumber(formData.phone)) {
+                newErrors.phone = 'Некорректный номер телефона';
+            }
         }
 
         if (currentStep === 2 && formData.delivery === 'Доставка' && !formData.address.trim()) {
@@ -77,19 +139,17 @@ function Order({ value, itemsArr, closeModal }) {
                 price: itemsArr.totalValue,
                 orderStage: "start",
             };
+            console.log(orderData.itemsJsonb)
             const data = await postOrder(orderData);
             if (data) {
                 setIsSuccess(true);
                 updateBusket(itemsArr.basketId, { itemsJsonb: [] });
                 localStorage.removeItem(BASKET_LOCAL_STORAGE_KEY);
-                window.location.reload();
-                // localStorage.removeItem("basket");
                 // Отправка в Telegram
-                // await sendTelegramNotification(formData, value);
+                await sendTelegramNotification(orderData, JSON.parse(orderData.itemsJsonb));
                 // Отправка на почту
                 // await sendEmailNotification(formData, value);
-
-
+                window.location.reload();
             }
         } catch (error) {
             console.error('Ошибка при оформлении заказа:', error);
@@ -186,15 +246,14 @@ function Order({ value, itemsArr, closeModal }) {
     }
 
     async function sendTelegramNotification(orderData, items) {
-        const botToken = '7446774548:AAH86Pusw8ggo7zlVKtW5fcj2FrQ4kmasQM';
-        const chatId = '1035534494';
-
+        const botToken = '8268778878:AAGJFFLFOjoyFtsAcKw1LRI7FM6ZcCi6NFs';
+        const chatId = '-4990488355';
         const itemsText = items.map(item => {
-            return `- ${item.name} (${item.quantity} шт.): ${item.price * item.quantity} руб`;
+            return `- ${item.name} (${item.count} шт.): ${item.price * item.count} руб`;
         }).join('\n');
 
         const total = items.reduce((sum, item) => {
-            return sum + (Number(item.price) * item.quantity);
+            return sum + (Number(item.price) * item.count);
         }, 0);
 
         const message = `
@@ -202,8 +261,7 @@ function Order({ value, itemsArr, closeModal }) {
             
             👤 *Клиент*: ${orderData.name}
             📞 *Телефон*: ${orderData.phone}
-            📍 *Адрес*: ${orderData.delivery === 'Самовывоз' ? 'Самовывоз' : orderData.address}
-            🚚 *Способ доставки*: ${orderData.delivery}
+            📍 *Адрес*: ${orderData.adress}
             💳 *Способ оплаты*: ${orderData.payment}
             📝 *Комментарий*: ${orderData.comment || 'нет'}
 
@@ -226,7 +284,7 @@ function Order({ value, itemsArr, closeModal }) {
                 })
             });
         } catch (error) {
-            console.error('Ошибка отправки в Telegram:', error);
+            console.log('Ошибка отправки в Telegram:', error);
         }
     }
 
@@ -303,7 +361,7 @@ function Order({ value, itemsArr, closeModal }) {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 className={`form-input common_reg ${errors.phone ? 'error' : ''}`}
-                                placeholder="+375 (__) ___ __ __"
+                                placeholder="375 (__) ___ __ __"
                                 required
                             />
                             {errors.phone && <span className="error-message">{errors.phone}</span>}
@@ -379,8 +437,8 @@ function Order({ value, itemsArr, closeModal }) {
                                 onChange={handleChange}
                                 className="form-select common_reg"
                             >
-                                <option value="Картой common_reg">Картой онлайн</option>
-                                <option value="Наличными common_reg">Наличными при получении</option>
+                                <option value="Картой">Картой онлайн</option>
+                                <option value="Наличными">Наличными при получении</option>
                             </select>
                         </div>
 

@@ -9,6 +9,7 @@ import ItemGroupTable from "./itemGroupTable/ItemGroupTable";
 import QuestionTable from "./qwestionTable/QuestionTable";
 import SliderTable from "./sliderTable/SliderTable";
 import ReviewTable from './reviewTable/ReviewTable';
+import OrderTable from './orderTable/OrderTable';
 
 function MainAdminPage() {
     // Инициализируем состояния с значениями из localStorage
@@ -63,21 +64,18 @@ function MainAdminPage() {
                     <h2>Сводка</h2>
                     <p>Здесь будет общая статистика и аналитика магазина</p>
                 </div>;
-            case 'start':
-                return <div className="placeholder-component">
-                    <h2>Начатые заказы</h2>
-                    <p>Список заказов, которые только начаты</p>
-                </div>;
-            case 'inProcess':
-                return <div className="placeholder-component">
-                    <h2>Заказы в процессе</h2>
-                    <p>Список заказов в процессе выполнения</p>
-                </div>;
-            case 'finished':
-                return <div className="placeholder-component">
-                    <h2>Завершенные заказы</h2>
-                    <p>Список завершенных заказов</p>
-                </div>;
+            case 'orders':
+                return <OrderTable />
+            // case 'inProcess':
+            //     return <div className="placeholder-component">
+            //         <h2>Заказы в процессе</h2>
+            //         <p>Список заказов в процессе выполнения</p>
+            //     </div>;
+            // case 'finished':
+            //     return <div className="placeholder-component">
+            //         <h2>Завершенные заказы</h2>
+            //         <p>Список завершенных заказов</p>
+            //     </div>;
             case 'reviews':
                 return <ReviewTable />
             default:

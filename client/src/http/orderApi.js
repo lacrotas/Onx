@@ -61,6 +61,12 @@ export const updateOrder = async (id, item) => {
     return data;
 }
 export const fetchAllOrders = async () => {
-    const { data } = await $host.get('api/orderRouter/getAll');
+    const token = localStorage.getItem('token');
+
+    const { data } = await $host.get('api/orderRouter/getAll', {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
     return data;
 }
