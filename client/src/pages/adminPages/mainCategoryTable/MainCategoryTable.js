@@ -131,45 +131,33 @@ const MainCategoryTable = () => {
     e.preventDefault();
     const myFormData = new FormData();
 
-    try {
-      if (editingCategory) {
-        myFormData.append("name", formData.name);
-        myFormData.append("image", formData.imageFile);
+    if (editingCategory) {
+      myFormData.append("name", formData.name);
+      myFormData.append("image", formData.imageFile);
 
-        await updateMainKategory(editingCategory.id, myFormData);
-      } else {
-        myFormData.append("name", formData.name);
-        myFormData.append("image", formData.imageFile);
+      await updateMainKategory(editingCategory.id, myFormData);
+    } else {
+      myFormData.append("name", formData.name);
+      myFormData.append("image", formData.imageFile);
 
-        await postMainKategory(myFormData);
-      }
-      alert('Данные успешно добавлены');
-      closeModal();
-      window.location.reload();
-
-    } catch (error) {
-      alert('Ошибка добавления сделай скрин и отправь мне:', error);
+      await postMainKategory(myFormData);
     }
+    closeModal();
+    window.location.reload();
   };
   const handleSubmitWithoutClose = async (e) => {
     const myFormData = new FormData();
 
-    try {
-      if (editingCategory) {
-        myFormData.append("name", formData.name);
-        myFormData.append("image", formData.imageFile);
+    if (editingCategory) {
+      myFormData.append("name", formData.name);
+      myFormData.append("image", formData.imageFile);
 
-        await updateMainKategory(editingCategory.id, myFormData);
-      } else {
-        myFormData.append("name", formData.name);
-        myFormData.append("image", formData.imageFile);
+      await updateMainKategory(editingCategory.id, myFormData);
+    } else {
+      myFormData.append("name", formData.name);
+      myFormData.append("image", formData.imageFile);
 
-        await postMainKategory(myFormData);
-      }
-      alert("дынные успешно добавлены");
-
-    } catch (error) {
-      alert('Произошла ошибка сделай скрин и скинь мне:', error);
+      await postMainKategory(myFormData);
     }
   };
 

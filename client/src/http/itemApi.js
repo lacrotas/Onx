@@ -9,8 +9,17 @@ export const postItem = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
+        alert('Товар успешно добавлен');
         return data;
     } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -55,26 +64,52 @@ export const deleteItemById = async (id) => {
     if (!id) {
         return null;
     } else {
-        const token = localStorage.getItem('token');
-        const { data } = await $host.delete('api/itemRouter/delete/' + id, {
-            headers: {
-                Authorization: `Bearer ${token}`
+        try {
+            const token = localStorage.getItem('token');
+            const { data } = await $host.delete('api/itemRouter/delete/' + id, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             }
+            )
+            alert('Товар успешно удален');
+            return data;
+        } catch (e) {
+            if (e.response && e.response.status === 413) {
+                alert("Ошибка: Слишком большой размер загружаемых файлов!");
+
+            } else if (e.response && e.response.status === 401) {
+                alert("Вы не авторизованны");
+            } else {
+                alert("Произошла ошибка при сохранении.");
+            }
+            return false;
         }
-        )
-        return data;
     }
 }
 export const updateItemById = async (id, item) => {
     if (!id) {
         return null;
     } else {
-        const token = localStorage.getItem('token');
-        const { data } = await $host.put('api/itemRouter/update/' + id, item, {
-            headers: {
-                Authorization: `Bearer ${token}`
+        try {
+            const token = localStorage.getItem('token');
+            const { data } = await $host.put('api/itemRouter/update/' + id, item, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            alert('Товар успешно обновлен');
+            return data;
+        } catch (e) {
+            if (e.response && e.response.status === 413) {
+                alert("Ошибка: Слишком большой размер загружаемых файлов!");
+
+            } else if (e.response && e.response.status === 401) {
+                alert("Вы не авторизованны");
+            } else {
+                alert("Произошла ошибка при сохранении.");
             }
-        })
-        return data;
+            return false;
+        }
     }
 }

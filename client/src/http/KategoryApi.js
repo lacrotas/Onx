@@ -31,8 +31,16 @@ export const postMainKategory = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
+        alert("Данные успешно добавлены");
         return data;
-    } catch {
+    } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -49,22 +57,42 @@ export const deleteMainKategoryById = async (id) => {
             }
         }
         )
+        alert("Данные успешно удалены");
         return data;
-    } catch {
-        return false
+    } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
+        return false;
     }
 }
 export const updateMainKategory = async (id, item) => {
     if (checkId(id)) {
         return null;
     }
-    const token = localStorage.getItem('token');
-    const { data } = await $host.put('api/mainKategoryRouter/update/' + id, item, {
-        headers: {
-            Authorization: `Bearer ${token}`
+    try {
+        const token = localStorage.getItem('token');
+        const { data } = await $host.put('api/mainKategoryRouter/update/' + id, item, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+        alert("Данные успешно удалены");
+        return data;
+    } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
         }
-    })
-    return data;
+        return false;
+    }
 }
 export const fetchMainKategoryById = async (id) => {
     if (checkId(id)) {
@@ -109,8 +137,16 @@ export const deleteKategoryById = async (id) => {
                 Authorization: `Bearer ${token}`
             }
         })
+        alert("Категория успешно удалена");
         return data;
     } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -125,8 +161,16 @@ export const deleteKategoryByMainKategoryId = async (id) => {
                 Authorization: `Bearer ${token}`
             }
         })
+        alert("Категория успешно удалена");
         return data;
     } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -138,8 +182,16 @@ export const postKategory = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
+        alert("Добавить категорию");
         return data;
-    } catch {
+    } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -154,8 +206,16 @@ export const updateKategory = async (id, item) => {
                 Authorization: `Bearer ${token}`
             }
         })
+        alert("Обновление категории успешно");
         return data;
     } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -170,8 +230,16 @@ export const deleteAllKategoryByMainKategoryId = async (id) => {
                 Authorization: `Bearer ${token}`
             }
         })
+        alert("Удаление категорий успешно");
         return data;
     } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }

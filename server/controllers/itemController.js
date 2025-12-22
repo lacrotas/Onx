@@ -5,30 +5,51 @@ const { mediaProcessor } = require('../middleware/MediaProcessor');
 
 async function filterAndUpdateImages(currentImagesFromDB, imageStringsFromFrontend, newProcessedImages) {
     try {
-        // 1. Нормализация входных данных (гарантируем массивы)
+        // 1. Нормализация входных данных
         const currentImages = Array.isArray(currentImagesFromDB) ? currentImagesFromDB : [];
-
-        let frontendImages = [];
+        
+        let frontendOrderMap = [];
         if (Array.isArray(imageStringsFromFrontend)) {
-            frontendImages = imageStringsFromFrontend;
+            frontendOrderMap = imageStringsFromFrontend;
         } else if (imageStringsFromFrontend) {
-            frontendImages = [imageStringsFromFrontend];
+            frontendOrderMap = [imageStringsFromFrontend];
         }
 
-        // 2. Определяем, какие старые файлы нужно оставить
-        // Логика: Проходим по старым файлам из БД. Если имя файла содержится в каком-либо URL с фронта, значит файл остался.
-        const imagesToKeep = currentImages.filter(dbImageName => {
-            return frontendImages.some(frontendUrl => {
-                // frontendUrl может быть "http://.../image.jpg" или "blob:..."
-                // Если это blob, то это новая картинка, она нас тут не интересует
-                if (frontendUrl.startsWith('blob:')) return false;
+        // Копия массива новых картинок, чтобы мы могли "вынимать" их по одной
+        // Важно: newProcessedImages идут в том же порядке, в котором файлы приходили в req.files.images
+        // Фронтенд отправляет файлы в том же порядке, что и blob-строки в imageStrings
+        let availableNewImages = [...newProcessedImages];
 
-                // Проверяем, содержится ли имя файла из БД в URL с фронта
-                return frontendUrl.includes(dbImageName);
-            });
-        });
+        // 2. Собираем итоговый массив в том порядке, который прислал фронтенд
+        const finalImages = [];
+        const imagesToKeep = []; // Для отслеживания, что не удалять
+
+        for (const itemString of frontendOrderMap) {
+            if (itemString.startsWith('blob:')) {
+                // Это новая картинка. Берем следующую из обработанных
+                const newImageName = availableNewImages.shift();
+                if (newImageName) {
+                    finalImages.push(newImageName);
+                }
+            } else {
+                // Это старая картинка (URL или имя файла)
+                // Находим её имя в currentImages
+                const foundOldImage = currentImages.find(dbImg => itemString.includes(dbImg));
+                
+                if (foundOldImage) {
+                    finalImages.push(foundOldImage);
+                    imagesToKeep.push(foundOldImage);
+                }
+            }
+        }
+
+        // Если вдруг остались "бесхозные" новые картинки (чего быть не должно при правильном фронте), добавим их в конец
+        if (availableNewImages.length > 0) {
+            finalImages.push(...availableNewImages);
+        }
 
         // 3. Определяем, какие файлы нужно удалить (те, что были в БД, но не попали в imagesToKeep)
+        // Используем Set для уникальности, хотя filter тоже сработает
         const imagesToDelete = currentImages.filter(dbImageName => !imagesToKeep.includes(dbImageName));
 
         // 4. Удаляем лишние файлы
@@ -36,9 +57,6 @@ async function filterAndUpdateImages(currentImagesFromDB, imageStringsFromFronte
             console.log('Deleting old images from server:', imagesToDelete);
             await mediaProcessor.deleteOldFiles(imagesToDelete, 'images');
         }
-
-        // 5. Формируем итоговый массив: (Оставшиеся старые) + (Новые обработанные)
-        const finalImages = [...imagesToKeep, ...newProcessedImages];
 
         return finalImages;
     } catch (error) {

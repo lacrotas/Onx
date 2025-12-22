@@ -144,49 +144,39 @@ const FilterTable = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const myFormData = new FormData();
-        try {
-            myFormData.append("name", formData.name);
-            myFormData.append("buttonType", formData.buttonType);
-            myFormData.append("kategoryId", formData.kategoryId);
-            myFormData.append("addition", formData.addition);
+        myFormData.append("name", formData.name);
+        myFormData.append("buttonType", formData.buttonType);
+        myFormData.append("kategoryId", formData.kategoryId);
+        myFormData.append("addition", formData.addition);
 
-            if (editingFilter) {
-                await updateFilter(editingFilter.id, myFormData);
-            } else {
-                await postFilterForKategory(myFormData);
-            }
-            loadFilters();
-            alert("дынные успешно добавлены");
-            closeModal();
-        } catch (error) {
-            alert('Произошла ошибка сделай скрин и скинь мне:', error);
+        if (editingFilter) {
+            await updateFilter(editingFilter.id, myFormData);
+        } else {
+            await postFilterForKategory(myFormData);
         }
+        loadFilters();
+        closeModal();
+
     };
 
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
         const myFormData = new FormData();
-        try {
-            myFormData.append("name", formData.name);
-            myFormData.append("buttonType", formData.buttonType);
-            myFormData.append("kategoryId", formData.kategoryId);
-            myFormData.append("addition", formData.addition);
+        myFormData.append("name", formData.name);
+        myFormData.append("buttonType", formData.buttonType);
+        myFormData.append("kategoryId", formData.kategoryId);
+        myFormData.append("addition", formData.addition);
 
-            if (editingFilter) {
-                await updateFilter(editingFilter.id, myFormData);
-            } else {
-                await postFilterForKategory(myFormData);
-            }
-            alert('Данные успешно добавлены');
-            loadFilters();
-
-        } catch (error) {
-            alert('Произошла ошибка сделай скрин и скинь мне:', error);
+        if (editingFilter) {
+            await updateFilter(editingFilter.id, myFormData);
+        } else {
+            await postFilterForKategory(myFormData);
         }
-    };
+        loadFilters();
+    }
 
     const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this filter?')) {
+        if (window.confirm('Вы действительно хотите удалить данный  фильтр?')) {
             deleteFilter(id);
             window.location.reload();
         }

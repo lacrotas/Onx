@@ -162,45 +162,33 @@ const CategoryTable = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const myFormData = new FormData();
-        try {
-            if (editingCategory) {
-                myFormData.append("name", formData.name);
-                myFormData.append("image", formData.imageFile);
-                await updateKategory(editingCategory.id, myFormData);
+        if (editingCategory) {
+            myFormData.append("name", formData.name);
+            myFormData.append("image", formData.imageFile);
+            await updateKategory(editingCategory.id, myFormData);
 
-            } else {
-                myFormData.append("name", formData.name);
-                myFormData.append("image", formData.imageFile);
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
-                await postKategory(myFormData);
-            }
-            alert("Данные успешно добавлены");
-            closeModal();
-            window.location.reload();
-
-        } catch (error) {
-            alert('Ошибка добавления сделай скрин и отправь мне:', error);
+        } else {
+            myFormData.append("name", formData.name);
+            myFormData.append("image", formData.imageFile);
+            myFormData.append("mainKategoryId", formData.mainKategoryId);
+            await postKategory(myFormData);
         }
+        closeModal();
+        window.location.reload();
     };
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
         const myFormData = new FormData();
-        try {
-            if (editingCategory) {
-                myFormData.append("name", formData.name);
-                myFormData.append("image", formData.imageFile);
-                await updateKategory(editingCategory.id, myFormData);
+        if (editingCategory) {
+            myFormData.append("name", formData.name);
+            myFormData.append("image", formData.imageFile);
+            await updateKategory(editingCategory.id, myFormData);
 
-            } else {
-                myFormData.append("name", formData.name);
-                myFormData.append("image", formData.imageFile);
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
-                await postKategory(myFormData);
-            }
-            alert("дынные успешно добавлены");
-
-        } catch (error) {
-            alert('Произошла ошибка сделай скрин и скинь мне:', error);
+        } else {
+            myFormData.append("name", formData.name);
+            myFormData.append("image", formData.imageFile);
+            myFormData.append("mainKategoryId", formData.mainKategoryId);
+            await postKategory(myFormData);
         }
     };
 

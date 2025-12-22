@@ -39,8 +39,17 @@ export const postFilterForKategory = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
+        alert("Фильтр успешно добавлен");
         return data;
     } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -56,8 +65,17 @@ export const updateFilter = async (id, item) => {
                 Authorization: `Bearer ${token}`
             }
         })
+        alert("Фильтр успешно обновлен");
         return data;
     } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
         return false;
     }
 }
@@ -66,14 +84,24 @@ export const deleteFilter = async (id) => {
     if (!id) {
         return null;
     } else {
-        const token = localStorage.getItem('token');
-        const { data } = await $host.delete('api/attributeRouter/delete/' + id, {
-            headers: {
-                Authorization: `Bearer ${token}`
+        try {
+            const token = localStorage.getItem('token');
+            const { data } = await $host.delete('api/attributeRouter/delete/' + id, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             }
+            )
+            alert("Фильтр успешно удален");
+            return data;
+        } catch (e) {
+            if (e.response && e.response.status === 401) {
+                alert("Вы не авторизованны");
+            } else {
+                alert("Произошла ошибка при сохранении.");
+            }
+            return false;
         }
-        )
-        return data;
     }
 }
 
@@ -107,13 +135,25 @@ export const deleteAttribute = async (id) => {
     if (!id) {
         return null;
     } else {
-        const token = localStorage.getItem('token');
-        const { data } = await $host.delete('api/attributeRouter/delete/' + id, {
-            headers: {
-                Authorization: `Bearer ${token}`
+        try {
+            const token = localStorage.getItem('token');
+            const { data } = await $host.delete('api/attributeRouter/delete/' + id, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             }
+            )
+            alert("Удаление атрибута успешно");
+            return data;
+        } catch (e) {
+            if (e.response && e.response.status === 413) {
+                alert("Ошибка: Слишком большой размер загружаемых файлов!");
+            } else if (e.response && e.response.status === 401) {
+                alert("Вы не авторизованны");
+            } else {
+                alert("Произошла ошибка при сохранении.");
+            }
+            return false;
         }
-        )
-        return data;
     }
 }

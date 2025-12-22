@@ -10,15 +10,17 @@ const ItemTable = () => {
     const [items, setItems] = useState([]);
     const [filteredItems, setFilteredItems] = useState([]);
     const [mainCategories, setMainCategories] = useState([]);
-    const [allCategories, setAllCategories] = useState([]); // все категории
-    const [categoriesByMain, setCategoriesByMain] = useState([]); // категории по выбранной главной категории
+    const [allCategories, setAllCategories] = useState([]);
+    const [categoriesByMain, setCategoriesByMain] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // 1. Добавляем состояние для сортировки
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+
+    // ИЗМЕНЕНИЕ 1: Упростили структуру formData. Убрали imageFiles и existingImages.
+    // images теперь будет массивом объектов { url: string, file: File | null }
     const [formData, setFormData] = useState({
         name: '',
         mainKategoryId: '',
@@ -27,9 +29,7 @@ const ItemTable = () => {
         description: '',
         video: null,
         videoUrl: '',
-        images: [],
-        imageFiles: [],
-        existingImages: [],
+        images: [], // Unified array
         isExist: true,
         isShowed: true,
         specifications: {}
@@ -38,42 +38,33 @@ const ItemTable = () => {
     const imageInputRef = useRef(null);
     const videoInputRef = useRef(null);
 
-    // Load items, main categories, and categories on component mount
     useEffect(() => {
         loadItems();
         loadMainCategories();
         loadAllCategories();
     }, []);
 
-    // 2. Обновляем useEffect для фильтрации И сортировки
     useEffect(() => {
-        // Сначала фильтруем
         let result = items.filter(item =>
             item.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-        // Затем сортируем
         if (sortConfig.key) {
             result.sort((a, b) => {
                 let aValue = a[sortConfig.key];
                 let bValue = b[sortConfig.key];
 
-                // Специальная логика для разных типов полей
                 if (sortConfig.key === 'mainKategoryId') {
-                    // Сортируем по названию главной категории
                     aValue = getMainCategoryName(a.mainKategoryId);
                     bValue = getMainCategoryName(b.mainKategoryId);
                 } else if (sortConfig.key === 'kategoryId') {
-                    // Сортируем по названию категории
                     aValue = getCategoryName(a.kategoryId);
                     bValue = getCategoryName(b.kategoryId);
                 } else if (sortConfig.key === 'price') {
-                    // Преобразуем цену в число для корректного сравнения
                     aValue = parseFloat(a.price) || 0;
                     bValue = parseFloat(b.price) || 0;
                 }
 
-                // Обработка null/undefined
                 if (aValue === null || aValue === undefined) aValue = '';
                 if (bValue === null || bValue === undefined) bValue = '';
 
@@ -88,13 +79,12 @@ const ItemTable = () => {
         }
 
         setFilteredItems(result);
-    }, [searchTerm, items, sortConfig, mainCategories, allCategories]); // Добавили зависимости
+    }, [searchTerm, items, sortConfig, mainCategories, allCategories]);
 
     const loadItems = async () => {
         try {
             const data = await fetchAllItem();
             setItems(data);
-            // setFilteredItems(data); // Убрали, так как useEffect сработает
         } catch (error) {
             console.error('Error loading items:', error);
         }
@@ -118,7 +108,6 @@ const ItemTable = () => {
         }
     };
 
-    // ... (остальные функции загрузки и модального окна без изменений) ...
     const loadCategoriesByMainCategory = async (mainCategoryId) => {
         try {
             const data = await fetchAllKategoryByMainKategoryId(mainCategoryId);
@@ -168,7 +157,6 @@ const ItemTable = () => {
         }
     };
 
-    // 3. Функция запроса сортировки
     const requestSort = (key) => {
         let direction = 'ascending';
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -177,7 +165,6 @@ const ItemTable = () => {
         setSortConfig({ key, direction });
     };
 
-    // Вспомогательная функция для индикатора
     const getSortIndicator = (key) => {
         if (sortConfig.key !== key) return null;
         return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
@@ -199,9 +186,7 @@ const ItemTable = () => {
             description: '',
             video: null,
             videoUrl: '',
-            images: [],
-            imageFiles: [],
-            existingImages: [],
+            images: [], // Пустой массив для новых
             isExist: true,
             isShowed: true,
             specifications: {}
@@ -216,7 +201,11 @@ const ItemTable = () => {
     const openEditModal = (item) => {
         setEditingItem(item);
 
-        const itemImages = Array.isArray(item.images) ? item.images : [];
+        // ИЗМЕНЕНИЕ 2: Преобразуем существующие картинки в объекты
+        const itemImages = Array.isArray(item.images)
+            ? item.images.map(img => ({ url: img, file: null }))
+            : [];
+
         const itemVideo = item.video || '';
         const itemSpecifications = item.specificationsJSONB || {};
 
@@ -228,9 +217,7 @@ const ItemTable = () => {
             description: item.description || '',
             video: null,
             videoUrl: itemVideo,
-            images: itemImages,
-            imageFiles: [],
-            existingImages: itemImages,
+            images: itemImages, // Используем унифицированный массив
             isExist: item.isExist ?? true,
             isShowed: item.isShowed ?? true,
             specifications: itemSpecifications
@@ -308,19 +295,35 @@ const ItemTable = () => {
         loadFiltersForCategory(value, currentSpecs);
     };
 
+    // ИЗМЕНЕНИЕ 3: Обновленная логика добавления картинок
     const handleImagesChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 0) {
-            const newImageFiles = [...formData.imageFiles, ...files];
-            const newImageUrls = newImageFiles.map(file => URL.createObjectURL(file));
-            const allImages = [...formData.existingImages, ...newImageUrls];
+            // Создаем объекты для новых файлов
+            const newImageObjects = files.map(file => ({
+                url: URL.createObjectURL(file),
+                file: file
+            }));
 
             setFormData(prev => ({
                 ...prev,
-                imageFiles: newImageFiles,
-                images: allImages
+                images: [...prev.images, ...newImageObjects]
             }));
         }
+    };
+
+    // ИЗМЕНЕНИЕ 4: Функция для установки главного изображения
+    const setMainImage = (index) => {
+        if (index === 0) return; // Уже главное
+
+        const newImages = [...formData.images];
+        const [selectedImage] = newImages.splice(index, 1); // Удаляем из текущей позиции
+        newImages.unshift(selectedImage); // Вставляем в начало
+
+        setFormData(prev => ({
+            ...prev,
+            images: newImages
+        }));
     };
 
     const handleVideoChange = (e) => {
@@ -343,41 +346,30 @@ const ItemTable = () => {
         videoInputRef.current?.click();
     };
 
+    // ИЗМЕНЕНИЕ 5: Упрощенное удаление (просто удаляем по индексу)
     const removeImage = (index) => {
-        const totalExistingImages = formData.existingImages.length;
+        const imageToRemove = formData.images[index];
 
-        if (index < totalExistingImages) {
-            const newExistingImages = [...formData.existingImages];
-            newExistingImages.splice(index, 1);
-
-            setFormData(prev => ({
-                ...prev,
-                existingImages: newExistingImages,
-                images: [...newExistingImages, ...prev.images.slice(totalExistingImages)]
-            }));
-        } else {
-            const fileIndex = index - totalExistingImages;
-            const newImageFiles = [...formData.imageFiles];
-            const newImages = [...formData.images];
-
-            newImageFiles.splice(fileIndex, 1);
-            newImages.splice(index, 1);
-
-            URL.revokeObjectURL(formData.images[index]);
-
-            setFormData(prev => ({
-                ...prev,
-                imageFiles: newImageFiles,
-                images: newImages
-            }));
+        // Если это blob-ссылка, освобождаем память
+        if (imageToRemove.file) {
+            URL.revokeObjectURL(imageToRemove.url);
         }
+
+        const newImages = [...formData.images];
+        newImages.splice(index, 1);
+
+        setFormData(prev => ({
+            ...prev,
+            images: newImages
+        }));
     };
 
-    const getImageSource = (image) => {
-        if (image.startsWith('blob:')) {
-            return image;
+    // ИЗМЕНЕНИЕ 6: Получение src для отображения
+    const getImageSource = (imageObj) => {
+        if (imageObj.file) {
+            return imageObj.url; // Blob URL
         }
-        return `${process.env.REACT_APP_API_URL}static/images/${image}`;
+        return `${process.env.REACT_APP_API_URL}static/images/${imageObj.url}`; // Server URL
     };
 
     const updateFilterAttributeValues = async (newSpecifications, oldSpecifications = {}) => {
@@ -412,142 +404,89 @@ const ItemTable = () => {
         }
     };
 
+    // ИЗМЕНЕНИЕ 7: Общая функция для заполнения FormData
+    const fillFormData = (myFormData) => {
+        myFormData.append("mainKategoryId", formData.mainKategoryId);
+        myFormData.append("kategoryId", formData.kategoryId);
+        myFormData.append("name", formData.name);
+
+        // Важно: проходим по массиву images в том порядке, в котором они на экране
+        formData.images.forEach(imgObj => {
+            // Отправляем имя файла (для старых) или blob-строку (для новых) в imageStrings
+            // Сервер должен использовать этот массив для определения порядка
+            myFormData.append('imageStrings', imgObj.url);
+
+            // Если это новый файл, добавляем его в массив images
+            if (imgObj.file) {
+                myFormData.append("images", imgObj.file);
+            }
+        });
+
+        myFormData.append("video", formData.video);
+        myFormData.append("price", formData.price);
+        myFormData.append("description", formData.description);
+        myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
+        myFormData.append("isExist", formData.isExist);
+        myFormData.append("isShowed", formData.isShowed);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            const myFormData = new FormData();
-            // ... (код отправки формы без изменений) ...
-            if (editingItem) {
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
-                myFormData.append("kategoryId", formData.kategoryId);
-                myFormData.append("name", formData.name);
-                formData.imageFiles.forEach(file => {
-                    myFormData.append("images", file);
-                });
-                formData.images.forEach(image => {
-                    myFormData.append('imageStrings', image);
-                });
-                myFormData.append("video", formData.video);
-                myFormData.append("price", formData.price);
-                myFormData.append("description", formData.description);
-                myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
-                myFormData.append("isExist", formData.isExist);
-                myFormData.append("isShowed", formData.isShowed);
-                await updateItemById(editingItem.id, myFormData)
-            } else {
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
-                myFormData.append("kategoryId", formData.kategoryId);
-                myFormData.append("name", formData.name);
-                formData.imageFiles.forEach(file => {
-                    myFormData.append("images", file);
-                });
-                myFormData.append("video", formData.video);
-                myFormData.append("price", formData.price);
-                myFormData.append("description", formData.description);
-                myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
-                myFormData.append("isExist", formData.isExist);
-                myFormData.append("isShowed", formData.isShowed);
-                await postItem(myFormData);
-                alert('Данные успешно добавлены');
+        const myFormData = new FormData();
+        fillFormData(myFormData); // Используем хелпер
 
-            }
-
-            await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
-            alert('Данные успешно добавлены');
-            closeModal();
-            window.location.reload();
-        } catch (error) {
-            alert('Ошибка добавления сделай скрин и отправь мне:', error);
-            if (error.response && error.response.status === 413) {
-                alert("Ошибка: Слишком большой размер загружаемых файлов!");
-            } else {
-                alert("Произошла ошибка при сохранении.");
-            }
+        if (editingItem) {
+            await updateItemById(editingItem.id, myFormData)
+        } else {
+            await postItem(myFormData);
         }
+
+        updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
+        closeModal();
+        window.location.reload();
     };
 
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
-        try {
-            const myFormData = new FormData();
-            // ... (код отправки формы без изменений) ...
-            if (editingItem) {
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
-                myFormData.append("kategoryId", formData.kategoryId);
-                myFormData.append("name", formData.name);
-                formData.imageFiles.forEach(file => {
-                    myFormData.append("images", file);
-                });
-                formData.images.forEach(image => {
-                    myFormData.append('imageStrings', image);
-                });
-                myFormData.append("video", formData.video);
-                myFormData.append("price", formData.price);
-                myFormData.append("description", formData.description);
-                myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
-                myFormData.append("isExist", formData.isExist);
-                myFormData.append("isShowed", formData.isShowed);
-                await updateItemById(editingItem.id, myFormData)
-            } else {
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
-                myFormData.append("kategoryId", formData.kategoryId);
-                myFormData.append("name", formData.name);
-                formData.imageFiles.forEach(file => {
-                    myFormData.append("images", file);
-                });
-                myFormData.append("video", formData.video);
-                myFormData.append("price", formData.price);
-                myFormData.append("description", formData.description);
-                myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
-                myFormData.append("isExist", formData.isExist);
-                myFormData.append("isShowed", formData.isShowed);
-                await postItem(myFormData);
-            }
+        const myFormData = new FormData();
+        fillFormData(myFormData); // Используем хелпер
 
-            await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
-            alert('Данные успешно добавлены');
-
-        } catch (error) {
-            alert('Ошибка добавления сделай скрин и отправь мне:', error);
-            if (error.response && error.response.status === 413) {
-                alert("Ошибка: Слишком большой размер загружаемых файлов!");
-            } else {
-                alert("Произошла ошибка при сохранении.");
-            }
+        if (editingItem) {
+            await updateItemById(editingItem.id, myFormData)
+        } else {
+            await postItem(myFormData);
         }
+
+        await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Вы дейтвительно хотите удалить данный товар?')) {
-            try {
-                const itemToDelete = items.find(item => item.id === id);
-                await deleteItemById(id);
+            const itemToDelete = items.find(item => item.id === id);
+            await deleteItemById(id);
 
-                if (itemToDelete && itemToDelete.specificationsJSONB) {
-                    const categoryItems = items.filter(item => item.id !== id && item.kategoryId === itemToDelete.kategoryId);
-                    const allFilters = await fetchAllFiltersByKategoryId(itemToDelete.kategoryId);
+            if (itemToDelete && itemToDelete.specificationsJSONB) {
+                const categoryItems = items.filter(item => item.id !== id && item.kategoryId === itemToDelete.kategoryId);
+                const allFilters = await fetchAllFiltersByKategoryId(itemToDelete.kategoryId);
 
-                    for (const filter of allFilters) {
-                        const allValues = new Set();
-                        categoryItems.forEach(item => {
-                            if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
-                                allValues.add(item.specificationsJSONB[filter.name]);
-                            }
-                        });
-                        const attributeValues = Array.from(allValues);
-                        const myFormData = new FormData();
-                        myFormData.append('name', filter.name);
-                        myFormData.append('buttonType', filter.buttonType);
-                        myFormData.append('kategoryId', filter.kategoryId);
-                        myFormData.append('addition', filter.addition || '');
-                        myFormData.append('attributeValues', JSON.stringify(attributeValues));
-                        await updateFilter(filter.id, myFormData);
-                    }
+                for (const filter of allFilters) {
+                    const allValues = new Set();
+                    categoryItems.forEach(item => {
+                        if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
+                            allValues.add(item.specificationsJSONB[filter.name]);
+                        }
+                    });
+                    const attributeValues = Array.from(allValues);
+                    const myFormData = new FormData();
+                    myFormData.append('name', filter.name);
+                    myFormData.append('buttonType', filter.buttonType);
+                    myFormData.append('kategoryId', filter.kategoryId);
+                    myFormData.append('addition', filter.addition || '');
+                    myFormData.append('attributeValues', JSON.stringify(attributeValues));
+                    await updateFilter(filter.id, myFormData);
                 }
-                setItems(items.filter(item => item.id !== id));
-            } catch (error) {
-                console.error('Error deleting item:', error);
             }
+            setItems(items.filter(item => item.id !== id));
         }
     };
 
@@ -582,7 +521,6 @@ const ItemTable = () => {
             <div className="table-container">
                 <table className="categories-table">
                     <thead>
-                        {/* 4. Добавляем onClick и стили курсора */}
                         <tr>
                             <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
                                 ID{getSortIndicator('id')}
@@ -593,7 +531,7 @@ const ItemTable = () => {
                             <th onClick={() => requestSort('kategoryId')} style={{ cursor: 'pointer' }}>
                                 Категория{getSortIndicator('kategoryId')}
                             </th>
-                            <th>Фото</th> {/* Фото обычно не сортируют */}
+                            <th>Фото</th>
                             <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
                                 Название{getSortIndicator('name')}
                             </th>
@@ -617,7 +555,9 @@ const ItemTable = () => {
                                 <td>{getCategoryName(item.kategoryId)}</td>
                                 <td>
                                     <div className="image-preview">
-                                        <img src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`} alt="Item" className="preview-image" />
+                                        {item.images && item.images.length > 0 && (
+                                            <img src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`} alt="Item" className="preview-image" />
+                                        )}
                                     </div>
                                 </td>
                                 <td className='td_name'>{item.name}</td>
@@ -649,7 +589,6 @@ const ItemTable = () => {
                     <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
                         <h2>{editingItem ? 'Редактирования' : 'Добавление'}</h2>
                         <form onSubmit={handleSubmit} className="item-form">
-                            {/* ... (форма осталась без изменений) ... */}
                             <div className="form-row">
                                 <div className="form-group">
                                     <label htmlFor="name">Название:</label>
@@ -758,31 +697,57 @@ const ItemTable = () => {
                                     theme="snow"
                                     value={formData.description}
                                     onChange={handleDescriptionChange}
-                                    className="form-quill" 
+                                    className="form-quill"
                                     modules={{
                                         toolbar: [
                                             [{ 'header': [1, 2, false] }],
                                             ['bold', 'italic', 'underline', 'strike'],
                                             [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                                            ['clean'] // Кнопка очистки форматирования
+                                            ['clean']
                                         ],
                                     }}
                                 />
                             </div>
 
                             <div className="form-group full-width">
-                                <label>Картинки:</label>
+                                <label>Картинки (Нажмите на картинку, чтобы сделать её главной):</label>
                                 <div className="images-container">
-                                    {formData.images.map((image, index) => (
-                                        <div key={index} className="image-item">
+                                    {formData.images.map((imageObj, index) => (
+                                        <div
+                                            key={index}
+                                            className="image-item"
+                                            // ИЗМЕНЕНИЕ 8: Стили для главной картинки и обработчик клика
+                                            style={{
+                                                border: index === 0 ? '3px solid #4CAF50' : '1px solid #ddd',
+                                                cursor: 'pointer',
+                                                position: 'relative'
+                                            }}
+                                            onClick={() => setMainImage(index)}
+                                            title={index === 0 ? "Главное изображение" : "Нажмите, чтобы сделать главным"}
+                                        >
+                                            {index === 0 && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    background: '#4CAF50',
+                                                    color: 'white',
+                                                    padding: '2px 5px',
+                                                    fontSize: '10px',
+                                                    zIndex: 10
+                                                }}>Главное</div>
+                                            )}
                                             <img
-                                                src={getImageSource(image)}
+                                                src={getImageSource(imageObj)}
                                                 alt={`Preview ${index}`}
                                                 className="uploaded-image-large"
                                             />
                                             <button
                                                 type="button"
-                                                onClick={() => removeImage(index)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Чтобы не срабатывал выбор главного при удалении
+                                                    removeImage(index);
+                                                }}
                                                 className="remove-image-button"
                                             >
                                                 ×
