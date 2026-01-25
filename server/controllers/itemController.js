@@ -334,7 +334,7 @@ class itemController {
                     price,
                     isExist,
                     isShowed,
-                    description,
+                    description: description.replace(/<p><br><\/p>/g, ''),
                     specificationsJSONB: specifications,
                     video: newVideo,
                     rating,

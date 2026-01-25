@@ -6,7 +6,7 @@ import { fetchKategoryById, fetchMainKategoryById } from "../../../http/Kategory
 import "./ItemPageKategory.scss";
 import Header from '../../../components/header/Header';
 import Footer from '../../../components/footer/Footer';
-import { ITEM_PREVIEW_ROUTE, BUSKET_ROUTE, ITEM_MAIN_ROUTE } from "../../appRouter/Const"; // Добавил BUSKET_ROUTE
+import { ITEM_PREVIEW_ROUTE, BUSKET_ROUTE, ITEM_MAIN_ROUTE } from "../../appRouter/Const"; 
 import { NavLink } from "react-router-dom";
 import { useHistory } from 'react-router-dom';
 import { FaSort } from "react-icons/fa";
@@ -593,7 +593,7 @@ const ItemPageKategory = () => {
                                                             pathname: `${ITEM_PREVIEW_ROUTE}/${item.id}`,
                                                             state: { path: [item.id] }
                                                         }}
-                                                        onClick={() => handleClick([item.id])}
+                                                        // onClick={() => handleClick([item.id])}
                                                     >
                                                         <div className="item-card">
                                                             <div className="item-image">

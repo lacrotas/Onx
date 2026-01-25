@@ -281,6 +281,7 @@ const ItemTable = () => {
             mainKategoryId: value,
             kategoryId: ''
         }));
+        loadCategoriesByMainCategory(value);
     };
 
     const handleCategoryChange = (e) => {

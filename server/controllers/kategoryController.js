@@ -78,7 +78,7 @@ class kategoryController {
         try {
             const { id } = req.params;
             const { name } = req.body;
-            const { image } = req.files;
+
             const kategory = await Kategory.findOne(
                 { where: { id } }
             )
