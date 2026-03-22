@@ -1,86 +1,137 @@
 .cat-card {
     position: relative;
-    height: 400px; 
+    height: 400px;
     border-radius: 20px;
     overflow: hidden;
     cursor: pointer;
     background: #000;
-    display: block; 
+    display: block;
     text-decoration: none;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 
-
-    @media (min-width: 768px) {
-        &.span-2 { grid-column: span 2; }
-    }
-    
-    @media (min-width: 1024px) {
-        &.span-3 { grid-column: span 3; }
-    }
-    
-    @media (min-width: 1360px) {
-        &.span-4 { grid-column: span 4; }
-    }
+    /* По умолчанию все занимают 1 колонку */
+    grid-column: span 1;
 
     .cat-img {
-        width: 100%; 
+        width: 100%;
         height: 100%;
-        object-fit: cover; 
+        object-fit: cover;
         opacity: 0.85;
         transition: transform 0.5s ease, opacity 0.5s ease;
     }
 
     &:hover .cat-img {
         transform: scale(1.08);
-        opacity: 0.6; 
+        opacity: 0.6;
     }
 
-    &:hover .arrow { 
-        transform: translateX(8px); 
+    &:hover .arrow {
+        transform: translateX(8px);
     }
 
     .cat-overlay {
         position: absolute;
-        bottom: 0; 
-        left: 0; 
+        bottom: 0;
+        left: 0;
         width: 100%;
         padding: 30px;
         box-sizing: border-box;
         color: white;
-        background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 60%, transparent);
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.4) 60%, transparent);
     }
 
-    .cat-title { 
-        margin-bottom: 6px; 
+    .cat-title {
+        margin-bottom: 6px;
         display: -webkit-box;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    
-    .cat-subtitle { 
-        opacity: 0.8; 
-        display: flex; 
-        align-items: center; 
+
+    .cat-subtitle {
+        opacity: 0.8;
+        display: flex;
+        align-items: center;
         gap: 8px;
     }
-    
-    .arrow { 
-        font-size: 1.2rem; 
-        transition: transform 0.2s; 
+
+    .arrow {
+        font-size: 1.2rem;
+        transition: transform 0.2s;
     }
 }
 
-@media (max-width: 768px) {
-    .cat-card { 
-        height: 280px; 
-        
-        &.span-2, &.span-3, &.span-4 {
-            grid-column: span 1; 
+/* --- Адаптивная логика для больших карточек (span) --- */
+
+/* Планшеты (2 колонки) */
+@media (min-width: 601px) {
+
+    .cat-card.span-2,
+    .cat-card.span-3,
+    .cat-card.span-4 {
+        grid-column: span 2;
+    }
+}
+
+/* Ноутбуки (3 колонки) */
+@media (min-width: 901px) {
+    .cat-card.span-2 {
+        grid-column: span 2;
+    }
+
+    .cat-card.span-3,
+    .cat-card.span-4 {
+        grid-column: span 3;
+    }
+}
+
+/* Десктопы (4 колонки) */
+@media (min-width: 1201px) {
+    .cat-card.span-2 {
+        grid-column: span 2;
+    }
+
+    .cat-card.span-3 {
+        grid-column: span 3;
+    }
+
+    .cat-card.span-4 {
+        grid-column: span 4;
+    }
+}
+
+/* Огромные экраны (резиновость от 1440px и выше) */
+@media (min-width: 1440px) {
+    .cat-card {
+        /* Увеличиваем высоту пропорционально растяжению ширины */
+        height: 480px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .cat-card {
+        /* Для 4K мониторов высоту делаем еще больше */
+        height: 580px;
+    }
+}
+@media (max-width: 1440px) {
+    .cat-card {
+        margin: 0 15px;
+    }
+}
+/* Мобильные телефоны */
+@media (max-width: 600px) {
+    .cat-card {
+        height: 280px;
+
+        /* На мобильных все карточки строго по 1 колонке, чтобы не ломать верстку */
+        &.span-2,
+        &.span-3,
+        &.span-4 {
+            grid-column: span 1;
         }
 
         .cat-overlay {
             padding: 20px;
         }
-
     }
 }

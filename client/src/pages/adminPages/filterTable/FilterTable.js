@@ -58,15 +58,16 @@ const FilterTable = () => {
     // --- ФУНКЦИЯ ДЛЯ СОХРАНЕНИЯ ЗНАЧЕНИЙ ИЗ КАРТОЧКИ ---
     const saveFilterValues = async (filterObj, newValuesArray) => {
         try {
-            const myFormData = new FormData();
-            myFormData.append('name', filterObj.name);
-            myFormData.append('buttonType', filterObj.buttonType);
-            myFormData.append('kategoryId', filterObj.kategoryId);
-            myFormData.append('addition', filterObj.addition || '');
-            // Отправляем новый массив значений для конкретного фильтра
-            myFormData.append('attributeValues', JSON.stringify(newValuesArray));
+            // Отправляем обычный объект
+            const payload = {
+                name: filterObj.name,
+                buttonType: filterObj.buttonType,
+                kategoryId: filterObj.kategoryId,
+                addition: filterObj.addition || '',
+                attributeValues: newValuesArray // передаем сам массив, без JSON.stringify
+            };
 
-            await updateFilter(filterObj.id, myFormData);
+            await updateFilter(filterObj.id, payload);
             await loadFilters(); // Перезагружаем все фильтры с сервера
         } catch (error) {
             console.error(error);
@@ -115,35 +116,37 @@ const FilterTable = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
-        myFormData.append("name", formData.name);
-        myFormData.append("buttonType", formData.buttonType);
-        myFormData.append("kategoryId", formData.kategoryId);
-        myFormData.append("addition", formData.addition);
+
+        // Формируем обычный JS-объект вместо FormData
+        const payload = {
+            name: formData.name,
+            buttonType: formData.buttonType,
+            kategoryId: formData.kategoryId,
+            addition: formData.addition,
+            attributeValues: editingFilter ? (editingFilter.attributeValues || []) : []
+        };
 
         if (editingFilter) {
-            // Оставляем старые значения, меняем только настройки
-            myFormData.append('attributeValues', JSON.stringify(editingFilter.attributeValues || []));
-            await updateFilter(editingFilter.id, myFormData);
+            await updateFilter(editingFilter.id, payload);
         } else {
-            // При создании фильтра массив пустой
-            myFormData.append('attributeValues', JSON.stringify([]));
-            await postFilterForKategory(myFormData);
+            await postFilterForKategory(payload);
         }
+
         loadFilters();
         closeModal();
     };
-
-    const handleSubmitWithoutClose = async (e) => {
+   const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
-        myFormData.append("name", formData.name);
-        myFormData.append("buttonType", formData.buttonType);
-        myFormData.append("kategoryId", formData.kategoryId);
-        myFormData.append("addition", formData.addition);
-        myFormData.append('attributeValues', JSON.stringify([])); 
+        
+        const payload = {
+            name: formData.name,
+            buttonType: formData.buttonType,
+            kategoryId: formData.kategoryId,
+            addition: formData.addition,
+            attributeValues: []
+        };
 
-        await postFilterForKategory(myFormData);
+        await postFilterForKategory(payload);
         loadFilters();
     };
 
@@ -165,7 +168,7 @@ const FilterTable = () => {
         const grouped = result.reduce((acc, filter) => {
             const cat = categories.find(c => c.id === filter.kategoryId);
             const catName = cat ? cat.name : 'Без категории';
-            
+
             if (!acc[catName]) {
                 acc[catName] = [];
             }
@@ -174,7 +177,7 @@ const FilterTable = () => {
         }, {});
 
         const sortedKeys = Object.keys(grouped).sort();
-        
+
         return sortedKeys.map(key => ({
             categoryName: key,
             filters: grouped[key]
@@ -192,7 +195,7 @@ const FilterTable = () => {
 
     return (
         <div className="admin-filter-editor">
-            <FilterTableHeader 
+            <FilterTableHeader
                 searchTerm={searchTerm}
                 handleSearch={handleSearch}
                 openAddModal={openAddModal}
@@ -210,7 +213,7 @@ const FilterTable = () => {
                             <h2 className="group-title my_h2">{group.categoryName}</h2>
                             <div className="filter-grid">
                                 {group.filters.map(filter => (
-                                    <FilterCard 
+                                    <FilterCard
                                         key={filter.id}
                                         filter={filter}
                                         saveFilterValues={saveFilterValues}
@@ -224,7 +227,7 @@ const FilterTable = () => {
                 )}
             </main>
 
-            <FilterModal 
+            <FilterModal
                 isModalOpen={isModalOpen}
                 confirmAndCloseModal={confirmAndCloseModal}
                 editingFilter={editingFilter}

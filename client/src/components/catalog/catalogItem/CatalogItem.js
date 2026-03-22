@@ -20,7 +20,6 @@ export default function CatalogItem({ itemId, image, label, item_counter, featur
         <NavLink
             to={{ pathname: ITEM_MAIN_ROUTE + "/" + itemId, state: { path: { name: label } } }}
             onClick={() => window.scrollTo(0, 0)}
-            // Подставляем сгенерированный класс
             className={`cat-card ${spanClass}`}
         >
             <img

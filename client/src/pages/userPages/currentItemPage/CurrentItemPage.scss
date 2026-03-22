@@ -15,6 +15,7 @@ $radius-md: 12px;
         max-width: 1400px;
         margin: 0 auto;
         padding: 40px 20px;
+        box-sizing: border-box; /* Добавлено для страховки от вылезающих паддингов */
     }
 }
 
@@ -29,6 +30,7 @@ $radius-md: 12px;
     gap: 60px;
     align-items: start;
     margin-bottom: 80px;
+    width: 100%; /* Убеждаемся, что сетка не выходит за пределы */
 
     @media (max-width: 992px) {
         grid-template-columns: 1fr;
@@ -38,8 +40,12 @@ $radius-md: 12px;
 
 // ГАЛЕРЕЯ
 .apple-gallery-col {
+    min-width: 0; /* ВОТ ИСПРАВЛЕНИЕ: запрещаем блоку распирать сетку на мобильных */
+    width: 100%;
+
     .apple-viewer-card {
         position: relative;
+        width: 100%; /* Гарантируем, что квадрат не вылезет за пределы */
         background: $apple-bg;
         border-radius: $radius-xl;
         aspect-ratio: 1/1;
@@ -90,6 +96,14 @@ $radius-md: 12px;
             &:last-child {
                 right: 20px;
             }
+            
+            /* Чуть уменьшаем кнопки на телефонах, чтобы не перекрывали картинку */
+            @media (max-width: 600px) {
+                width: 36px;
+                height: 36px;
+                &:first-child { left: 10px; }
+                &:last-child { right: 10px; }
+            }
         }
     }
 
@@ -100,6 +114,7 @@ $radius-md: 12px;
         overflow-x: auto;
         padding-bottom: 10px;
         scrollbar-width: none;
+        -webkit-overflow-scrolling: touch; /* Добавлено: плавный скролл на iPhone/Android */
 
         &::-webkit-scrollbar {
             display: none;
@@ -135,6 +150,12 @@ $radius-md: 12px;
                 padding: 10px;
                 border-radius: 50%;
             }
+            
+            /* На телефонах миниатюры можно сделать чуть компактнее */
+            @media (max-width: 600px) {
+                width: 65px;
+                height: 65px;
+            }
         }
     }
 }
@@ -142,6 +163,7 @@ $radius-md: 12px;
 // ПАНЕЛЬ ИНФОРМАЦИИ
 .apple-info-col {
     top: 100px;
+    min-width: 0; /* Страховка для правой колонки */
 
     .apple-product-title {
         margin-bottom: 20px;
@@ -297,6 +319,12 @@ $radius-md: 12px;
 .apple-rich-text {
     color: #333;
     max-width: 800px;
+    /* На телефонах текст не должен вылезать, если там есть большие картинки/таблицы */
+    overflow-wrap: break-word;
+    img {
+        max-width: 100%;
+        height: auto;
+    }
 }
 
 .apple-specs-full-grid {

@@ -2,7 +2,7 @@ import ButtonImage from "../../assets/images/button.png";
 import "./Catalog.scss";
 import CatalogItem from "./catalogItem/CatalogItem";
 import { fetchAllMainKategory } from "../../http/KategoryApi";
-import { fetchAllItemByMainKategoryId } from "../../http/itemApi"
+import { fetchAllItemByMainKategoryId } from "../../http/itemApi";
 import { useState, useEffect } from "react";
 import CatalogInfoSlide from "../catalogInfoSlide/CatalogInfoSlide";
 

@@ -1,19 +1,35 @@
-/* Заменяем все старые стили на эти */
 .catalog_section {
     display: grid;
-    /* Создает колонки минимум 320px. Если места меньше - переносит вниз. */
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 24px;
     max-width: 1400px;
     margin: 0 auto;
+    margin: 10px;
     width: 100%;
     box-sizing: border-box;
+
+    /* Десктоп по умолчанию: 4 колонки */
+    grid-template-columns: repeat(4, 1fr);
 }
 
-@media (max-width: 768px) {
+/* Ноутбуки и горизонтальные планшеты */
+@media (max-width: 1200px) {
     .catalog_section {
-        /* На мобилках - 1 колонка для красивых больших фото */
-        grid-template-columns: 1fr; 
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Вертикальные планшеты */
+@media (max-width: 900px) {
+    .catalog_section {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+/* Мобильные телефоны */
+@media (max-width: 600px) {
+    .catalog_section {
+        grid-template-columns: 1fr;
         gap: 16px;
         padding-bottom: 60px;
     }
