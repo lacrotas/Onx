@@ -1,4 +1,3 @@
-// ViewImages.jsx
 import React, { useState } from 'react';
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { FiX } from "react-icons/fi";
@@ -8,7 +7,7 @@ function ViewImages({ images = [], setIsModalActive }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   if (!Array.isArray(images) || images.length === 0) {
-    return <div className="view-images-empty">Нет изображений</div>;
+    return <div className="view-images-empty my_p">Нет изображений</div>;
   }
 
   const handleThumbnailClick = (index) => {
@@ -31,13 +30,8 @@ function ViewImages({ images = [], setIsModalActive }) {
 
   return (
     <div className="view-images" tabIndex={0} onKeyDown={handleKeyDown}>
-      {/* Крестик закрытия */}
-      <div className="view-images-close"
-        onClick={() => setIsModalActive(false)}>
-        <FiX size={20} />
-      </div>
-
-      {/* Миниатюры слева */}
+      
+      {/* Левая панель с миниатюрами (на мобилке — нижняя) */}
       <div className="view-images-thumbnails">
         {images.map((image, index) => (
           <button
@@ -56,8 +50,13 @@ function ViewImages({ images = [], setIsModalActive }) {
         ))}
       </div>
 
-      {/* Основное изображение с кнопками навигации */}
+      {/* Основная область */}
       <div className="view-images-main">
+        {/* Крестик закрытия внутри правой области */}
+        <button className="view-images-close" onClick={() => setIsModalActive(false)}>
+          <FiX size={24} />
+        </button>
+
         {images.length > 1 && (
           <>
             <button
@@ -65,7 +64,7 @@ function ViewImages({ images = [], setIsModalActive }) {
               onClick={goToPrev}
               aria-label="Предыдущее изображение"
             >
-              <IoIosArrowBack size={32} />
+              <IoIosArrowBack size={36} />
             </button>
 
             <button
@@ -73,12 +72,13 @@ function ViewImages({ images = [], setIsModalActive }) {
               onClick={goToNext}
               aria-label="Следующее изображение"
             >
-              <IoIosArrowForward size={32} />
+              <IoIosArrowForward size={36} />
             </button>
           </>
         )}
 
         <img
+          key={activeIndex} 
           src={`${process.env.REACT_APP_API_URL}static/images/${images[activeIndex]}`}
           alt={`Основное изображение ${activeIndex + 1}`}
           className="view-images-main-img"

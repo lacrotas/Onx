@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchAllKategory, fetchAllMainKategory, postKategory, updateKategory, deleteKategoryById } from '../../../http/KategoryApi';
+import CategoryTableHeader from './components/categoryTableHeader/CategoryTableHeader';
+import CategoryTableRow from './components/categoryTableRow/CategoryTableRow';
+import CategoryModal from './components/categoryModal/CategoryModal';
 import "./CategoryTable.scss";
 
 const CategoryTable = () => {
@@ -7,8 +10,10 @@ const CategoryTable = () => {
     const [filteredCategories, setFilteredCategories] = useState([]);
     const [mainCategories, setMainCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Новое состояние для фильтрации по главной категории
+    const [selectedFilterMainCategory, setSelectedFilterMainCategory] = useState('');
 
-    // 1. Добавляем состояние для сортировки
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,32 +26,30 @@ const CategoryTable = () => {
     });
     const fileInputRef = useRef(null);
 
-    // Load categories and main categories on component mount
     useEffect(() => {
         loadCategories();
         loadMainCategories();
     }, []);
 
-    // 2. Обновляем useEffect для фильтрации И сортировки
     useEffect(() => {
-        // Сначала фильтруем
-        let result = categories.filter(category =>
-            category.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        let result = categories.filter(category => {
+            const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
+            // Проверка: если фильтр не выбран (''), то показываем все, иначе сверяем ID
+            const matchesMainCategory = selectedFilterMainCategory === '' || category.mainKategoryId === parseInt(selectedFilterMainCategory);
+            
+            return matchesSearch && matchesMainCategory;
+        });
 
-        // Затем сортируем
         if (sortConfig.key) {
             result.sort((a, b) => {
                 let aValue = a[sortConfig.key];
                 let bValue = b[sortConfig.key];
 
-                // Специальная логика для сортировки по названию главной категории
                 if (sortConfig.key === 'mainKategoryId') {
                     aValue = getMainCategoryName(a.mainKategoryId);
                     bValue = getMainCategoryName(b.mainKategoryId);
                 }
 
-                // Обработка null/undefined
                 if (aValue === null || aValue === undefined) aValue = '';
                 if (bValue === null || bValue === undefined) bValue = '';
 
@@ -61,13 +64,12 @@ const CategoryTable = () => {
         }
 
         setFilteredCategories(result);
-    }, [searchTerm, categories, sortConfig, mainCategories]); // Добавили зависимости
+    }, [searchTerm, selectedFilterMainCategory, categories, sortConfig, mainCategories]);
 
     const loadCategories = async () => {
         try {
             const data = await fetchAllKategory();
             setCategories(data);
-            // setFilteredCategories(data); // Убрали, так как useEffect сработает
         } catch (error) {
             console.error('Error loading categories:', error);
         }
@@ -85,7 +87,6 @@ const CategoryTable = () => {
         }
     };
 
-    // 3. Функция запроса сортировки
     const requestSort = (key) => {
         let direction = 'ascending';
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -94,7 +95,6 @@ const CategoryTable = () => {
         setSortConfig({ key, direction });
     };
 
-    // Вспомогательная функция для индикатора
     const getSortIndicator = (key) => {
         if (sortConfig.key !== key) return null;
         return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
@@ -102,6 +102,11 @@ const CategoryTable = () => {
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
+    };
+
+    // Обработчик изменения фильтра в шапке
+    const handleFilterMainCategoryChange = (e) => {
+        setSelectedFilterMainCategory(e.target.value);
     };
 
     const openAddModal = () => {
@@ -130,11 +135,13 @@ const CategoryTable = () => {
         setIsModalOpen(false);
         setEditingCategory(null);
     };
+
     const confirmAndCloseModal = () => {
         if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
             closeModal();
         }
     };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -166,7 +173,6 @@ const CategoryTable = () => {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
             await updateKategory(editingCategory.id, myFormData);
-
         } else {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
@@ -174,8 +180,9 @@ const CategoryTable = () => {
             await postKategory(myFormData);
         }
         closeModal();
-        window.location.reload();
+        loadCategories();
     };
+
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
         const myFormData = new FormData();
@@ -183,19 +190,19 @@ const CategoryTable = () => {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
             await updateKategory(editingCategory.id, myFormData);
-
         } else {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
             myFormData.append("mainKategoryId", formData.mainKategoryId);
             await postKategory(myFormData);
         }
+        loadCategories();
     };
 
-    const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this category?')) {
-            deleteKategoryById(id);
-            window.location.reload();
+    const handleDelete = async (id) => {
+        if (window.confirm('Вы уверены, что хотите удалить эту категорию?')) {
+            await deleteKategoryById(id);
+            loadCategories();
         }
     };
 
@@ -205,171 +212,60 @@ const CategoryTable = () => {
     };
 
     return (
-        <div className="adminKategoryTable">
-            <div className="admin-header">
-                <h1>Категории</h1>
-                <div className="search-container">
-                    <input
-                        type="text"
-                        placeholder="Название категории..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="search-input"
-                    />
-                </div>
-                <button onClick={openAddModal} className="add-button">
-                    Добавить категорию
-                </button>
-            </div>
+        <div className="admin-category-editor">
+            <CategoryTableHeader 
+                searchTerm={searchTerm}
+                handleSearch={handleSearch}
+                openAddModal={openAddModal}
+                mainCategories={mainCategories}
+                selectedFilterMainCategory={selectedFilterMainCategory}
+                handleFilterMainCategoryChange={handleFilterMainCategoryChange}
+            />
 
-            <div className="table-container">
-                <table className="categories-table">
-                    <thead>
-                        {/* 4. Добавляем onClick и стили курсора */}
-                        <tr>
-                            <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
-                                ID{getSortIndicator('id')}
-                            </th>
-                            <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
-                                Название{getSortIndicator('name')}
-                            </th>
-                            <th>Картинка</th>
-                            <th onClick={() => requestSort('mainKategoryId')} style={{ cursor: 'pointer' }}>
-                                Главная категория{getSortIndicator('mainKategoryId')}
-                            </th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredCategories.map(category => (
-                            <tr key={category.id}>
-                                <td>{category.id}</td>
-                                <td>{category.name}</td>
-                                <td>
-                                    <div className="image-preview">
-                                        <img src={`${process.env.REACT_APP_API_URL}static/images/${category.image}`} alt="Category" className="preview-image" />
-                                    </div>
-                                </td>
-                                <td>{getMainCategoryName(category.mainKategoryId)}</td>
-                                <td className="action-buttons">
-                                    <button
-                                        onClick={() => openEditModal(category)}
-                                        className="edit-button"
-                                    >
-                                        Обновить
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(category.id)}
-                                        className="delete-button"
-                                    >
-                                        Удалить
-                                    </button>
-                                </td>
+            <main className="content-container">
+                <div className="table-wrapper">
+                    <table className="apple-table">
+                        <thead>
+                            <tr>
+                                <th onClick={() => requestSort('name')} className="sortable my_p">
+                                    Название {getSortIndicator('name')}
+                                </th>
+                                <th className="my_p">Картинка</th>
+                                <th onClick={() => requestSort('mainKategoryId')} className="sortable my_p">
+                                    Главная категория {getSortIndicator('mainKategoryId')}
+                                </th>
+                                <th className="my_p">Действия</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2>{editingCategory ? 'Редактирование' : 'Добавление'}</h2>
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="name">Название:</label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="form-input"
+                        </thead>
+                        <tbody>
+                            {filteredCategories.map(category => (
+                                <CategoryTableRow 
+                                    key={category.id}
+                                    category={category}
+                                    getMainCategoryName={getMainCategoryName}
+                                    openEditModal={openEditModal}
+                                    handleDelete={handleDelete}
                                 />
-                            </div>
-
-                            {!editingCategory && mainCategories.length > 0 && (
-                                <div className="form-group">
-                                    <label htmlFor="mainKategoryId">Главная категория:</label>
-                                    <select
-                                        id="mainKategoryId"
-                                        name="mainKategoryId"
-                                        value={formData.mainKategoryId}
-                                        onChange={handleInputChange}
-                                        className="form-select"
-                                        required
-                                    >
-                                        {mainCategories.map(mainCat => (
-                                            <option key={mainCat.id} value={mainCat.id}>
-                                                {mainCat.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            {editingCategory && (
-                                <div className="form-group">
-                                    <label>Главная категория:</label>
-                                    <div className="form-static">
-                                        {getMainCategoryName(editingCategory.mainKategoryId)}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="form-group">
-                                <label>Картинка:</label>
-                                <div
-                                    className="image-upload-container"
-                                    onClick={triggerFileInput}
-                                >
-                                    {formData.imageUrl ? (
-                                        <div className="image-preview-container">
-                                            <img
-                                                src={formData.imageUrl}
-                                                alt="Preview"
-                                                className="uploaded-image"
-                                            />
-                                            <div className="image-overlay">
-                                                <span className="overlay-text">Изменить</span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="image-placeholder">
-                                            <div className="placeholder-icon">📁</div>
-                                            <span>Загрузить изображение</span>
-                                        </div>
-                                    )}
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleFileChange}
-                                        accept="image/*"
-                                        style={{ display: 'none' }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="modal-buttons">
-                                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">
-                                    Отмена
-                                </button>
-                                {!editingCategory ?
-                                    <button type="button" onClick={(e) => handleSubmitWithoutClose(e)} className="save-button">
-                                        Добавить без сброса
-                                    </button>
-                                    : <></>
-                                }
-                                <button type="submit" className="save-button">
-                                    {editingCategory ? 'Обновить' : 'Добавить'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-            )}
+            </main>
 
+            <CategoryModal 
+                isModalOpen={isModalOpen}
+                confirmAndCloseModal={confirmAndCloseModal}
+                editingCategory={editingCategory}
+                formData={formData}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleSubmit}
+                handleSubmitWithoutClose={handleSubmitWithoutClose}
+                mainCategories={mainCategories}
+                getMainCategoryName={getMainCategoryName}
+                triggerFileInput={triggerFileInput}
+                fileInputRef={fileInputRef}
+                handleFileChange={handleFileChange}
+            />
         </div>
     );
 };

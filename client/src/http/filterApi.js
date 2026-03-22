@@ -39,7 +39,6 @@ export const postFilterForKategory = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
-        alert("Фильтр успешно добавлен");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -65,7 +64,6 @@ export const updateFilter = async (id, item) => {
                 Authorization: `Bearer ${token}`
             }
         })
-        alert("Фильтр успешно обновлен");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -92,7 +90,6 @@ export const deleteFilter = async (id) => {
                 }
             }
             )
-            alert("Фильтр успешно удален");
             return data;
         } catch (e) {
             if (e.response && e.response.status === 401) {
@@ -143,7 +140,6 @@ export const deleteAttribute = async (id) => {
                 }
             }
             )
-            alert("Удаление атрибута успешно");
             return data;
         } catch (e) {
             if (e.response && e.response.status === 413) {

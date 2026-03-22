@@ -65,7 +65,6 @@ async function filterAndUpdateImages(currentImagesFromDB, imageStringsFromFronte
     }
 }
 
-
 class itemController {
 
     async getItemsByNameSubstring(req, res) {
@@ -83,6 +82,7 @@ class itemController {
             return res.status(500).json({ message: "Error fetching items", error });
         }
     }
+
     async addItem(req, res, next) {
         let processedImages = [];
         let processedVideo = null;
@@ -161,10 +161,12 @@ class itemController {
             }
         }
     }
+
     async getAllItems(req, res) {
         const items = await Item.findAll();
         return res.json(items);
     }
+
     async getItemById(req, res) {
         const { id } = req.params
         const item = await Item.findOne(
@@ -172,6 +174,7 @@ class itemController {
         );
         return res.json(item);
     }
+
     async getAllItemsByMainKategoryId(req, res) {
         const { mainKategoryId } = req.params
         const items = await Item.findAll(
@@ -179,6 +182,7 @@ class itemController {
         );
         return res.json(items);
     }
+
     async getAllItemsByItemGroupIdId(req, res) {
         const { itemGroupId } = req.params
         const items = await Item.findAll(
@@ -186,6 +190,7 @@ class itemController {
         );
         return res.json(items);
     }
+
     async getAllItemsByKategoryId(req, res) {
         const { kategoryId } = req.params
         const items = await Item.findAll(
@@ -193,6 +198,7 @@ class itemController {
         );
         return res.json(items);
     }
+
     async getAttributeValuesForCategory(req, res) {
         try {
             // Правильно извлекаем kategoryId из params
@@ -251,6 +257,7 @@ class itemController {
             });
         }
     }
+
     async deleteItemById(req, res) {
         try {
             const { id } = req.params;
@@ -271,76 +278,72 @@ class itemController {
 
     async updateItemById(req, res) {
         let newProcessedImages = [];
-        let newVideo = null;
         let currentItem = null;
 
         try {
             const { id } = req.params;
-            let { // Используем let, чтобы можно было перезаписать imageStrings
-                itemGroupId,
-                name,
-                price,
-                description,
-                rating,
-                reviewNumber,
-                specificationsJSONB,
-                isExist,
-                isShowed,
-                imageStrings
-            } = req.body;
-
             console.log('=== updateItemById START ===');
-
-            // ВАЖНО: Если imageStrings undefined (все старые удалены), делаем пустой массив
-            if (!imageStrings) {
-                imageStrings = [];
-            }
 
             currentItem = await Item.findOne({ where: { id } });
             if (!currentItem) {
-                // Если запись не найдена, нужно удалить новые загруженные файлы, чтобы не мусорить
+                // Если запись не найдена, удаляем мусор
                 if (req.processedImages) await mediaProcessor.deleteOldFiles(req.processedImages, 'images');
+                if (req.processedVideo) await mediaProcessor.deleteOldFiles(req.processedVideo, 'video');
                 return res.status(404).json({ message: 'Запись не найдена' });
             }
 
-            const oldImages = currentItem.images || [];
-            const oldVideo = currentItem.video;
+            // Создаем объект только с теми полями, которые реально пришли с фронтенда
+            const updateData = {};
 
-            // Новые файлы, обработанные middleware
-            newProcessedImages = req.processedImages || [];
-            newVideo = req.processedVideo || oldVideo;
+            if (req.body.itemGroupId !== undefined) updateData.itemGroupId = req.body.itemGroupId;
+            if (req.body.name !== undefined) updateData.name = req.body.name;
+            if (req.body.price !== undefined) updateData.price = req.body.price;
+            if (req.body.isExist !== undefined) updateData.isExist = req.body.isExist;
+            if (req.body.isShowed !== undefined) updateData.isShowed = req.body.isShowed;
+            if (req.body.rating !== undefined) updateData.rating = req.body.rating;
+            if (req.body.reviewNumber !== undefined) updateData.reviewNumber = req.body.reviewNumber;
 
-            // === ВЫЗОВ ОБНОВЛЕННОЙ ФУНКЦИИ ===
-            const finalImages = await filterAndUpdateImages(
-                oldImages,
-                imageStrings,
-                newProcessedImages
-            );
-
-            let specifications = specificationsJSONB;
-            if (typeof specificationsJSONB === 'string' && specificationsJSONB) {
-                try {
-                    specifications = JSON.parse(specificationsJSONB);
-                } catch (parseError) {
-                    console.log('JSON parse error:', parseError);
-                    specifications = {};
-                }
+            // Безопасная обработка описания (только если оно пришло)
+            if (req.body.description !== undefined) {
+                updateData.description = String(req.body.description).replace(/<p><br><\/p>/g, '');
             }
 
+            // Безопасная обработка характеристик (только если они пришли)
+            if (req.body.specificationsJSONB !== undefined) {
+                let specifications = req.body.specificationsJSONB;
+                if (typeof specifications === 'string' && specifications) {
+                    try {
+                        specifications = JSON.parse(specifications);
+                    } catch (parseError) {
+                        console.log('JSON parse error:', parseError);
+                        specifications = {};
+                    }
+                }
+                updateData.specificationsJSONB = specifications;
+            }
+
+            // Обработка картинок (ТОЛЬКО если фронтенд прислал imageStrings - значит было полное редактирование формы)
+            if (req.body.imageStrings !== undefined) {
+                newProcessedImages = req.processedImages || [];
+                const oldImages = currentItem.images || [];
+                
+                updateData.images = await filterAndUpdateImages(
+                    oldImages,
+                    req.body.imageStrings,
+                    newProcessedImages
+                );
+            }
+
+            // Обработка видео (только если загружено новое или явно пришел пустой URL/null для удаления)
+            if (req.processedVideo !== undefined) {
+                updateData.video = req.processedVideo;
+            } else if (req.body.video === 'null' || req.body.video === '') {
+                updateData.video = null;
+            }
+
+            // Применяем сформированный объект с изменениями в БД
             const [updatedRowsCount, updatedRows] = await Item.update(
-                {
-                    itemGroupId,
-                    name,
-                    price,
-                    isExist,
-                    isShowed,
-                    description: description.replace(/<p><br><\/p>/g, ''),
-                    specificationsJSONB: specifications,
-                    video: newVideo,
-                    rating,
-                    reviewNumber,
-                    images: finalImages,
-                },
+                updateData,
                 {
                     returning: true,
                     where: { id }
@@ -355,7 +358,7 @@ class itemController {
                 if (newProcessedImages.length > 0) {
                     await mediaProcessor.deleteOldFiles(newProcessedImages, 'images');
                 }
-                res.status(400).json({ message: 'Не удалось обновить данные' });
+                res.status(400).json({ message: 'Не удалось обновить данные или нет изменений' });
             }
         } catch (error) {
             console.error('Error in updateItemById:', error);

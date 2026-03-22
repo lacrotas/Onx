@@ -13,11 +13,18 @@ export default function Catalog() {
 
     useEffect(() => {
         fetchAllMainKategory().then(data => {
-            setAllKategory(data);
+            const sortedCategories = data.sort((a, b) => {
+                const indexA = a.gridItemIndex != null ? a.gridItemIndex : 9999;
+                const indexB = b.gridItemIndex != null ? b.gridItemIndex : 9999;
+                
+                return indexA - indexB;
+            });
+
+            setAllKategory(sortedCategories);
 
             const counters = {};
-
-            const fetchPromises = data.map(item => {
+            
+            const fetchPromises = sortedCategories.map(item => {
                 return fetchAllItemByMainKategoryId(item.id).then(items => {
                     counters[item.id] = items.length;
                 });
@@ -28,7 +35,6 @@ export default function Catalog() {
             });
         });
     }, []);
-
 
     return (
         <>
@@ -41,11 +47,11 @@ export default function Catalog() {
                         label={item.name}
                         itemId={item.id}
                         item_counter={itemsCounter[item.id] || 0}
+                        featured={item.gridSpace}
                     />
                 ))}
             </section>
             {isCategotyActive ? <CatalogInfoSlide setIsCategoryActive={setIsCategoryActive} /> : <></>}
         </>
-
     );
 }

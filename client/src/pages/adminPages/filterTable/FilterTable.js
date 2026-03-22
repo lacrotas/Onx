@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchAllFilters, postFilterForKategory, updateFilter, deleteFilter } from '../../../http/filterApi';
 import { fetchAllKategory } from '../../../http/KategoryApi';
+import FilterTableHeader from './components/filterTableHeader/FilterTableHeader';
+import FilterCard from './components/filterCard/FilterCard';
+import FilterModal from './components/filterModal/FilterModal';
 import "./FilterTable.scss";
 
 const FilterTable = () => {
     const [filters, setFilters] = useState([]);
-    const [filteredFilters, setFilteredFilters] = useState([]);
     const [categories, setCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-
-    // 1. Добавляем состояние для сортировки
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [selectedFilterCategory, setSelectedFilterCategory] = useState('');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingFilter, setEditingFilter] = useState(null);
@@ -20,55 +20,16 @@ const FilterTable = () => {
         buttonType: 'check',
         addition: ''
     });
-    const fileInputRef = useRef(null);
 
-    // Load filters and categories on component mount
     useEffect(() => {
         loadFilters();
         loadCategories();
     }, []);
 
-    // 2. Обновляем useEffect для фильтрации И сортировки
-    useEffect(() => {
-        // Сначала фильтруем по поиску
-        let result = filters.filter(filter =>
-            filter.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-
-        // Затем сортируем, если есть конфигурация
-        if (sortConfig.key) {
-            result.sort((a, b) => {
-                let aValue = a[sortConfig.key];
-                let bValue = b[sortConfig.key];
-
-                // Специальная обработка для колонки "Категория", так как там ID, а сортировать хотим по названию
-                if (sortConfig.key === 'kategoryId') {
-                    aValue = getCategoryName(a.kategoryId);
-                    bValue = getCategoryName(b.kategoryId);
-                }
-
-                // Обработка null/undefined значений
-                if (aValue === null || aValue === undefined) aValue = '';
-                if (bValue === null || bValue === undefined) bValue = '';
-
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-
-        setFilteredFilters(result);
-    }, [searchTerm, filters, sortConfig, categories]); // Добавили sortConfig и categories в зависимости
-
     const loadFilters = async () => {
         try {
             const data = await fetchAllFilters();
             setFilters(data);
-            // setFilteredFilters(data); // Это больше не нужно здесь, так как useEffect сработает при изменении filters
         } catch (error) {
             console.error('Error loading filters:', error);
         }
@@ -86,25 +47,34 @@ const FilterTable = () => {
         }
     };
 
-    // 3. Функция запроса сортировки
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    // Вспомогательная функция для отображения стрелочки
-    const getSortIndicator = (key) => {
-        if (sortConfig.key !== key) return null;
-        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
-    };
-
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
     };
 
+    const handleFilterCategoryChange = (e) => {
+        setSelectedFilterCategory(e.target.value);
+    };
+
+    // --- ФУНКЦИЯ ДЛЯ СОХРАНЕНИЯ ЗНАЧЕНИЙ ИЗ КАРТОЧКИ ---
+    const saveFilterValues = async (filterObj, newValuesArray) => {
+        try {
+            const myFormData = new FormData();
+            myFormData.append('name', filterObj.name);
+            myFormData.append('buttonType', filterObj.buttonType);
+            myFormData.append('kategoryId', filterObj.kategoryId);
+            myFormData.append('addition', filterObj.addition || '');
+            // Отправляем новый массив значений для конкретного фильтра
+            myFormData.append('attributeValues', JSON.stringify(newValuesArray));
+
+            await updateFilter(filterObj.id, myFormData);
+            await loadFilters(); // Перезагружаем все фильтры с сервера
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении значений");
+        }
+    };
+
+    // --- Модальное окно (для создания/редактирования базовых настроек) ---
     const openAddModal = () => {
         setEditingFilter(null);
         setFormData({
@@ -131,11 +101,13 @@ const FilterTable = () => {
         setIsModalOpen(false);
         setEditingFilter(null);
     };
+
     const confirmAndCloseModal = () => {
         if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
             closeModal();
         }
     };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -150,13 +122,16 @@ const FilterTable = () => {
         myFormData.append("addition", formData.addition);
 
         if (editingFilter) {
+            // Оставляем старые значения, меняем только настройки
+            myFormData.append('attributeValues', JSON.stringify(editingFilter.attributeValues || []));
             await updateFilter(editingFilter.id, myFormData);
         } else {
+            // При создании фильтра массив пустой
+            myFormData.append('attributeValues', JSON.stringify([]));
             await postFilterForKategory(myFormData);
         }
         loadFilters();
         closeModal();
-
     };
 
     const handleSubmitWithoutClose = async (e) => {
@@ -166,192 +141,100 @@ const FilterTable = () => {
         myFormData.append("buttonType", formData.buttonType);
         myFormData.append("kategoryId", formData.kategoryId);
         myFormData.append("addition", formData.addition);
+        myFormData.append('attributeValues', JSON.stringify([])); 
 
-        if (editingFilter) {
-            await updateFilter(editingFilter.id, myFormData);
-        } else {
-            await postFilterForKategory(myFormData);
-        }
+        await postFilterForKategory(myFormData);
         loadFilters();
-    }
+    };
 
-    const handleDelete = (id) => {
-        if (window.confirm('Вы действительно хотите удалить данный  фильтр?')) {
-            deleteFilter(id);
-            window.location.reload();
+    const handleDelete = async (id) => {
+        if (window.confirm('Вы действительно хотите удалить данный фильтр?')) {
+            await deleteFilter(id);
+            loadFilters();
         }
     };
 
-    const getCategoryName = (kategoryId) => {
-        const category = categories.find(cat => cat.id === kategoryId);
-        return category ? category.name : 'Unknown';
+    // --- Группировка данных для рендера ---
+    const getFilteredAndGroupedData = () => {
+        const result = filters.filter(filter => {
+            const matchesSearch = filter.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = selectedFilterCategory === '' || filter.kategoryId === parseInt(selectedFilterCategory);
+            return matchesSearch && matchesCategory;
+        });
+
+        const grouped = result.reduce((acc, filter) => {
+            const cat = categories.find(c => c.id === filter.kategoryId);
+            const catName = cat ? cat.name : 'Без категории';
+            
+            if (!acc[catName]) {
+                acc[catName] = [];
+            }
+            acc[catName].push(filter);
+            return acc;
+        }, {});
+
+        const sortedKeys = Object.keys(grouped).sort();
+        
+        return sortedKeys.map(key => ({
+            categoryName: key,
+            filters: grouped[key]
+        }));
     };
+
+    const groupedData = getFilteredAndGroupedData();
 
     const buttonTypeOptions = [
-        { value: 'check', label: 'Checkbox' },
-        { value: 'color', label: 'Color' },
-        { value: 'select', label: 'Select' },
-        { value: 'number', label: 'Number' }
+        { value: 'check', label: 'Checkbox (Да/Нет)' },
+        { value: 'color', label: 'Цвет' },
+        { value: 'select', label: 'Выпадающий список' },
+        { value: 'number', label: 'Числовое значение' }
     ];
 
     return (
-        <div className="adminFilterTable">
-            <div className="admin-header">
-                <h1>Фильтры</h1>
-                <div className="search-container">
-                    <input
-                        type="text"
-                        placeholder="Найти фильтр..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="search-input"
-                    />
-                </div>
-                <button onClick={openAddModal} className="add-button">
-                    Добавить фильтр
-                </button>
-            </div>
+        <div className="admin-filter-editor">
+            <FilterTableHeader 
+                searchTerm={searchTerm}
+                handleSearch={handleSearch}
+                openAddModal={openAddModal}
+                categories={categories}
+                selectedFilterCategory={selectedFilterCategory}
+                handleFilterCategoryChange={handleFilterCategoryChange}
+            />
 
-            <div className="table-container">
-                <table className="categories-table">
-                    <thead>
-                        {/* 4. Добавляем onClick и стили курсора */}
-                        <tr>
-                            <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
-                                ID{getSortIndicator('id')}
-                            </th>
-                            <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
-                                Название{getSortIndicator('name')}
-                            </th>
-                            <th onClick={() => requestSort('kategoryId')} style={{ cursor: 'pointer' }}>
-                                Категория{getSortIndicator('kategoryId')}
-                            </th>
-                            <th onClick={() => requestSort('buttonType')} style={{ cursor: 'pointer' }}>
-                                Тип{getSortIndicator('buttonType')}
-                            </th>
-                            <th onClick={() => requestSort('addition')} style={{ cursor: 'pointer' }}>
-                                Дополнение{getSortIndicator('addition')}
-                            </th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredFilters.map(filter => (
-                            <tr key={filter.id}>
-                                <td>{filter.id}</td>
-                                <td>{filter.name}</td>
-                                <td>{getCategoryName(filter.kategoryId)}</td>
-                                <td>{filter.buttonType}</td>
-                                <td>{filter.addition || '-'}</td>
-                                <td className="action-buttons">
-                                    <button
-                                        onClick={() => openEditModal(filter)}
-                                        className="edit-button"
-                                    >
-                                        Обновить
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(filter.id)}
-                                        className="delete-button"
-                                    >
-                                        Удалить
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2>{editingFilter ? 'Обновить' : 'Добавить'}</h2>
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="name">Название:</label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="form-input"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="kategoryId">Категория:</label>
-                                <select
-                                    id="kategoryId"
-                                    name="kategoryId"
-                                    value={formData.kategoryId}
-                                    onChange={handleInputChange}
-                                    className="form-select"
-                                    required
-                                >
-                                    {categories.map(category => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="buttonType">Тип:</label>
-                                <select
-                                    id="buttonType"
-                                    name="buttonType"
-                                    value={formData.buttonType}
-                                    onChange={handleInputChange}
-                                    className="form-select"
-                                    required
-                                >
-                                    {buttonTypeOptions.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {formData.buttonType === 'number' && (
-                                <div className="form-group">
-                                    <label htmlFor="addition">Дополнение (для числового фильтра):</label>
-                                    <input
-                                        type="text"
-                                        id="addition"
-                                        name="addition"
-                                        value={formData.addition}
-                                        onChange={handleInputChange}
-                                        className="form-input"
-                                        placeholder="Введите строку для числового фильтра"
+            <main className="content-container">
+                {groupedData.length === 0 ? (
+                    <div className="empty-state my_p">Ничего не найдено.</div>
+                ) : (
+                    groupedData.map((group, index) => (
+                        <div key={index} className="category-group">
+                            <h2 className="group-title my_h2">{group.categoryName}</h2>
+                            <div className="filter-grid">
+                                {group.filters.map(filter => (
+                                    <FilterCard 
+                                        key={filter.id}
+                                        filter={filter}
+                                        saveFilterValues={saveFilterValues}
+                                        openEditModal={openEditModal}
+                                        handleDelete={handleDelete}
                                     />
-                                </div>
-                            )}
-
-                            <div className="modal-buttons">
-                                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">
-                                    Отмена
-                                </button>
-                                {!editingFilter ?
-                                    <button type="button" onClick={(e) => handleSubmitWithoutClose(e)} className="save-button">
-                                        Добавить без сброса
-                                    </button>
-                                    : <></>
-                                }
-                                <button type="submit" className="save-button">
-                                    {editingFilter ? 'Обновить' : 'Добавить'}
-                                </button>
-
+                                ))}
                             </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                        </div>
+                    ))
+                )}
+            </main>
 
+            <FilterModal 
+                isModalOpen={isModalOpen}
+                confirmAndCloseModal={confirmAndCloseModal}
+                editingFilter={editingFilter}
+                formData={formData}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleSubmit}
+                handleSubmitWithoutClose={handleSubmitWithoutClose}
+                categories={categories}
+                buttonTypeOptions={buttonTypeOptions}
+            />
         </div>
     );
 };

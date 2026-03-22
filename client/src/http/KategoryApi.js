@@ -31,7 +31,6 @@ export const postMainKategory = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
-        alert("Данные успешно добавлены");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -57,7 +56,6 @@ export const deleteMainKategoryById = async (id) => {
             }
         }
         )
-        alert("Данные успешно удалены");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -81,7 +79,6 @@ export const updateMainKategory = async (id, item) => {
                 Authorization: `Bearer ${token}`
             }
         })
-        alert("Данные успешно удалены");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -137,7 +134,6 @@ export const deleteKategoryById = async (id) => {
                 Authorization: `Bearer ${token}`
             }
         })
-        alert("Категория успешно удалена");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -161,7 +157,6 @@ export const deleteKategoryByMainKategoryId = async (id) => {
                 Authorization: `Bearer ${token}`
             }
         })
-        alert("Категория успешно удалена");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -182,7 +177,6 @@ export const postKategory = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
-        alert("Добавить категорию");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -206,7 +200,6 @@ export const updateKategory = async (id, item) => {
                 Authorization: `Bearer ${token}`
             }
         })
-        alert("Обновление категории успешно");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -230,7 +223,6 @@ export const deleteAllKategoryByMainKategoryId = async (id) => {
                 Authorization: `Bearer ${token}`
             }
         })
-        alert("Удаление категорий успешно");
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {

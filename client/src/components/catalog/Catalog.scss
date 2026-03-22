@@ -1,77 +1,20 @@
+/* Заменяем все старые стили на эти */
 .catalog_section {
-    padding-top: 50px;
-    padding: 50px 0;
-    max-width: 1440px;
-    width: 100%;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 30px;
-    align-items: center;
-    justify-items: center;
-
-    .catalog_container {
-        width: 300px;
-        height: 220px;
-
-        .container_paragraph {
-            margin-top: 20px;
-            color: #757575;
-        }
-
-        .container_label {
-            margin: 0;
-        }
-
-        .container_button {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-
-            .button_image {
-                width: 50px;
-                height: 50px;
-            }
-
-            .button_text {
-                margin-left: 20px;
-            }
-
-            &:hover {
-                .button_image {
-                    transform: translateX(5px) scale(1.1);
-                    transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1.5);
-                }
-
-                .button_text {
-                    color: #4a90e2;
-                    text-shadow: 0 0 12px rgba(74, 144, 226, 0.5);
-                    transition: all 0.3s ease;
-                }
-            }
-        }
-    }
-
-
+    /* Создает колонки минимум 320px. Если места меньше - переносит вниз. */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
     .catalog_section {
-        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-        gap: 15px;
-    }
-}
-
-@media screen and (max-width: 900px) {
-    .catalog_section {
-        .catalog_container {
-            height: 270px;
-        }
-    }
-}
-
-@media screen and (max-width: 400px) {
-    .catalog_section {
-        width: calc(100% - 10px);
-        padding: 10px 5px 50px 5px;
+        /* На мобилках - 1 колонка для красивых больших фото */
+        grid-template-columns: 1fr; 
+        gap: 16px;
+        padding-bottom: 60px;
     }
 }

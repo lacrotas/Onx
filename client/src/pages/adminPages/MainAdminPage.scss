@@ -3,7 +3,7 @@
     min-height: 100vh;
     background: #f8f9fa;
     position: relative;
-    
+
     &.header-active {
         .main-content {
             margin-left: 280px;
@@ -11,7 +11,7 @@
             transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
         }
     }
-    
+
     &.header-hidden {
         .main-content {
             margin-left: 0;
@@ -37,11 +37,173 @@
                 width: calc(100vw - 250px);
             }
         }
-        
+
         &.header-hidden {
             .main-content {
                 margin-left: 0;
                 width: 100vw;
+            }
+        }
+    }
+}
+
+
+$bg-body: #f5f5f7;
+$accent: #0071e3;
+$text-main: #1d1d1f;
+$text-sec: #86868b;
+$radius-lg: 20px;
+$radius-md: 12px;
+$border-color: #f2f2f7;
+
+.adminPageTable {
+    padding: 20px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    .admin-table-container {
+        background: white;
+        border-radius: $radius-lg;
+        padding: 24px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02); // Легкая, почти незаметная тень
+        overflow-x: auto;
+
+        .categories-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+
+            th {
+                background: none; // Убираем градиент
+                padding: 12px 16px;
+                text-align: left;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: $text-sec; // Серый текст заголовков
+                border-bottom: 1px solid $border-color;
+                transition: color 0.2s;
+
+                &:hover {
+                    color: $text-main; // Эффект при наведении на сортировку
+                }
+            }
+
+            .table_col {
+                border-bottom: 1px solid #e5e5e5;
+
+                td {
+                    padding: 16px;
+                    color: $text-main;
+                    font-size: 0.95rem;
+                    vertical-align: middle;
+
+                    // Стили для текста названия
+                    &.td_name {
+                        font-weight: 600; // Жирное начертание для названия
+                        max-width: 250px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                }
+            }
+
+            /* Стили для картинки */
+            .image-preview {
+                width: 48px;
+                height: 48px;
+                border-radius: 8px;
+                overflow: hidden;
+                background: #f5f5f7;
+
+                .preview-image {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+            }
+
+            /* Стили кнопок действий в стиле иконок Apple */
+            .action-buttons {
+                display: flex;
+                gap: 8px;
+                margin-top: 5px;
+
+                .edit-button,
+                .delete-button {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: white;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0px; // Скрываем текст, если используем иконки, или оставим текст ниже
+                    transition: all 0.2s;
+                    position: relative;
+
+                    &:hover {
+                        border-color: $accent;
+                        color: $accent;
+                        transform: scale(1.1);
+                    }
+                }
+
+                .edit-button {
+                    color: $text-main;
+
+                    &::after {
+                        content: '✎';
+                        font-size: 14px;
+                    }
+
+                    // Заменяем текст на символ
+                }
+
+                .delete-button {
+                    color: #ff3b30; // Красный Apple
+
+                    &:hover {
+                        border-color: #ff3b30;
+                        background-color: #fff1f0;
+                    }
+
+                    &::after {
+                        content: '✕';
+                        font-size: 14px;
+                    }
+
+                    // Заменяем текст на символ
+                }
+            }
+        }
+    }
+
+    .admin-header {
+        margin-top: 20px;
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+
+            .btn-prim {
+                background: #0071e3;
+                color: white;
+                border: none;
+                padding: 10px 24px;
+                border-radius: 980px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+
+            .btn-prim:hover {
+                transform: scale(1.02);
             }
         }
     }

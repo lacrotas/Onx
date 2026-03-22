@@ -71,7 +71,7 @@ class MainKategoryController {
 
         try {
             const { id } = req.params;
-            const { name } = req.body;
+            const { name, gridSpace, gridItemIndex } = req.body;
 
             const mainKategory = await MainKategory.findOne({ where: { id } });
             if (!mainKategory) {
@@ -85,7 +85,9 @@ class MainKategoryController {
             const [updatedRowsCount, updatedRows] = await MainKategory.update(
                 {
                     name: name,
-                    image: newFileName
+                    image: newFileName,
+                    gridItemIndex: gridItemIndex,
+                    gridSpace: gridSpace
                 },
                 {
                     returning: true,

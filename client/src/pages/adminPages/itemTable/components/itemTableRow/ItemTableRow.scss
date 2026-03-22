@@ -1,0 +1,154 @@
+tr {
+    transition: background 0.3s;
+    &.modified-row {
+        background: rgba(52, 199, 89, 0.05);
+    }
+    
+    &:last-child td { border-bottom: none; }
+    &:hover td { background: rgba(0,0,0,0.02); }
+}
+
+td {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+
+    &.truncate-text {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.table-img-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f5f5f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .no-img {
+        opacity: 0.5;
+    }
+}
+
+/* Инлайн-редактирование цены */
+.price-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .quick-price-input {
+        width: 80px;
+        padding: 6px 8px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        transition: all 0.2s;
+
+        &:hover {
+            border-color: var(--border-color);
+            background: #f5f5f7;
+        }
+        &:focus {
+            background: #fff;
+            border-color: #0071e3;
+            outline: none;
+        }
+        
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        &[type=number] {
+            -moz-appearance: textfield;
+        }
+    }
+}
+
+/* ПЕРЕКЛЮЧАТЕЛЬ */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+
+    input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #e5e5ea;
+        transition: .3s;
+        border-radius: 24px;
+
+        &:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    }
+
+    input:checked + .slider {
+        background-color: #34c759;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(20px);
+    }
+}
+
+/* Кнопки действий */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+
+    button {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        transition: background 0.2s;
+
+        &.edit-btn {
+            background: #f0f0f5;
+            color: #1d1d1f;
+            &:hover { background: #e5e5ea; }
+        }
+
+        &.copy-btn {
+            background: rgba(255, 149, 0, 0.1);
+            color: #1d1d1f;
+            &:hover { background: rgba(255, 149, 0, 0.2); }
+        }
+
+        &.delete-btn {
+            background: rgba(255, 59, 48, 0.1);
+            color: #ff3b30;
+            &:hover { background: rgba(255, 59, 48, 0.2); }
+        }
+    }
+}

@@ -1,87 +1,86 @@
-.catalog_item {
-    width: 250px;
-    height: 250px;
-    cursor: pointer;
-    text-align: center;
+.cat-card {
     position: relative;
-    z-index: 1;
-    background-color: #fff;
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
+    height: 400px; 
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #000;
+    display: block; 
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+
+
+    @media (min-width: 768px) {
+        &.span-2 { grid-column: span 2; }
+    }
     
-    /* Новые стили для выравнивания */
-    box-sizing: border-box; /* Чтобы padding не увеличивал размер карточки */
-    padding: 15px; /* Внутренний отступ от краев карточки */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-
-    &:hover {
-        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
+    @media (min-width: 1024px) {
+        &.span-3 { grid-column: span 3; }
+    }
+    
+    @media (min-width: 1360px) {
+        &.span-4 { grid-column: span 4; }
     }
 
-    .item_image {
-        /* Убираем margin-top, отступы регулирует flex-gap или padding родителя */
-        margin-top: 0; 
-        
-        /* Немного уменьшаем картинку, чтобы влезло 3-4 строки текста */
-        width: 120px; 
-        height: 120px;
-        object-fit: contain; /* Чтобы картинка не сплющилась */
-        flex-shrink: 0; /* Запрещаем картинке сжиматься */
-        margin-bottom: 10px; /* Небольшой отступ до текста */
+    .cat-img {
+        width: 100%; 
+        height: 100%;
+        object-fit: cover; 
+        opacity: 0.85;
+        transition: transform 0.5s ease, opacity 0.5s ease;
     }
 
-    .item_text_container {
+    &:hover .cat-img {
+        transform: scale(1.08);
+        opacity: 0.6; 
+    }
+
+    &:hover .arrow { 
+        transform: translateX(8px); 
+    }
+
+    .cat-overlay {
+        position: absolute;
+        bottom: 0; 
+        left: 0; 
         width: 100%;
-        margin-top: 0; /* Убираем старый отступ */
-        
-        /* Магия выравнивания */
-        flex-grow: 1; /* Занимает всё оставшееся место */
-        display: flex;
-        flex-direction: column;
-        justify-content: center; /* Центрирует текст вертикально в своей зоне */
-        align-items: center;
+        padding: 30px;
+        box-sizing: border-box;
+        color: white;
+        background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4) 60%, transparent);
+    }
 
-        .item_paragraph--counter {
-            color: #8E8E93;
-            padding: 0;
-            margin: 0;
-            font-size: 0.9rem; /* Можно чуть уменьшить, если нужно */
-        }
-
-        .item_paragraph--name {
-            color: #333333;
-            padding: 0;
-            margin-top: 5px;
-            /* Опционально: ограничить кол-во строк, если вдруг будет 5+ */
-            display: -webkit-box;
-            -webkit-line-clamp: 4; 
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+    .cat-title { 
+        margin-bottom: 6px; 
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .cat-subtitle { 
+        opacity: 0.8; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px;
+    }
+    
+    .arrow { 
+        font-size: 1.2rem; 
+        transition: transform 0.2s; 
     }
 }
 
 @media (max-width: 768px) {
-    .catalog_item {
-        width: 190px;
-        height: 190px;
-        padding: 10px;
-
-        .item_image {
-            /* Адаптация для мобильных */
-            width: 80px;
-            height: 80px;
-            margin-bottom: 5px;
-        }
+    .cat-card { 
+        height: 280px; 
         
-        .item_text_container {
-             .item_paragraph--name {
-                 font-size: 14px; /* Чуть меньше шрифт на мобильных */
-             }
+        &.span-2, &.span-3, &.span-4 {
+            grid-column: span 1; 
         }
+
+        .cat-overlay {
+            padding: 20px;
+        }
+
     }
 }

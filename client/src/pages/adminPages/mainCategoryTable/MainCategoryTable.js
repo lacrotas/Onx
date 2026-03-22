@@ -1,297 +1,239 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { fetchAllMainKategory, postMainKategory, updateMainKategory, deleteMainKategoryById } from '../../../http/KategoryApi';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy
+} from '@dnd-kit/sortable';
+
+import {
+  postMainKategory,
+  fetchAllMainKategory,
+  updateMainKategory,
+  deleteMainKategoryById
+} from '../../../http/KategoryApi';
+import SortableCard from './sortableCard/SortableCard';
 import "./MainCategoryTable.scss";
 
 const MainCategoryTable = () => {
   const [categories, setCategories] = useState([]);
-  const [filteredCategories, setFilteredCategories] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // 1. Добавляем состояние для сортировки
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({ name: '', imageFile: null, imageUrl: '' });
+
   const fileInputRef = useRef(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const data = await fetchAllMainKategory();
+      const sorted = data.sort((a, b) => (a.gridItemIndex || 0) - (b.gridItemIndex || 0));
+      setCategories(sorted);
+      setHasChanges(false);
+    } catch (error) {
+      console.error("Ошибка при загрузке категорий:", error);
+    }
+  }, []);
 
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [loadCategories]);
 
-  // 2. Обновляем useEffect для фильтрации И сортировки
-  useEffect(() => {
-    // Сначала фильтруем
-    let result = categories.filter(category =>
-      category.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Затем сортируем
-    if (sortConfig.key) {
-      result.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-
-        // Обработка null/undefined
-        if (aValue === null || aValue === undefined) aValue = '';
-        if (bValue === null || bValue === undefined) bValue = '';
-
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-
-    setFilteredCategories(result);
-  }, [searchTerm, categories, sortConfig]); // Добавили sortConfig в зависимости
-
-  const loadCategories = async () => {
-    try {
-      const data = await fetchAllMainKategory();
-      setCategories(data);
-      // setFilteredCategories(data); // Убрали, так как useEffect сработает автоматически
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
+  const changeSize = (id, newSize) => {
+    setCategories(prev => prev.map(c => {
+      if (c.id === id) {
+        return { ...c, gridSpace: newSize };
+      }
+      return c;
+    }));
+    setHasChanges(true);
   };
 
-  // 3. Функция запроса сортировки
-  const requestSort = (key) => {
-    let direction = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  // Вспомогательная функция для индикатора
-  const getSortIndicator = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
-  };
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const openAddModal = () => {
-    setEditingCategory(null);
-    setFormData({ name: '', imageFile: null, imageUrl: '' });
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (category) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      imageFile: null,
-      imageUrl: `${process.env.REACT_APP_API_URL}static/images/${category.image}`
+    setCategories((items) => {
+      const oldIndex = items.findIndex(i => i.id === active.id);
+      const newIndex = items.findIndex(i => i.id === over.id);
+      const updatedArray = arrayMove(items, oldIndex, newIndex);
+      return updatedArray.map((item, index) => ({ ...item, gridItemIndex: index }));
     });
-    setIsModalOpen(true);
+    setHasChanges(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingCategory(null);
-  };
-  const confirmAndCloseModal = () => {
-    if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
-      closeModal();
+  const handleApplyChanges = async () => {
+    setIsSaving(true);
+    try {
+      const updatePromises = categories.map(cat => {
+        const fd = new FormData();
+        fd.append("gridItemIndex", cat.gridItemIndex);
+        fd.append("gridSpace", cat.gridSpace || 1);
+        return updateMainKategory(cat.id, fd);
+      });
+      await Promise.all(updatePromises);
+      setHasChanges(false);
+      setTimeout(() => { alert("Изменения сетки применены успешно!") }, 200);
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка при сохранении сетки");
+    } finally {
+      setIsSaving(false);
     }
   };
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+
+  const toggleModal = (category = null) => {
+    if (category) {
+      setEditingCategory(category);
+      setFormData({
+        name: category.name,
+        imageFile: null,
+        imageUrl: `${process.env.REACT_APP_API_URL}static/images/${category.image}`
+      });
+    } else {
+      setEditingCategory(null);
+      setFormData({ name: '', imageFile: null, imageUrl: '' });
+    }
+    setIsModalOpen(!isModalOpen);
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData(prev => ({
-          ...prev,
-          imageFile: file,
-          imageUrl: event.target.result
-        }));
-      };
-      reader.readAsDataURL(file);
+      setFormData(prev => ({
+        ...prev,
+        imageFile: file,
+        imageUrl: URL.createObjectURL(file)
+      }));
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const myFormData = new FormData();
-
-    if (editingCategory) {
-      myFormData.append("name", formData.name);
-      myFormData.append("image", formData.imageFile);
-
-      await updateMainKategory(editingCategory.id, myFormData);
-    } else {
-      myFormData.append("name", formData.name);
-      myFormData.append("image", formData.imageFile);
-
-      await postMainKategory(myFormData);
-    }
-    closeModal();
-    window.location.reload();
-  };
-  const handleSubmitWithoutClose = async (e) => {
-    const myFormData = new FormData();
-
-    if (editingCategory) {
-      myFormData.append("name", formData.name);
-      myFormData.append("image", formData.imageFile);
-
-      await updateMainKategory(editingCategory.id, myFormData);
-    } else {
-      myFormData.append("name", formData.name);
-      myFormData.append("image", formData.imageFile);
-
-      await postMainKategory(myFormData);
+  const handleDelete = async (id) => {
+    if (window.confirm('При удалении категории удалятся все связанные товары. Продолжить?')) {
+      try {
+        await deleteMainKategoryById(id);
+        loadCategories();
+      } catch (error) {
+        console.error(error);
+        alert("Ошибка при удалении");
+      }
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('При удалении главной категории удалятся все товары, фильтры, категории которые с ней связанны?')) {
-      deleteMainKategoryById(id)
-      window.location.reload();
+  const handleModalSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const fd = new FormData();
+    fd.append("name", formData.name);
+    if (formData.imageFile) {
+      fd.append("image", formData.imageFile);
+    }
+
+    try {
+      if (editingCategory) {
+        await updateMainKategory(editingCategory.id, fd);
+      } else {
+        await postMainKategory(fd);
+      }
+      setIsModalOpen(false);
+      loadCategories();
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка при сохранении данных категории");
     }
   };
-
 
   return (
-    <div className="adminMainKategoryTable">
-      <div className="admin-header">
-        <h1>Главные категории</h1>
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="Название категории..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
+    <div className="admin-category-editor">
+      <header className="admin-nav">
+        <div className="nav-container">
+          <div className="logo my_h2">Главные категории</div>
+          <div className="nav-buttons">
+            <button type="button" className="refresh-btn my_p" onClick={() => toggleModal()}>+ Добавить</button>
+            {hasChanges && (
+              <button
+                type="button"
+                className={`apply-btn my_p ${isSaving ? 'loading' : ''}`}
+                onClick={handleApplyChanges}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Сохранение...' : 'Применить изменения'}
+              </button>
+            )}
+            <button type="button" className="refresh-btn my_p" onClick={loadCategories}>Сбросить</button>
+          </div>
         </div>
-        <button onClick={openAddModal} className="add-button">
-          Добавить категорию
-        </button>
-      </div>
+      </header>
 
-      <div className="table-container">
-        <table className="categories-table">
-          <thead>
-            {/* 4. Добавляем onClick и стили курсора */}
-            <tr>
-              <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
-                ID{getSortIndicator('id')}
-              </th>
-              <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
-                Название{getSortIndicator('name')}
-              </th>
-              <th>Картинка</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCategories.map(category => (
-              <tr key={category.id}>
-                <td>{category.id}</td>
-                <td>{category.name}</td>
-                <td>
-                  <div className="image-preview">
-                    <img src={`${process.env.REACT_APP_API_URL}static/images/${category.image}`} alt="Category" className="preview-image" />
-                  </div>
-                </td>
-                <td className="action-buttons">
-                  <button
-                    onClick={() => openEditModal(category)}
-                    className="edit-button"
-                  >
-                    Обновить
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category.id)}
-                    className="delete-button"
-                  >
-                    Удалить
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <main className="content-container">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={categories.map(c => c.id)} strategy={rectSortingStrategy}>
+            <div className="catalog_section">
+              {categories.map(cat => (
+                <SortableCard
+                  key={cat.id}
+                  cat={cat}
+                  onChangeSize={changeSize}
+                  onEdit={toggleModal}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      </main>
 
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>{editingCategory ? 'Редактирование' : 'Добавление'}</h2>
-            <form onSubmit={handleSubmit}>
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h2 className="my_h2">{editingCategory ? 'Редактирование' : 'Добавление'}</h2>
+            <form onSubmit={handleModalSubmit}>
               <div className="form-group">
-                <label htmlFor="name">Название:</label>
+                <label className="label my_p">Название:</label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
+                  className="form-input my_p"
                   value={formData.name}
-                  onChange={handleInputChange}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="form-input"
                 />
               </div>
+
               <div className="form-group">
-                <label>Картинка:</label>
-                <div
-                  className="image-upload-container"
-                  onClick={triggerFileInput}
-                >
+                <label className="label my_p">Картинка:</label>
+                <div className="image-upload-container" onClick={() => fileInputRef.current.click()}>
                   {formData.imageUrl ? (
                     <div className="image-preview-container">
-                      <img
-                        src={formData.imageUrl}
-                        alt="Preview"
-                        className="uploaded-image"
-                      />
-                      <div className="image-overlay">
-                        <span className="overlay-text">поменять</span>
-                      </div>
+                      <img src={formData.imageUrl} className="uploaded-image" alt="Preview" />
+                      <div className="image-overlay"><span className="overlay-text my_p">поменять</span></div>
                     </div>
                   ) : (
                     <div className="image-placeholder">
-                      <div className="placeholder-icon">📁</div>
-                      <span>Нажмите чтобы загрузить</span>
+                      <div className="placeholder-icon my_h1">📁</div>
+                      <span className="my_p">Загрузить фото</span>
                     </div>
                   )}
                   <input
                     type="file"
                     ref={fileInputRef}
+                    style={{ display: 'none' }}
                     onChange={handleFileChange}
                     accept="image/*"
-                    style={{ display: 'none' }}
                   />
                 </div>
               </div>
+
               <div className="modal-buttons">
-                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">
-                  Отмена
-                </button>
-                {!editingCategory ?
-                  <button type="button" onClick={(e) => handleSubmitWithoutClose(e)} className="save-button">
-                    Добавить без сброса
-                  </button>
-                  : <></>
-                }
-                <button type="submit" className="save-button">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="cancel-button my_p">Отмена</button>
+                <button type="submit" className="save-button my_p">
                   {editingCategory ? 'Обновить' : 'Добавить'}
                 </button>
               </div>
@@ -299,7 +241,6 @@ const MainCategoryTable = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

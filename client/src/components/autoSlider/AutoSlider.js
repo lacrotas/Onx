@@ -18,7 +18,7 @@ const AutoSlider = () => {
         if (sliders.length > 0) {
             const interval = setInterval(() => {
                 setCurrentIndex(prev => (prev + 1) % sliders.length);
-            }, 5000);
+            }, 10000);
             return () => clearInterval(interval);
         }
     }, [sliders]);

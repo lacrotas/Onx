@@ -1,0 +1,143 @@
+$bg-card: #ffffff;
+$text-main: #1d1d1f;
+$text-sec: #86868b;
+$accent: #0071e3;
+$success: #34c759;
+$border: #d2d2d7;
+$radius: 20px;
+/* --- SIDEBAR STYLES --- */
+.sidebar {
+    position: sticky;
+    top: 100px;
+    
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .filters-list_close {
+            display: none; // Видно только на мобилках
+            cursor: pointer;
+            color: $text-sec;
+        }
+    }
+
+    .filter-group {
+        margin-bottom: 30px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding-bottom: 20px;
+    }
+
+    .filter-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: $text-main;
+    }
+
+    /* Кастомный чекбокс */
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: $text-main;
+        transition: color 0.2s ease;
+
+        &:hover { color: $accent; }
+
+        input { display: none; }
+
+        .custom-check {
+            width: 18px;
+            height: 18px;
+            border: 1px solid $border;
+            border-radius: 5px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            transition: all 0.2s ease;
+        }
+
+        input:checked + .custom-check {
+            background-color: $accent;
+            border-color: $accent;
+            
+            &::after {
+                content: '✓';
+                color: white;
+                font-size: 10px;
+                font-weight: bold;
+            }
+        }
+    }
+
+    /* Инпуты для чисел */
+    .number-range-modern {
+        display: flex;
+        gap: 8px;
+        
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid $border;
+            font-size: 0.85rem;
+            outline: none;
+            
+            &:focus { border-color: $accent; }
+        }
+    }
+
+    .btn-reset {
+        width: 100%;
+        padding: 12px;
+        background: transparent;
+        color: $text-sec;
+        border: 1px solid $border;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: #f5f5f7;
+            color: $text-main;
+            border-color: $text-main;
+        }
+    }
+}
+
+/* --- MOBILE ADAPTATION --- */
+@media (max-width: 900px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%; // Скрыт за экраном
+        width: 300px;
+        height: 100vh;
+        background: #fff;
+        z-index: 1001;
+        padding: 24px;
+        transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+
+        &.open {
+            left: 0;
+        }
+
+        .sidebar-header .filters-list_close {
+            display: block;
+        }
+    }
+}

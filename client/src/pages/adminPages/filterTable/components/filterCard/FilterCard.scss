@@ -1,0 +1,185 @@
+.filter-card {
+    background: var(--bg-card, #ffffff);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s, border-color 0.2s;
+    border: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+
+    &:hover {
+        border-color: rgba(0, 113, 227, 0.2);
+        transform: translateY(-2px);
+    }
+
+    &.modified {
+        border-color: #34c759;
+        box-shadow: 0 4px 24px rgba(52, 199, 89, 0.1);
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .filter-name {
+        letter-spacing: -0.5px;
+        color: var(--text-main);
+    }
+
+    .filter-addition {
+        color: var(--text-sec);
+        margin-top: 4px;
+    }
+
+    .filter-type {
+        color: var(--text-sec);
+        background: #f5f5f7;
+        padding: 4px 10px;
+        border-radius: 6px;
+        text-transform: uppercase;
+    }
+
+    .values-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+        flex: 1;
+    }
+
+    .value-tag {
+        background: #f2f2f7;
+        padding: 6px 14px;
+        border-radius: 99px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-main);
+
+        .remove {
+            color: var(--text-sec);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: color 0.2s;
+
+            &:hover { 
+                color: #ff3b30; 
+            }
+        }
+    }
+
+    .add-value-input {
+        border: 1px dashed #d2d2d7;
+        background: transparent;
+        padding: 6px 14px;
+        border-radius: 99px;
+        outline: none;
+        width: 140px;
+        transition: all 0.2s;
+        color: var(--text-main);
+
+        &::placeholder {
+            color: var(--text-sec);
+        }
+
+        &:focus {
+            border-color: var(--accent);
+            border-style: solid;
+            width: 180px;
+            background: #fff;
+        }
+    }
+
+    /* СТИЛИ ДЛЯ ЛОКАЛЬНЫХ КНОПОК СОХРАНЕНИЯ */
+    .local-actions {
+        background: rgba(52, 199, 89, 0.05);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .unsaved-badge {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+
+            button {
+                padding: 6px 16px;
+                border-radius: 99px;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s;
+
+                &:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+            }
+
+            .btn-local-cancel {
+                background: #e5e5ea;
+                color: #1d1d1f;
+                &:hover:not(:disabled) { background: #d1d1d6; }
+            }
+
+            .btn-local-apply {
+                background: #34c759;
+                color: #fff;
+                box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+                &:hover:not(:disabled) { 
+                    background: #28a745; 
+                    transform: translateY(-1px);
+                }
+            }
+        }
+    }
+
+    .card-footer {
+        border-top: 1px solid #f2f2f7;
+        padding-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .info-text {
+        color: var(--text-sec);
+    }
+
+    .card-settings {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        background: #f5f5f7;
+        border: none;
+        border-radius: 8px;
+        color: var(--text-sec);
+        cursor: pointer;
+        padding: 6px 10px;
+        transition: all 0.2s;
+
+        &:hover { 
+            background: #e5e5ea;
+            color: var(--accent); 
+        }
+
+        &.delete:hover { 
+            background: rgba(255, 59, 48, 0.1);
+        }
+    }
+}

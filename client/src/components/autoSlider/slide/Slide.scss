@@ -1,100 +1,117 @@
-// Slide.scss
-
 .slider_item {
-    width: 100%;
-    height: 400px;
     position: absolute;
     top: 0;
     left: 0;
-    transition: opacity 1s ease, transform 1s ease;
-    
-    /* Затемнение (overlay) должно быть под текстом, но над картинкой */
-    &::after {
-        content: '';
+    width: 100%;
+    height: 70vh;
+    /* Высота из нового дизайна */
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    overflow: hidden;
+    transition: opacity 1s ease;
+    /* Убрал transform, чтобы слайды менялись плавным затуханием */
+
+    /* Фон (картинка) */
+    .slider_bg {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0) 100%);
-        z-index: 1; /* Слой затемнения */
-    }
-
-    img {
-        width: 100%;
-        height: 100%;
         object-fit: cover;
+        filter: brightness(0.6);
+        /* Равномерное затемнение вместо градиента */
+        transform: scale(1);
+        transition: transform 10s ease;
+        /* Медленный зум картинки */
+        z-index: 0;
+    }
+
+    /* Эффект увеличения фона при наведении на слайд */
+    &:hover .slider_bg {
+        transform: scale(1.05);
+    }
+
+    /* Контентная часть (Текст и кнопка) */
+    .slider_content {
         position: relative;
-        z-index: 0; /* Картинка в самом низу */
+        z-index: 2;
+        max-width: 1400px;
+        padding: 0 20px;
+        transition: transform 1s ease, opacity 1s ease;
     }
 
-    color: #ffffff;
-
-    .item_container {
-        position: absolute;
-        bottom: 70px;
-        left: 0;
-        width: 100%; /* Растягиваем на всю ширину экрана */
-        z-index: 2; /* Текст поверх затемнения */
-        
-        /* Центрирование контента */
-        display: flex;
-        justify-content: center; 
-        padding: 0 20px; /* Безопасные отступы по бокам для мобилок */
-        
-        transition: transform 1s ease;
-        .container_text .container_text-paragraph{
-            margin-top: 10px;
-        }
-        &.current {
-            transform: translateY(0);
-        }
-
-        &.next {
-            transform: translateY(50px);
-        }
+    .slider_title {
+        margin: 0 0 20px 0;
     }
 
-    /* Внутренняя обертка для контента, чтобы ограничить ширину */
-    .content_wrapper {
-        width: 100%;
-        max-width: 1440px; /* Ваша ширина контейнера */
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
+    .slider_desc {
+        opacity: 0.9;
+        margin: 0 0 30px 0;
+    }
+
+    /* Новая кнопка в стиле Apple */
+    .btn-hero {
+        background: white;
+        color: black;
+        padding: 14px 40px;
+        border-radius: 980px;
+        /* Делает кнопку в форме "таблетки" */
+        transition: transform 0.2s;
+        display: inline-block;
+        border: none;
+        cursor: pointer;
+
+        &:hover {
+            transform: scale(1.05);
+        }
     }
 }
 
+/* --- СОСТОЯНИЯ СЛАЙДЕРА --- */
+
 .current {
     opacity: 1;
-    transform: translateX(0);
     z-index: 2;
+
+    .slider_content {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .next {
     opacity: 0;
-    transform: translateX(50px);
     z-index: 1;
+
+    .slider_content {
+        transform: translateY(30px);
+        /* Небольшой выезд текста снизу при смене слайда */
+        opacity: 0;
+    }
 }
 
-.none {
-    opacity: 0;
-    z-index: 0;
-}
+/* --- MOBILE ADAPTIVE --- */
+@media (max-width: 768px) {
+    .slider_item {
+        height: 60vh;
+        min-height: 400px;
 
-.slider_button {
-    padding: 12px 30px;
-    border: 2px solid #ffffff;
-    border-radius: 10px;
-    background-color: rgba($color: #000000, $alpha: 0.3);
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    white-space: nowrap; /* Чтобы текст кнопки не переносился */
+        .slider_title {
+            font-size: 2.8rem;
+        }
 
-    &:hover {
-        transform: translateY(-3px);
-        background-color: rgba($color: #ffffff, $alpha: 0.2);
+        .slider_desc {
+            font-size: 1.2rem;
+        }
+
+        .btn-hero {
+            padding: 12px 30px;
+            font-size: 1rem;
+        }
     }
 }

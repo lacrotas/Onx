@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchAllMainKategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
 import { fetchAllItem, postItem, deleteItemById, updateItemById } from '../../../http/itemApi';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'
 import { fetchAllFiltersByKategoryId, updateFilter } from '../../../http/filterApi';
+import ItemTableHeader from './components/itemTableHeader/ItemTableHeader';
+import ItemTableRow from './components/itemTableRow/ItemTableRow';
+import ItemModal from './components/itemModal/ItemModal';
 import "./ItemTable.scss";
 
 const ItemTable = () => {
@@ -13,14 +14,13 @@ const ItemTable = () => {
     const [allCategories, setAllCategories] = useState([]);
     const [categoriesByMain, setCategoriesByMain] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedFilterCategory, setSelectedFilterCategory] = useState('');
 
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
 
-    // ИЗМЕНЕНИЕ 1: Упростили структуру formData. Убрали imageFiles и existingImages.
-    // images теперь будет массивом объектов { url: string, file: File | null }
     const [formData, setFormData] = useState({
         name: '',
         mainKategoryId: '',
@@ -29,14 +29,19 @@ const ItemTable = () => {
         description: '',
         video: null,
         videoUrl: '',
-        images: [], // Unified array
+        images: [],
         isExist: true,
         isShowed: true,
         specifications: {}
     });
+
     const [filtersForCategory, setFiltersForCategory] = useState([]);
     const imageInputRef = useRef(null);
     const videoInputRef = useRef(null);
+
+    const [modifiedItems, setModifiedItems] = useState({});
+    const [isSaving, setIsSaving] = useState(false);
+    const hasChanges = Object.keys(modifiedItems).length > 0;
 
     useEffect(() => {
         loadItems();
@@ -45,9 +50,18 @@ const ItemTable = () => {
     }, []);
 
     useEffect(() => {
-        let result = items.filter(item =>
-            item.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        let result = items.filter(item => {
+            const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = selectedFilterCategory === '' || item.kategoryId === parseInt(selectedFilterCategory);
+            return matchesSearch && matchesCategory;
+        });
+
+        result = result.map(item => {
+            if (modifiedItems[item.id]) {
+                return { ...item, ...modifiedItems[item.id] };
+            }
+            return item;
+        });
 
         if (sortConfig.key) {
             result.sort((a, b) => {
@@ -79,12 +93,14 @@ const ItemTable = () => {
         }
 
         setFilteredItems(result);
-    }, [searchTerm, items, sortConfig, mainCategories, allCategories]);
+    }, [searchTerm, selectedFilterCategory, items, sortConfig, mainCategories, allCategories, modifiedItems]);
 
+    // загрузка данных с сервера
     const loadItems = async () => {
         try {
             const data = await fetchAllItem();
             setItems(data);
+            setModifiedItems({});
         } catch (error) {
             console.error('Error loading items:', error);
         }
@@ -157,6 +173,7 @@ const ItemTable = () => {
         }
     };
 
+    // внутренняя логика компонента
     const requestSort = (key) => {
         let direction = 'ascending';
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -174,6 +191,72 @@ const ItemTable = () => {
         setSearchTerm(e.target.value);
     };
 
+    const handleFilterCategoryChange = (e) => {
+        setSelectedFilterCategory(e.target.value);
+    };
+    const getMainCategoryName = (mainKategoryId) => {
+        const mainCat = mainCategories.find(cat => cat.id === mainKategoryId);
+        return mainCat ? mainCat.name : 'Неизвестно';
+    };
+
+    const getCategoryName = (kategoryId) => {
+        const category = allCategories.find(cat => cat.id === kategoryId);
+        return category ? category.name : 'Неизвестно';
+    };
+
+    // обновление данных без отправки на сервак
+    const handleQuickEdit = (itemId, field, newValue) => {
+        setModifiedItems(prev => {
+            const itemChanges = prev[itemId] || {};
+            const originalItem = items.find(i => i.id === itemId);
+            const newChanges = { ...itemChanges, [field]: newValue };
+
+            if (originalItem && String(originalItem[field]) === String(newValue)) {
+                delete newChanges[field];
+            }
+
+            if (Object.keys(newChanges).length === 0) {
+                const newState = { ...prev };
+                delete newState[itemId];
+                return newState;
+            }
+
+            return { ...prev, [itemId]: newChanges };
+        });
+    };
+
+    const cancelChanges = () => {
+        if (window.confirm('Отменить все несохраненные изменения в таблице?')) {
+            setModifiedItems({});
+        }
+    };
+    // редактирование цены/наличия/показа и отправка на сервер
+    const handleApplyChanges = async () => {
+        setIsSaving(true);
+        try {
+            const updatePromises = Object.keys(modifiedItems).map(itemId => {
+                const changes = modifiedItems[itemId];
+                const myFormData = new FormData();
+
+                if (changes.isExist !== undefined) myFormData.append("isExist", changes.isExist);
+                if (changes.isShowed !== undefined) myFormData.append("isShowed", changes.isShowed);
+                if (changes.price !== undefined) myFormData.append("price", changes.price);
+
+                return updateItemById(itemId, myFormData);
+            });
+
+            await Promise.all(updatePromises);
+            setModifiedItems({});
+            loadItems();
+            setTimeout(() => {alert("Изменения успешно сохранены!")}, 200);
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении изменений");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    // модалка по добавлению/редактированию товара
     const openAddModal = () => {
         setEditingItem(null);
         const initialMainCategoryId = mainCategories.length > 0 ? mainCategories[0].id : '';
@@ -186,7 +269,7 @@ const ItemTable = () => {
             description: '',
             video: null,
             videoUrl: '',
-            images: [], // Пустой массив для новых
+            images: [],
             isExist: true,
             isShowed: true,
             specifications: {}
@@ -197,29 +280,28 @@ const ItemTable = () => {
             loadCategoriesByMainCategory(initialMainCategoryId);
         }
     };
-
     const openEditModal = (item) => {
         setEditingItem(item);
 
-        // ИЗМЕНЕНИЕ 2: Преобразуем существующие картинки в объекты
         const itemImages = Array.isArray(item.images)
             ? item.images.map(img => ({ url: img, file: null }))
             : [];
 
         const itemVideo = item.video || '';
+        const localChanges = modifiedItems[item.id] || {};
         const itemSpecifications = item.specificationsJSONB || {};
 
         const initialFormData = {
             name: item.name || '',
             mainKategoryId: item.mainKategoryId || '',
             kategoryId: item.kategoryId || '',
-            price: item.price || '',
+            price: localChanges.price !== undefined ? localChanges.price : (item.price || ''),
             description: item.description || '',
             video: null,
             videoUrl: itemVideo,
-            images: itemImages, // Используем унифицированный массив
-            isExist: item.isExist ?? true,
-            isShowed: item.isShowed ?? true,
+            images: itemImages,
+            isExist: localChanges.isExist !== undefined ? localChanges.isExist : (item.isExist ?? true),
+            isShowed: localChanges.isShowed !== undefined ? localChanges.isShowed : (item.isShowed ?? true),
             specifications: itemSpecifications
         };
 
@@ -234,25 +316,59 @@ const ItemTable = () => {
             loadFiltersForCategory(item.kategoryId, itemSpecifications);
         }
     };
+    const openDuplicateModal = (item) => {
+        setEditingItem(null);
 
+        const itemImages = Array.isArray(item.images)
+            ? item.images.map(img => ({ url: img, file: null }))
+            : [];
+
+        const itemVideo = item.video || '';
+        const itemSpecifications = item.specificationsJSONB || {};
+
+        const initialFormData = {
+            name: item.name + ' (Копия)',
+            mainKategoryId: item.mainKategoryId || '',
+            kategoryId: item.kategoryId || '',
+            price: item.price || '',
+            description: item.description || '',
+            video: null,
+            videoUrl: itemVideo,
+            images: itemImages,
+            isExist: item.isExist ?? true,
+            isShowed: item.isShowed ?? true,
+            specifications: itemSpecifications
+        };
+
+        setFormData(initialFormData);
+        setIsModalOpen(true);
+
+        if (item.mainKategoryId) {
+            loadCategoriesByMainCategory(item.mainKategoryId);
+        }
+        if (item.kategoryId) {
+            loadFiltersForCategory(item.kategoryId, itemSpecifications);
+        }
+    };
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingItem(null);
         setFiltersForCategory([]);
         setCategoriesByMain([]);
     };
-
     const confirmAndCloseModal = () => {
         if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
             closeModal();
         }
     };
 
+    // обработка input
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         const val = type === 'checkbox' ? checked : value;
         setFormData(prev => ({ ...prev, [name]: val }));
     };
+
     const handleDescriptionChange = (value) => {
         setFormData(prev => ({ ...prev, description: value }));
     };
@@ -296,11 +412,9 @@ const ItemTable = () => {
         loadFiltersForCategory(value, currentSpecs);
     };
 
-    // ИЗМЕНЕНИЕ 3: Обновленная логика добавления картинок
     const handleImagesChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 0) {
-            // Создаем объекты для новых файлов
             const newImageObjects = files.map(file => ({
                 url: URL.createObjectURL(file),
                 file: file
@@ -313,13 +427,12 @@ const ItemTable = () => {
         }
     };
 
-    // ИЗМЕНЕНИЕ 4: Функция для установки главного изображения
     const setMainImage = (index) => {
-        if (index === 0) return; // Уже главное
+        if (index === 0) return;
 
         const newImages = [...formData.images];
-        const [selectedImage] = newImages.splice(index, 1); // Удаляем из текущей позиции
-        newImages.unshift(selectedImage); // Вставляем в начало
+        const [selectedImage] = newImages.splice(index, 1);
+        newImages.unshift(selectedImage);
 
         setFormData(prev => ({
             ...prev,
@@ -347,11 +460,9 @@ const ItemTable = () => {
         videoInputRef.current?.click();
     };
 
-    // ИЗМЕНЕНИЕ 5: Упрощенное удаление (просто удаляем по индексу)
     const removeImage = (index) => {
         const imageToRemove = formData.images[index];
 
-        // Если это blob-ссылка, освобождаем память
         if (imageToRemove.file) {
             URL.revokeObjectURL(imageToRemove.url);
         }
@@ -365,14 +476,35 @@ const ItemTable = () => {
         }));
     };
 
-    // ИЗМЕНЕНИЕ 6: Получение src для отображения
     const getImageSource = (imageObj) => {
         if (imageObj.file) {
-            return imageObj.url; // Blob URL
+            return imageObj.url;
         }
-        return `${process.env.REACT_APP_API_URL}static/images/${imageObj.url}`; // Server URL
+        return `${process.env.REACT_APP_API_URL}static/images/${imageObj.url}`;
     };
 
+    // сбор данных для отправки на сервер
+    const fillFormData = (myFormData) => {
+        myFormData.append("mainKategoryId", formData.mainKategoryId);
+        myFormData.append("kategoryId", formData.kategoryId);
+        myFormData.append("name", formData.name);
+
+        formData.images.forEach(imgObj => {
+            myFormData.append('imageStrings', imgObj.url);
+            if (imgObj.file) {
+                myFormData.append("images", imgObj.file);
+            }
+        });
+
+        myFormData.append("video", formData.video);
+        myFormData.append("price", formData.price);
+        myFormData.append("description", formData.description);
+        myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
+        myFormData.append("isExist", formData.isExist);
+        myFormData.append("isShowed", formData.isShowed);
+    };
+
+    // добавление/обновление/удаление данных на сервере
     const updateFilterAttributeValues = async (newSpecifications, oldSpecifications = {}) => {
         const allFilters = await fetchAllFiltersByKategoryId(formData.kategoryId);
 
@@ -405,64 +537,44 @@ const ItemTable = () => {
         }
     };
 
-    // ИЗМЕНЕНИЕ 7: Общая функция для заполнения FormData
-    const fillFormData = (myFormData) => {
-        myFormData.append("mainKategoryId", formData.mainKategoryId);
-        myFormData.append("kategoryId", formData.kategoryId);
-        myFormData.append("name", formData.name);
-
-        // Важно: проходим по массиву images в том порядке, в котором они на экране
-        formData.images.forEach(imgObj => {
-            // Отправляем имя файла (для старых) или blob-строку (для новых) в imageStrings
-            // Сервер должен использовать этот массив для определения порядка
-            myFormData.append('imageStrings', imgObj.url);
-
-            // Если это новый файл, добавляем его в массив images
-            if (imgObj.file) {
-                myFormData.append("images", imgObj.file);
-            }
-        });
-
-        myFormData.append("video", formData.video);
-        myFormData.append("price", formData.price);
-        myFormData.append("description", formData.description);
-        myFormData.append("specificationsJSONB", JSON.stringify(formData.specifications));
-        myFormData.append("isExist", formData.isExist);
-        myFormData.append("isShowed", formData.isShowed);
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         const myFormData = new FormData();
-        fillFormData(myFormData); // Используем хелпер
+        fillFormData(myFormData);
 
         if (editingItem) {
-            await updateItemById(editingItem.id, myFormData)
+            await updateItemById(editingItem.id, myFormData);
+            setModifiedItems(prev => {
+                const newState = { ...prev };
+                delete newState[editingItem.id];
+                return newState;
+            });
         } else {
             await postItem(myFormData);
         }
 
         updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
         closeModal();
-        window.location.reload();
+        loadItems();
     };
 
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
         const myFormData = new FormData();
-        fillFormData(myFormData); // Используем хелпер
+        fillFormData(myFormData);
 
         if (editingItem) {
-            await updateItemById(editingItem.id, myFormData)
+            await updateItemById(editingItem.id, myFormData);
         } else {
             await postItem(myFormData);
         }
 
         await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
+        loadItems();
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Вы дейтвительно хотите удалить данный товар?')) {
+        if (window.confirm('Вы действительно хотите удалить данный товар?')) {
             const itemToDelete = items.find(item => item.id === id);
             await deleteItemById(id);
 
@@ -488,439 +600,102 @@ const ItemTable = () => {
                 }
             }
             setItems(items.filter(item => item.id !== id));
+
+            if (modifiedItems[id]) {
+                setModifiedItems(prev => {
+                    const newState = { ...prev };
+                    delete newState[id];
+                    return newState;
+                });
+            }
         }
     };
 
-    const getMainCategoryName = (mainKategoryId) => {
-        const mainCat = mainCategories.find(cat => cat.id === mainKategoryId);
-        return mainCat ? mainCat.name : 'Unknown';
-    };
 
-    const getCategoryName = (kategoryId) => {
-        const category = allCategories.find(cat => cat.id === kategoryId);
-        return category ? category.name : 'Unknown';
-    };
 
     return (
-        <div className="adminItemTable">
-            <div className="admin-header">
-                <h1>Товары</h1>
-                <div className="search-container">
-                    <input
-                        type="text"
-                        placeholder="Название товара..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="search-input"
-                    />
-                </div>
-                <button onClick={openAddModal} className="add-button">
-                    Добавить товар
-                </button>
-            </div>
+        <div className="admin-item-editor">
+            <ItemTableHeader
+                selectedFilterCategory={selectedFilterCategory}
+                handleFilterCategoryChange={handleFilterCategoryChange}
+                allCategories={allCategories}
+                searchTerm={searchTerm}
+                handleSearch={handleSearch}
+                openAddModal={openAddModal}
+                hasChanges={hasChanges}
+                isSaving={isSaving}
+                handleApplyChanges={handleApplyChanges}
+                cancelChanges={cancelChanges}
+            />
 
-            <div className="table-container">
-                <table className="categories-table">
-                    <thead>
-                        <tr>
-                            <th onClick={() => requestSort('id')} style={{ cursor: 'pointer' }}>
-                                ID{getSortIndicator('id')}
-                            </th>
-                            <th onClick={() => requestSort('mainKategoryId')} style={{ cursor: 'pointer' }}>
-                                Главная категория{getSortIndicator('mainKategoryId')}
-                            </th>
-                            <th onClick={() => requestSort('kategoryId')} style={{ cursor: 'pointer' }}>
-                                Категория{getSortIndicator('kategoryId')}
-                            </th>
-                            <th>Фото</th>
-                            <th onClick={() => requestSort('name')} style={{ cursor: 'pointer' }}>
-                                Название{getSortIndicator('name')}
-                            </th>
-                            <th onClick={() => requestSort('price')} style={{ cursor: 'pointer' }}>
-                                Цена{getSortIndicator('price')}
-                            </th>
-                            <th onClick={() => requestSort('isExist')} style={{ cursor: 'pointer' }}>
-                                В наличии{getSortIndicator('isExist')}
-                            </th>
-                            <th onClick={() => requestSort('isShowed')} style={{ cursor: 'pointer' }}>
-                                Показан{getSortIndicator('isShowed')}
-                            </th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredItems.map(item => (
-                            <tr key={item.id}>
-                                <td>{item.id}</td>
-                                <td>{getMainCategoryName(item.mainKategoryId)}</td>
-                                <td>{getCategoryName(item.kategoryId)}</td>
-                                <td>
-                                    <div className="image-preview">
-                                        {item.images && item.images.length > 0 && (
-                                            <img src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`} alt="Item" className="preview-image" />
-                                        )}
-                                    </div>
-                                </td>
-                                <td className='td_name'>{item.name}</td>
-                                <td>{item.price}</td>
-                                <td>{item.isExist ? 'Да' : 'Нет'}</td>
-                                <td>{item.isShowed ? 'Да' : 'Нет'}</td>
-                                <td className="action-buttons">
-                                    <button
-                                        onClick={() => openEditModal(item)}
-                                        className="edit-button"
-                                    >
-                                        Редактировать
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(item.id)}
-                                        className="delete-button"
-                                    >
-                                        Удалить
-                                    </button>
-                                </td>
+            <main className="content-container">
+                <div className="table-wrapper">
+                    <table className="apple-table">
+                        <thead>
+                            <tr>
+                                <th onClick={() => requestSort('kategoryId')} className="sortable my_p">
+                                    Категория {getSortIndicator('kategoryId')}
+                                </th>
+                                <th className="my_p">Фото</th>
+                                <th onClick={() => requestSort('name')} className="sortable my_p">
+                                    Название {getSortIndicator('name')}
+                                </th>
+                                <th onClick={() => requestSort('price')} className="sortable my_p">
+                                    Цена {getSortIndicator('price')}
+                                </th>
+                                <th className="my_p">
+                                    Наличие
+                                </th>
+                                <th className="my_p">
+                                    Показан
+                                </th>
+                                <th className="my_p">Действия</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
-                    <div className="modal-content-large" onClick={(e) => e.stopPropagation()}>
-                        <h2>{editingItem ? 'Редактирования' : 'Добавление'}</h2>
-                        <form onSubmit={handleSubmit} className="item-form">
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label htmlFor="name">Название:</label>
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label htmlFor="price">Цена:</label>
-                                    <input
-                                        type="text"
-                                        id="price"
-                                        name="price"
-                                        value={formData.price}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="form-input"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label htmlFor="mainKategoryId">Главная категория:</label>
-                                    <select
-                                        id="mainKategoryId"
-                                        name="mainKategoryId"
-                                        value={formData.mainKategoryId}
-                                        onChange={handleMainCategoryChange}
-                                        className="form-select"
-                                        required
-                                    >
-                                        {mainCategories.map(mainCat => (
-                                            <option key={mainCat.id} value={mainCat.id}>
-                                                {mainCat.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label htmlFor="kategoryId">Категория:</label>
-                                    <select
-                                        id="kategoryId"
-                                        name="kategoryId"
-                                        value={formData.kategoryId}
-                                        onChange={handleCategoryChange}
-                                        className="form-select"
-                                        required
-                                        disabled={!formData.mainKategoryId || categoriesByMain.length === 0}
-                                    >
-                                        <option value="">Выберите категорию</option>
-                                        {categoriesByMain.map(category => (
-                                            <option key={category.id} value={category.id}>
-                                                {category.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {!formData.mainKategoryId && (
-                                        <div className="form-hint">Сначала выберите главную категорию</div>
-                                    )}
-                                    {formData.mainKategoryId && categoriesByMain.length === 0 && (
-                                        <div className="form-hint">Нет категорий для выбранной главной категории</div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="isExist"
-                                            checked={formData.isExist}
-                                            onChange={handleInputChange}
-                                            className="form-checkbox"
-                                        />
-                                        В наличии
-                                    </label>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="isShowed"
-                                            checked={formData.isShowed}
-                                            onChange={handleInputChange}
-                                            className="form-checkbox"
-                                        />
-                                        Показан
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="form-group full-width">
-                                <label>Описание:</label>
-                                <ReactQuill
-                                    theme="snow"
-                                    value={formData.description}
-                                    onChange={handleDescriptionChange}
-                                    className="form-quill"
-                                    modules={{
-                                        toolbar: [
-                                            [{ 'header': [1, 2, false] }],
-                                            ['bold', 'italic', 'underline', 'strike'],
-                                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                                            ['clean']
-                                        ],
-                                    }}
+                        </thead>
+                        <tbody>
+                            {filteredItems.map(item => (
+                                <ItemTableRow
+                                    key={item.id}
+                                    item={item}
+                                    modifiedItem={modifiedItems[item.id]}
+                                    getMainCategoryName={getMainCategoryName}
+                                    getCategoryName={getCategoryName}
+                                    handleQuickEdit={handleQuickEdit}
+                                    openEditModal={openEditModal}
+                                    openDuplicateModal={openDuplicateModal}
+                                    handleDelete={handleDelete}
                                 />
-                            </div>
-
-                            <div className="form-group full-width">
-                                <label>Картинки (Нажмите на картинку, чтобы сделать её главной):</label>
-                                <div className="images-container">
-                                    {formData.images.map((imageObj, index) => (
-                                        <div
-                                            key={index}
-                                            className="image-item"
-                                            // ИЗМЕНЕНИЕ 8: Стили для главной картинки и обработчик клика
-                                            style={{
-                                                border: index === 0 ? '3px solid #4CAF50' : '1px solid #ddd',
-                                                cursor: 'pointer',
-                                                position: 'relative'
-                                            }}
-                                            onClick={() => setMainImage(index)}
-                                            title={index === 0 ? "Главное изображение" : "Нажмите, чтобы сделать главным"}
-                                        >
-                                            {index === 0 && (
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    background: '#4CAF50',
-                                                    color: 'white',
-                                                    padding: '2px 5px',
-                                                    fontSize: '10px',
-                                                    zIndex: 10
-                                                }}>Главное</div>
-                                            )}
-                                            <img
-                                                src={getImageSource(imageObj)}
-                                                alt={`Preview ${index}`}
-                                                className="uploaded-image-large"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Чтобы не срабатывал выбор главного при удалении
-                                                    removeImage(index);
-                                                }}
-                                                className="remove-image-button"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <div
-                                        className="add-image-placeholder"
-                                        onClick={triggerImageInput}
-                                    >
-                                        <div className="placeholder-icon">+</div>
-                                        <span>Добавить фото</span>
-                                    </div>
-                                    <input
-                                        type="file"
-                                        ref={imageInputRef}
-                                        onChange={handleImagesChange}
-                                        accept="image/*"
-                                        multiple
-                                        style={{ display: 'none' }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="form-group full-width">
-                                <label>Видео:</label>
-                                <div className="video-container">
-                                    {formData.videoUrl && (
-                                        <div className="video-preview">
-                                            <video
-                                                src={formData.videoUrl.startsWith('blob:')
-                                                    ? formData.videoUrl
-                                                    : `${process.env.REACT_APP_API_URL}static/video/${formData.videoUrl}`}
-                                                controls
-                                                className="video-element"
-                                            />
-                                        </div>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={triggerVideoInput}
-                                        className="video-upload-button"
-                                    >
-                                        {formData.videoUrl ? 'Change Video' : 'Upload Video'}
-                                    </button>
-                                    <input
-                                        type="file"
-                                        ref={videoInputRef}
-                                        onChange={handleVideoChange}
-                                        accept="video/*"
-                                        style={{ display: 'none' }}
-                                    />
-                                </div>
-                            </div>
-                            {filtersForCategory.length > 0 && (
-                                <div className="form-group full-width">
-                                    <label>Характеристики:</label>
-                                    <div className="specifications-container">
-                                        {filtersForCategory.map(filter => {
-                                            const currentSpecValue = formData.specifications[filter.name] || '';
-
-                                            if (filter.buttonType === 'check') {
-                                                return (
-                                                    <div key={filter.id} className="specification-item">
-                                                        <label className="checkbox-label">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={currentSpecValue === 'true'}
-                                                                onChange={(e) => handleSpecificationChange(filter.name, e.target.checked ? 'true' : 'false')}
-                                                                className="form-checkbox"
-                                                            />
-                                                            {filter.name}
-                                                        </label>
-                                                    </div>
-                                                );
-                                            } else if (filter.buttonType === 'select') {
-                                                const attributeValues = Array.isArray(filter.attributeValues) ? filter.attributeValues : [];
-                                                const showCustomInput = currentSpecValue && !attributeValues.includes(currentSpecValue);
-
-                                                return (
-                                                    <div key={filter.id} className="specification-item">
-                                                        <label htmlFor={`spec-${filter.name}`}>{filter.name}:</label>
-                                                        <select
-                                                            id={`spec-${filter.name}`}
-                                                            value={currentSpecValue}
-                                                            onChange={(e) => {
-                                                                const value = e.target.value;
-                                                                if (value === '__custom__') {
-                                                                    handleSpecificationChange(filter.name, '');
-                                                                } else {
-                                                                    handleSpecificationChange(filter.name, value);
-                                                                }
-                                                            }}
-                                                            className="form-select"
-                                                        >
-                                                            <option value="">Выберите значение</option>
-                                                            {attributeValues.map((val, index) => (
-                                                                <option key={index} value={val}>
-                                                                    {val}
-                                                                </option>
-                                                            ))}
-                                                            <option value="__custom__">➕ Добавить значение</option>
-                                                        </select>
-
-                                                        {(showCustomInput || currentSpecValue === '') && (
-                                                            <input
-                                                                type="text"
-                                                                value={currentSpecValue}
-                                                                onChange={(e) => handleSpecificationChange(filter.name, e.target.value)}
-                                                                placeholder="Введите новое значение"
-                                                                className="form-input custom-value-input"
-                                                            />
-                                                        )}
-                                                    </div>
-                                                );
-                                            } else if (filter.buttonType === 'number') {
-                                                return (
-                                                    <div key={filter.id} className="specification-item">
-                                                        <label htmlFor={`spec-${filter.name}`}>{filter.name}:</label>
-                                                        <div className="number-with-addition">
-                                                            <input
-                                                                type="number"
-                                                                id={`spec-${filter.name}`}
-                                                                value={currentSpecValue}
-                                                                onChange={(e) => handleSpecificationChange(filter.name, e.target.value)}
-                                                                className="form-input number-input"
-                                                                placeholder="Введите число"
-                                                            />
-                                                            {filter.addition && (
-                                                                <span className="addition-suffix">{filter.addition}</span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            } else {
-                                                return (
-                                                    <div key={filter.id} className="specification-item">
-                                                        <label htmlFor={`spec-${filter.name}`}>{filter.name}:</label>
-                                                        <input
-                                                            type="text"
-                                                            id={`spec-${filter.name}`}
-                                                            value={currentSpecValue}
-                                                            onChange={(e) => handleSpecificationChange(filter.name, e.target.value)}
-                                                            className="form-input"
-                                                        />
-                                                    </div>
-                                                );
-                                            }
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="modal-buttons">
-                                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">
-                                    Отмена
-                                </button>
-                                {!editingItem ?
-                                    <button type="button" onClick={(e) => handleSubmitWithoutClose(e)} className="save-button">
-                                        Добавить без сброса
-                                    </button>
-                                    : <></>
-                                }
-                                <button type="submit" className="save-button">
-                                    {editingItem ? 'Обновить' : 'Добавить'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-            )}
+            </main>
 
+            <ItemModal
+                isModalOpen={isModalOpen}
+                confirmAndCloseModal={confirmAndCloseModal}
+                editingItem={editingItem}
+                formData={formData}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleSubmit}
+                mainCategories={mainCategories}
+                handleMainCategoryChange={handleMainCategoryChange}
+                categoriesByMain={categoriesByMain}
+                handleCategoryChange={handleCategoryChange}
+                handleDescriptionChange={handleDescriptionChange}
+                setMainImage={setMainImage}
+                getImageSource={getImageSource}
+                removeImage={removeImage}
+                triggerImageInput={triggerImageInput}
+                imageInputRef={imageInputRef}
+                handleImagesChange={handleImagesChange}
+                videoInputRef={videoInputRef}
+                triggerVideoInput={triggerVideoInput}
+                handleVideoChange={handleVideoChange}
+                filtersForCategory={filtersForCategory}
+                handleSpecificationChange={handleSpecificationChange}
+                handleSubmitWithoutClose={handleSubmitWithoutClose}
+            />
         </div>
     );
 };

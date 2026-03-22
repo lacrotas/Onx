@@ -6,7 +6,7 @@ function Breadcrumbs({ items }) {
     <div className="breadcrumbs">
       {items.map((item, index) => (
         <span key={index} className="breadcrumbs__item">
-          {index > 0 && <span className="breadcrumbs__separator"> &gt; </span>}
+          {index > 0 && <span className="breadcrumbs__separator"> / </span>}
           {item.path ? (
             <Link to={item.path} className="breadcrumbs__link my_p_small">
               {item.title}

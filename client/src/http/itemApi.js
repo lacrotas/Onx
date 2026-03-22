@@ -9,7 +9,6 @@ export const postItem = async (item) => {
                 Authorization: `Bearer ${token}`
             }
         });
-        alert('Товар успешно добавлен');
         return data;
     } catch (e) {
         if (e.response && e.response.status === 413) {
@@ -72,7 +71,6 @@ export const deleteItemById = async (id) => {
                 }
             }
             )
-            alert('Товар успешно удален');
             return data;
         } catch (e) {
             if (e.response && e.response.status === 413) {
@@ -98,7 +96,6 @@ export const updateItemById = async (id, item) => {
                     Authorization: `Bearer ${token}`
                 }
             })
-            alert('Товар успешно обновлен');
             return data;
         } catch (e) {
             if (e.response && e.response.status === 413) {
