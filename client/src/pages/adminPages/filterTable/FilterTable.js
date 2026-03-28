@@ -18,7 +18,8 @@ const FilterTable = () => {
         name: '',
         kategoryId: '',
         buttonType: 'check',
-        addition: ''
+        addition: '',
+        filterIndex:''
     });
 
     useEffect(() => {
@@ -29,7 +30,9 @@ const FilterTable = () => {
     const loadFilters = async () => {
         try {
             const data = await fetchAllFilters();
-            setFilters(data);
+            // Сортируем полученные фильтры по filterIndex
+            const sortedData = data.sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0));
+            setFilters(sortedData);
         } catch (error) {
             console.error('Error loading filters:', error);
         }
@@ -55,34 +58,33 @@ const FilterTable = () => {
         setSelectedFilterCategory(e.target.value);
     };
 
-    // --- ФУНКЦИЯ ДЛЯ СОХРАНЕНИЯ ЗНАЧЕНИЙ ИЗ КАРТОЧКИ ---
     const saveFilterValues = async (filterObj, newValuesArray) => {
         try {
-            // Отправляем обычный объект
             const payload = {
                 name: filterObj.name,
                 buttonType: filterObj.buttonType,
                 kategoryId: filterObj.kategoryId,
                 addition: filterObj.addition || '',
-                attributeValues: newValuesArray // передаем сам массив, без JSON.stringify
+                attributeValues: newValuesArray,
+                filterIndex: filterObj.filterIndex // Сохраняем индекс при обновлении значений
             };
 
             await updateFilter(filterObj.id, payload);
-            await loadFilters(); // Перезагружаем все фильтры с сервера
+            await loadFilters(); 
         } catch (error) {
             console.error(error);
             alert("Ошибка при сохранении значений");
         }
     };
 
-    // --- Модальное окно (для создания/редактирования базовых настроек) ---
     const openAddModal = () => {
         setEditingFilter(null);
         setFormData({
             name: '',
             kategoryId: categories.length > 0 ? categories[0].id : '',
             buttonType: 'check',
-            addition: ''
+            addition: '',
+            filterIndex: ''
         });
         setIsModalOpen(true);
     };
@@ -93,7 +95,8 @@ const FilterTable = () => {
             name: filter.name,
             kategoryId: filter.kategoryId,
             buttonType: filter.buttonType,
-            addition: filter.addition || ''
+            addition: filter.addition || '',
+            filterIndex: filter.filterIndex || ''
         });
         setIsModalOpen(true);
     };
@@ -117,14 +120,15 @@ const FilterTable = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Формируем обычный JS-объект вместо FormData
         const payload = {
             name: formData.name,
             buttonType: formData.buttonType,
             kategoryId: formData.kategoryId,
             addition: formData.addition,
-            attributeValues: editingFilter ? (editingFilter.attributeValues || []) : []
+            attributeValues: editingFilter ? (editingFilter.attributeValues || []) : [],
+            filterIndex: formData.filterIndex
         };
+        console.log(payload);
 
         if (editingFilter) {
             await updateFilter(editingFilter.id, payload);
@@ -135,7 +139,8 @@ const FilterTable = () => {
         loadFilters();
         closeModal();
     };
-   const handleSubmitWithoutClose = async (e) => {
+
+    const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
         
         const payload = {
@@ -143,7 +148,8 @@ const FilterTable = () => {
             buttonType: formData.buttonType,
             kategoryId: formData.kategoryId,
             addition: formData.addition,
-            attributeValues: []
+            attributeValues: [],
+            filterIndex: filters.length
         };
 
         await postFilterForKategory(payload);
@@ -157,7 +163,6 @@ const FilterTable = () => {
         }
     };
 
-    // --- Группировка данных для рендера ---
     const getFilteredAndGroupedData = () => {
         const result = filters.filter(filter => {
             const matchesSearch = filter.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -180,7 +185,8 @@ const FilterTable = () => {
 
         return sortedKeys.map(key => ({
             categoryName: key,
-            filters: grouped[key]
+            // Дополнительная сортировка внутри группы на случай, если массив filters был изменен
+            filters: grouped[key].sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0))
         }));
     };
 

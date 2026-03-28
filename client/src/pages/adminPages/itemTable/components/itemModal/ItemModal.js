@@ -29,6 +29,7 @@ const ItemModal = ({
     handleSubmitWithoutClose
 }) => {
     if (!isModalOpen) return null;
+    console.log(formData);
 
     return (
         <div className="modal-overlay" onClick={confirmAndCloseModal}>
@@ -36,7 +37,7 @@ const ItemModal = ({
                 <div className="modal-header">
                     <h2 className="my_h2">{editingItem ? 'Редактирование' : 'Добавление товара'}</h2>
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="item-form">
                     <div className="form-row">
                         <div className="form-group">
@@ -144,15 +145,15 @@ const ItemModal = ({
                         <label className="my_p">Изображения (первое - главное):</label>
                         <div className="images-grid">
                             {formData.images.map((imageObj, index) => (
-                                <div 
-                                    key={index} 
+                                <div
+                                    key={index}
                                     className={`image-card ${index === 0 ? 'main-image' : ''}`}
                                     onClick={() => setMainImage(index)}
                                 >
                                     {index === 0 && <div className="main-badge my_p_small">Главное</div>}
                                     <img src={getImageSource(imageObj)} alt={`img-${index}`} />
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         className="remove-img-btn"
                                         onClick={(e) => { e.stopPropagation(); removeImage(index); }}
                                     >×</button>
@@ -161,13 +162,13 @@ const ItemModal = ({
                             <div className="image-card add-card" onClick={triggerImageInput}>
                                 <span className="plus-icon">+</span>
                             </div>
-                            <input 
-                                type="file" 
-                                ref={imageInputRef} 
-                                onChange={handleImagesChange} 
-                                accept="image/*" 
-                                multiple 
-                                style={{ display: 'none' }} 
+                            <input
+                                type="file"
+                                ref={imageInputRef}
+                                onChange={handleImagesChange}
+                                accept="image/*"
+                                multiple
+                                style={{ display: 'none' }}
                             />
                         </div>
                     </div>
@@ -176,21 +177,21 @@ const ItemModal = ({
                         <label className="my_p">Видео:</label>
                         <div className="video-section">
                             {formData.videoUrl && (
-                                <video 
-                                    src={formData.videoUrl.startsWith('blob:') ? formData.videoUrl : `${process.env.REACT_APP_API_URL}static/video/${formData.videoUrl}`} 
-                                    controls 
+                                <video
+                                    src={formData.videoUrl.startsWith('blob:') ? formData.videoUrl : `${process.env.REACT_APP_API_URL}static/video/${formData.videoUrl}`}
+                                    controls
                                     className="video-player"
                                 />
                             )}
                             <button type="button" className="upload-btn my_p" onClick={triggerVideoInput}>
                                 {formData.videoUrl ? 'Изменить видео' : 'Загрузить видео'}
                             </button>
-                            <input 
-                                type="file" 
-                                ref={videoInputRef} 
-                                onChange={handleVideoChange} 
-                                accept="video/*" 
-                                style={{ display: 'none' }} 
+                            <input
+                                type="file"
+                                ref={videoInputRef}
+                                onChange={handleVideoChange}
+                                accept="video/*"
+                                style={{ display: 'none' }}
                             />
                         </div>
                     </div>
@@ -204,7 +205,7 @@ const ItemModal = ({
                                     return (
                                         <div key={filter.id} className="spec-box">
                                             <span className="spec-name my_p_small">{filter.name}</span>
-                                            
+
                                             {filter.buttonType === 'check' && (
                                                 <label className="custom-checkbox my_p">
                                                     <input

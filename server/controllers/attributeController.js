@@ -64,7 +64,7 @@ class attributeController {
 
         let updateData;
         if (req.is('multipart/form-data')) {
-            const { name, buttonType, addition, specificationsJSONB, attributeValues } = req.body;
+            const { name, buttonType, addition, specificationsJSONB, attributeValues, filterIndex } = req.body;
             let parsedAttributeValues = attributeValues;
             if (typeof attributeValues === 'string') {
                 try {
@@ -78,7 +78,8 @@ class attributeController {
                 buttonType: buttonType,
                 addition: addition,
                 specificationsJSONB: specificationsJSONB,
-                attributeValues: parsedAttributeValues
+                attributeValues: parsedAttributeValues,
+                filterIndex: filterIndex
             };
         } else {
             updateData = req.body;

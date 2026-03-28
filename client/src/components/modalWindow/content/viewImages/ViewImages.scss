@@ -22,6 +22,14 @@
     background-color: #f8f9fa;
     border-right: 1px solid #eaeaea;
     overflow-y: auto;
+    
+    /* Новые свойства для drag-to-scroll */
+    cursor: grab;
+    user-select: none;
+
+    &:active {
+      cursor: grabbing;
+    }
 
     &::-webkit-scrollbar {
       width: 4px;
@@ -37,14 +45,14 @@
     .view-images-thumb {
       width: 100%;
       aspect-ratio: 1 / 1;
+      flex-shrink: 0; /* ВОТ ИСПРАВЛЕНИЕ: запрещаем сжиматься по вертикали */
       padding: 0;
       border: 2px solid transparent;
       border-radius: 8px;
       background: none;
-      cursor: pointer;
       overflow: hidden;
       opacity: 0.6;
-      transition: all 0.2s ease;
+      transition: opacity 0.2s ease, border-color 0.2s ease;
 
       &:hover {
         opacity: 0.9;
@@ -60,6 +68,7 @@
         height: 100%;
         object-fit: cover;
         display: block;
+        pointer-events: none; /* Запрещаем дефолтное перетаскивание картинок браузером */
       }
     }
   }
@@ -165,7 +174,6 @@
   .view-images {
     flex-direction: column-reverse; /* Миниатюры внизу */
     
-    /* Убираем жесткую высоту 90vh, чтобы модалка облегала контент */
     height: auto; 
     max-height: 95vh;
 
@@ -181,18 +189,17 @@
       background-color: #ffffff;
 
       .view-images-thumb {
-        width: 60px; /* Слегка уменьшим для телефона */
+        width: 60px;
         height: 60px;
-        flex-shrink: 0;
+        /* flex-shrink: 0; здесь можно уже не писать, так как он наследуется от родительского класса сверху */
       }
     }
 
     &-main {
-      padding: 0; /* Убираем отступы, чтобы большое фото не было зажато */
-      min-height: 300px; /* Минимальная высота для красивого вида */
+      padding: 0; 
+      min-height: 300px; 
 
       .view-images-close {
-        /* На мобилке добавляем фоновую подложку крестику */
         top: 12px;
         right: 12px;
         background: rgba(255, 255, 255, 0.85);
@@ -203,7 +210,6 @@
       }
 
       .view-images-nav {
-        /* Круглые кнопки для навигации пальцем */
         background: rgba(255, 255, 255, 0.85);
         border-radius: 50%;
         width: 44px;
@@ -216,9 +222,8 @@
       }
 
       .view-images-main-img {
-        /* Ограничиваем картинку, чтобы не вылезла за экран с учетом миниатюр */
         max-height: calc(95vh - 84px); 
-        border-radius: 12px 12px 0 0; /* Скругляем только верх */
+        border-radius: 12px 12px 0 0; 
       }
     }
   }

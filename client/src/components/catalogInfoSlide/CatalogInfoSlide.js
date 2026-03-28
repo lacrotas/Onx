@@ -38,7 +38,7 @@ function CatalogInfoSlide({ setIsCategoryActive }) {
 
     return (
         <div className="catalog-modal">
-            <div className="modal-overlay" onClick={() => setIsCategoryActive(false)}></div>
+            <div className="catalog_modal-overlay" onClick={() => setIsCategoryActive(false)}></div>
 
             <div className="modal-container">
                 <button className="close-button" onClick={() => setIsCategoryActive(false)}>

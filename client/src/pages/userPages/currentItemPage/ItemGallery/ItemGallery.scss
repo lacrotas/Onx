@@ -1,0 +1,148 @@
+// Переменные стиля Apple
+$apple-blue: #0071e3;
+$apple-bg: #f5f5f7;
+$radius-xl: 22px;
+$radius-md: 12px;
+
+.apple-gallery-col {
+    min-width: 0;
+    width: 100%;
+
+    .apple-viewer-card {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1; // Жестко фиксируем квадратную форму
+        background: $apple-bg;
+        border-radius: $radius-xl;
+        overflow: hidden;
+        cursor: zoom-in; // Курсор-лупа показывает, что можно кликнуть
+
+        // Если внутри видео, меняем курсор на обычный
+        &.is-video {
+            cursor: default;
+        }
+
+        // Внутренний контейнер, который отвязывает размер картинки от родителя
+        .media-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .apple-main-image,
+        .apple-main-video {
+            width: 85%;
+            height: 85%;
+            object-fit: contain; // Картинка вписывается без искажений
+            transition: transform 0.4s cubic-bezier(0.2, 0, 0.2, 1);
+        }
+
+        &:hover .apple-main-image {
+            transform: scale(1.04); // Зум работает аккуратно из центра
+        }
+    }
+
+    .apple-gallery-nav {
+        position: absolute;
+        width: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none; // Пропускаем клики сквозь контейнер кнопок на сам блок
+        
+        .apple-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+            transition: 0.2s;
+            pointer-events: auto; // Возвращаем кликабельность самим кнопкам
+
+            &:hover {
+                background: #fff;
+            }
+
+            &:first-child { left: 20px; }
+            &:last-child { right: 20px; }
+            
+            @media (max-width: 600px) {
+                width: 36px;
+                height: 36px;
+                &:first-child { left: 10px; }
+                &:last-child { right: 10px; }
+            }
+        }
+    }
+
+    // НАСТРОЙКИ СЛАЙДЕРА МИНИАТЮР
+    .apple-thumbnails-grid {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch; 
+        
+        cursor: grab;
+        user-select: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        &:active {
+            cursor: grabbing;
+        }
+
+        .apple-thumb-box {
+            width: 75px;
+            height: 75px;
+            flex-shrink: 0;
+            background: $apple-bg;
+            border-radius: $radius-md;
+            border: 2px solid transparent;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, background-color 0.2s;
+
+            &.active {
+                border-color: $apple-blue;
+                background: #fff;
+            }
+
+            img {
+                width: 85%;
+                height: 85%;
+                object-fit: contain;
+                pointer-events: none; // Блокируем перетаскивание самих файлов
+            }
+
+            .apple-video-preview {
+                background: rgba(0, 0, 0, 0.1);
+                padding: 10px;
+                border-radius: 50%;
+                pointer-events: none;
+            }
+            
+            @media (max-width: 600px) {
+                width: 65px;
+                height: 65px;
+            }
+        }
+    }
+}

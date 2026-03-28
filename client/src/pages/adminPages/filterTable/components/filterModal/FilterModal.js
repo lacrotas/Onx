@@ -13,14 +13,12 @@ const FilterModal = ({
     buttonTypeOptions
 }) => {
     if (!isModalOpen) return null;
-
     return (
         <div className="modal-overlay" onClick={confirmAndCloseModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2 className="my_h2">{editingFilter ? 'Настройки фильтра' : 'Создание фильтра'}</h2>
                 </div>
-                
                 <form onSubmit={handleSubmit} className="filter-form">
                     <div className="form-group">
                         <label className="my_p">Название:</label>
@@ -34,6 +32,7 @@ const FilterModal = ({
                             placeholder="Например: Цвет"
                         />
                     </div>
+
 
                     <div className="form-group">
                         <label className="my_p">Категория:</label>
@@ -82,7 +81,18 @@ const FilterModal = ({
                             />
                         </div>
                     )}
-
+                    <div className="form-group">
+                        <label className="my_p">Порядок:</label>
+                        <input
+                            type="number"
+                            name="filterIndex"
+                            value={formData.filterIndex}
+                            onChange={handleInputChange}
+                            required
+                            className="form-input my_p"
+                            placeholder="Порядок отображения"
+                        />
+                    </div>
                     <div className="modal-actions">
                         <button type="button" onClick={confirmAndCloseModal} className="btn-cancel my_p">Отмена</button>
                         {!editingFilter && (
@@ -90,6 +100,7 @@ const FilterModal = ({
                         )}
                         <button type="submit" className="btn-primary my_p">{editingFilter ? 'Сохранить' : 'Создать'}</button>
                     </div>
+
                 </form>
             </div>
         </div>

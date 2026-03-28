@@ -49,7 +49,7 @@ const BusketPage = () => {
     const updateQuantityInLocalStorage = (itemId, newCount) => {
         const current = loadBasketFromLocalStorage();
         let updated;
-        
+
         if (newCount < 1) {
             // Удаление
             updated = current.filter(item => String(item.itemId) !== String(itemId) && String(item.id) !== String(itemId));
@@ -64,7 +64,7 @@ const BusketPage = () => {
                 updated = current;
             }
         }
-        
+
         localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(updated));
         return updated;
     };
@@ -78,7 +78,7 @@ const BusketPage = () => {
                 const basketData = await fetchBusketByUserId(userId);
                 setBasket(basketData);
                 basketItems = basketData?.itemsJsonb || [];
-                
+
                 // Синхронизируем серверную корзину с локальной при загрузке
                 // Это важно, чтобы Header сразу показал правильное число
                 const itemsForLS = basketItems.map(i => ({
@@ -96,8 +96,8 @@ const BusketPage = () => {
             if (basketItems && basketItems.length > 0) {
                 const itemsPromises = basketItems.map(async (item) => {
                     try {
-                        const idToFetch = item.itemId || item.id; 
-                        if(!idToFetch) return null;
+                        const idToFetch = item.itemId || item.id;
+                        if (!idToFetch) return null;
 
                         const itemData = await fetchItemId(idToFetch);
                         return {
@@ -109,7 +109,7 @@ const BusketPage = () => {
                         return null;
                     }
                 });
-                
+
                 const loadedItems = await Promise.all(itemsPromises);
                 const validItems = loadedItems.filter(item => item !== null);
                 setItems(validItems);
@@ -136,6 +136,10 @@ const BusketPage = () => {
     };
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
         loadBasket();
         // eslint-disable-next-line
     }, [userId]);
@@ -156,14 +160,14 @@ const BusketPage = () => {
             // 1. Обновляем на сервере
             const busketItems = updatedItems.map(item => ({ itemId: item.id, count: item.count }));
             await updateBusket(basket.id, { itemId: basket.id, itemsJsonb: busketItems });
-            
+
             // 2. ВАЖНО: Обновляем localStorage, чтобы Header был в курсе (даже если мы авторизованы)
             saveBasketToLocalStorage(updatedItems);
         } else {
             // Обновляем в localStorage (гость)
             updateQuantityInLocalStorage(itemId, newCount);
         }
-        
+
         // 3. Сообщаем хедеру об изменениях
         window.dispatchEvent(new Event('cartUpdated'));
     };
@@ -187,12 +191,12 @@ const BusketPage = () => {
             // 2. Обновляем сервер
             const busketItems = updatedItems.map(item => ({ itemId: item.id, count: item.count }));
             await updateBusket(basket.id, { itemId: basket.id, itemsJsonb: busketItems });
-            
+
             // 3. ВАЖНО: Синхронизируем localStorage для авторизованного юзера
             saveBasketToLocalStorage(updatedItems);
         } else {
             // 2. Обновляем localStorage для гостя
-            updateQuantityInLocalStorage(itemId, 0); 
+            updateQuantityInLocalStorage(itemId, 0);
         }
 
         // 4. ГЛАВНОЕ: Отправляем событие для Header
@@ -221,16 +225,16 @@ const BusketPage = () => {
             id: item.id,
             name: item.name,
             images: item.images[0],
-            count: localQuantities[item.id] || item.count, 
+            count: localQuantities[item.id] || item.count,
             price: item.price
         }));
-        
-        setItemsToLoad({ 
-            items: itemsOrderInfo, 
-            totalValue: calculateTotal(), 
-            totalCounter: calculateTotalItems(), 
-            userId: userId, 
-            basketId: basket ? basket.id : null 
+
+        setItemsToLoad({
+            items: itemsOrderInfo,
+            totalValue: calculateTotal(),
+            totalCounter: calculateTotalItems(),
+            userId: userId,
+            basketId: basket ? basket.id : null
         });
         setIsModalOpen(true);
     };

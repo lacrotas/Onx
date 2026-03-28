@@ -4,8 +4,6 @@ $apple-green: #34c759;
 $apple-black: #1d1d1f;
 $apple-grey: #86868b;
 $apple-bg: #f5f5f7;
-$radius-xl: 22px;
-$radius-md: 12px;
 
 .apple-theme-page {
     background: #ffffff;
@@ -35,128 +33,6 @@ $radius-md: 12px;
     @media (max-width: 992px) {
         grid-template-columns: 1fr;
         gap: 40px;
-    }
-}
-
-// ГАЛЕРЕЯ
-.apple-gallery-col {
-    min-width: 0; /* ВОТ ИСПРАВЛЕНИЕ: запрещаем блоку распирать сетку на мобильных */
-    width: 100%;
-
-    .apple-viewer-card {
-        position: relative;
-        width: 100%; /* Гарантируем, что квадрат не вылезет за пределы */
-        background: $apple-bg;
-        border-radius: $radius-xl;
-        aspect-ratio: 1/1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        cursor: zoom-in;
-
-        .apple-main-image,
-        .apple-main-video {
-            max-width: 85%;
-            max-height: 85%;
-            border-radius: 10px;
-            object-fit: contain;
-            transition: transform 0.5s cubic-bezier(0.2, 0, 0.2, 1);
-        }
-
-        &:hover .apple-main-image {
-            transform: scale(1.03);
-        }
-    }
-
-    .apple-gallery-nav {
-        .apple-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.8);
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            z-index: 5;
-            transition: 0.2s;
-
-            &:hover {
-                background: #fff;
-            }
-
-            &:first-child {
-                left: 20px;
-            }
-
-            &:last-child {
-                right: 20px;
-            }
-            
-            /* Чуть уменьшаем кнопки на телефонах, чтобы не перекрывали картинку */
-            @media (max-width: 600px) {
-                width: 36px;
-                height: 36px;
-                &:first-child { left: 10px; }
-                &:last-child { right: 10px; }
-            }
-        }
-    }
-
-    .apple-thumbnails-grid {
-        display: flex;
-        gap: 12px;
-        margin-top: 20px;
-        overflow-x: auto;
-        padding-bottom: 10px;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch; /* Добавлено: плавный скролл на iPhone/Android */
-
-        &::-webkit-scrollbar {
-            display: none;
-        }
-
-        .apple-thumb-box {
-            width: 75px;
-            height: 75px;
-            flex-shrink: 0;
-            background: $apple-bg;
-            border-radius: $radius-md;
-            border: 2px solid transparent;
-            cursor: pointer;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
-
-            &.active {
-                border-color: $apple-blue;
-                background: #fff;
-            }
-
-            img {
-                width: 85%;
-                height: 85%;
-                object-fit: contain;
-            }
-
-            .apple-video-preview {
-                background: rgba(0, 0, 0, 0.1);
-                padding: 10px;
-                border-radius: 50%;
-            }
-            
-            /* На телефонах миниатюры можно сделать чуть компактнее */
-            @media (max-width: 600px) {
-                width: 65px;
-                height: 65px;
-            }
-        }
     }
 }
 
@@ -277,7 +153,7 @@ $radius-md: 12px;
     padding: 10px 0;
 }
 
-// НИЖНЯЯ ЧАСТЬ
+// НИЖНЯЯ ЧАСТЬ (Аккордеоны и описание)
 .apple-bottom-details {
     margin-top: 40px;
     border-top: 1px solid #e5e5e7;
@@ -319,8 +195,7 @@ $radius-md: 12px;
 .apple-rich-text {
     color: #333;
     max-width: 800px;
-    /* На телефонах текст не должен вылезать, если там есть большие картинки/таблицы */
-    overflow-wrap: break-word;
+    overflow-wrap: break-word; /* Предотвращает вылезание длинного текста без пробелов */
     img {
         max-width: 100%;
         height: auto;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { FiX } from "react-icons/fi";
 import './ViewImages.scss';
@@ -6,11 +6,54 @@ import './ViewImages.scss';
 function ViewImages({ images = [], setIsModalActive }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
+  // Стейты и реф для кастомного скролла (drag-to-scroll)
+  const thumbnailsRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDragged, setIsDragged] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [scrollPos, setScrollPos] = useState({ left: 0, top: 0 });
+
   if (!Array.isArray(images) || images.length === 0) {
     return <div className="view-images-empty my_p">Нет изображений</div>;
   }
 
+  // --- Логика перетягивания слайдера (универсальная X/Y) ---
+  const startDrag = (e) => {
+    setIsDragging(true);
+    setIsDragged(false); // Сбрасываем флаг перетягивания
+    setStartPos({
+      x: e.pageX - thumbnailsRef.current.offsetLeft,
+      y: e.pageY - thumbnailsRef.current.offsetTop
+    });
+    setScrollPos({
+      left: thumbnailsRef.current.scrollLeft,
+      top: thumbnailsRef.current.scrollTop
+    });
+  };
+
+  const stopDrag = () => {
+    setIsDragging(false);
+  };
+
+  const onDrag = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    setIsDragged(true); // Произошел именно свайп, а не клик
+
+    const x = e.pageX - thumbnailsRef.current.offsetLeft;
+    const y = e.pageY - thumbnailsRef.current.offsetTop;
+    
+    // Высчитываем смещение (умножаем на 2 для скорости)
+    const walkX = (x - startPos.x) * 2;
+    const walkY = (y - startPos.y) * 2;
+    
+    // Применяем скролл (будет работать и вертикально, и горизонтально)
+    thumbnailsRef.current.scrollLeft = scrollPos.left - walkX;
+    thumbnailsRef.current.scrollTop = scrollPos.top - walkY;
+  };
+
   const handleThumbnailClick = (index) => {
+    if (isDragged) return; // Блокируем клик, если пользователь просто листал ленту
     setActiveIndex(index);
   };
 
@@ -32,7 +75,14 @@ function ViewImages({ images = [], setIsModalActive }) {
     <div className="view-images" tabIndex={0} onKeyDown={handleKeyDown}>
       
       {/* Левая панель с миниатюрами (на мобилке — нижняя) */}
-      <div className="view-images-thumbnails">
+      <div 
+        className="view-images-thumbnails"
+        ref={thumbnailsRef}
+        onMouseDown={startDrag}
+        onMouseLeave={stopDrag}
+        onMouseUp={stopDrag}
+        onMouseMove={onDrag}
+      >
         {images.map((image, index) => (
           <button
             key={index}
@@ -52,7 +102,6 @@ function ViewImages({ images = [], setIsModalActive }) {
 
       {/* Основная область */}
       <div className="view-images-main">
-        {/* Крестик закрытия внутри правой области */}
         <button className="view-images-close" onClick={() => setIsModalActive(false)}>
           <FiX size={24} />
         </button>

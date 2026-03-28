@@ -66,6 +66,8 @@ const Attribute = sequelize.define('attribute', {
         type: DataTypes.ARRAY(DataTypes.STRING),
         defaultValue: []
     },
+    filterIndex: { type: DataTypes.INTEGER },
+
 })
 // items
 const Item = sequelize.define('item', {
