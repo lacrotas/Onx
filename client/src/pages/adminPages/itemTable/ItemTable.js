@@ -248,7 +248,7 @@ const ItemTable = () => {
             await Promise.all(updatePromises);
             setModifiedItems({});
             loadItems();
-            setTimeout(() => {alert("Изменения успешно сохранены!")}, 200);
+            setTimeout(() => { alert("Изменения успешно сохранены!") }, 200);
         } catch (error) {
             console.error(error);
             alert("Ошибка при сохранении изменений");
@@ -505,35 +505,61 @@ const ItemTable = () => {
     };
 
     // добавление/обновление/удаление данных на сервере
-    const updateFilterAttributeValues = async (newSpecifications, oldSpecifications = {}) => {
-        const allFilters = await fetchAllFiltersByKategoryId(formData.kategoryId);
+    const updateFilterAttributeValues = async (newSpecifications) => {
+        try {
+            // Получаем актуальные фильтры с сервера
+            const allFilters = await fetchAllFiltersByKategoryId(formData.kategoryId);
 
-        for (const filter of allFilters) {
-            const categoryItems = items.filter(item => item.kategoryId === formData.kategoryId);
-            const allValues = new Set();
+            // Массив промисов для параллельной отправки (оптимизация скорости)
+            const updatePromises = [];
 
-            categoryItems.forEach(item => {
-                if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
-                    allValues.add(item.specificationsJSONB[filter.name]);
+            for (const filter of allFilters) {
+                // 1. Берем текущие значения из самого фильтра
+                let currentValues = [];
+                if (Array.isArray(filter.attributeValues)) {
+                    currentValues = filter.attributeValues;
+                } else if (typeof filter.attributeValues === 'string') {
+                    try {
+                        currentValues = JSON.parse(filter.attributeValues);
+                    } catch (e) {
+                        currentValues = [];
+                    }
                 }
-            });
 
-            if (newSpecifications[filter.name]) {
-                allValues.add(newSpecifications[filter.name]);
+                // 2. Создаем Set для уникальности значений
+                const allValues = new Set(currentValues);
+                const initialSize = allValues.size; // Запоминаем размер до добавления
+
+                // 3. Добавляем новое значение из формы (если оно заполнено)
+                const newValue = newSpecifications[filter.name];
+                if (newValue !== undefined && newValue !== null && newValue !== '') {
+                    // Приводим к строке, чтобы Set корректно искал дубликаты
+                    allValues.add(String(newValue));
+                }
+
+                // 4. Отправляем запрос ТОЛЬКО если появилось новое значение
+                if (allValues.size > initialSize) {
+                    const attributeValues = Array.from(allValues);
+
+                    const myFormData = new FormData();
+                    myFormData.append('name', filter.name);
+                    myFormData.append('buttonType', filter.buttonType);
+                    myFormData.append('kategoryId', filter.kategoryId);
+                    myFormData.append('addition', filter.addition || '');
+                    myFormData.append('attributeValues', JSON.stringify(attributeValues));
+
+                    // Добавляем запрос в массив, чтобы потом выполнить их разом
+                    updatePromises.push(updateFilter(filter.id, myFormData));
+                }
             }
 
-            if (editingItem && oldSpecifications[filter.name] && oldSpecifications[filter.name] !== newSpecifications[filter.name]) {
-                allValues.delete(oldSpecifications[filter.name]);
+            // Ждем выполнения всех необходимых запросов на обновление фильтров
+            if (updatePromises.length > 0) {
+                await Promise.all(updatePromises);
             }
 
-            const attributeValues = Array.from(allValues);
-            const myFormData = new FormData();
-            myFormData.append('name', filter.name);
-            myFormData.append('buttonType', filter.buttonType);
-            myFormData.append('kategoryId', filter.kategoryId);
-            myFormData.append('addition', filter.addition || '');
-            myFormData.append('attributeValues', JSON.stringify(attributeValues));
-            await updateFilter(filter.id, myFormData);
+        } catch (error) {
+            console.error('Ошибка при обновлении значений фильтров:', error);
         }
     };
 
@@ -553,7 +579,7 @@ const ItemTable = () => {
             await postItem(myFormData);
         }
 
-        updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
+        await updateFilterAttributeValues(formData.specifications);
         closeModal();
         loadItems();
     };
@@ -569,7 +595,7 @@ const ItemTable = () => {
             await postItem(myFormData);
         }
 
-        await updateFilterAttributeValues(formData.specifications, editingItem ? editingItem.specificationsJSONB : {});
+        await updateFilterAttributeValues(formData.specifications);
         loadItems();
     };
 
