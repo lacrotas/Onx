@@ -14,6 +14,8 @@
         border-radius: var(--radius-lg);
         width: 100%;
         max-width: 500px;
+        /* Ограничиваем максимальную высоту окна для появления скролла */
+        max-height: 90vh; 
         display: flex;
         flex-direction: column;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
@@ -28,6 +30,8 @@
         .category-form {
             padding: 30px;
             overflow-y: auto;
+            /* Заставляем форму занимать оставшуюся высоту */
+            flex: 1; 
 
             .form-group {
                 margin-bottom: 20px;
@@ -125,6 +129,16 @@
                 justify-content: flex-end;
                 gap: 12px;
                 margin-top: 30px;
+                
+                /* Делаем панель кнопок "прилипающей" к низу при скролле */
+                position: sticky;
+                bottom: -30px; /* Компенсируем нижний padding формы */
+                background: #fff; /* Фон, чтобы контент не просвечивал */
+                padding-top: 20px;
+                padding-bottom: 30px;
+                margin-bottom: -30px;
+                border-top: 1px solid var(--border-color);
+                z-index: 10;
 
                 button {
                     padding: 12px 24px;

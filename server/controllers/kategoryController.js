@@ -25,7 +25,7 @@ class kategoryController {
     async addKategory(req, res, next) {
         let fileName = null;
         try {
-            const { name, mainKategoryId } = req.body
+            const { name, mainKategoryId, kategoryIndex } = req.body
             fileName = req.processedImage || null;
             const parentCategory = await MainKategory.findOne({ where: { id: mainKategoryId } });
             if (!parentCategory) {
@@ -41,7 +41,8 @@ class kategoryController {
             const kategory = await Kategory.create({
                 name: name,
                 mainKategoryId: mainKategoryId,
-                image: fileName
+                image: fileName,
+                kategoryIndex: kategoryIndex
             })
             return res.json(kategory);
         } catch (e) {
@@ -77,7 +78,7 @@ class kategoryController {
         let oldFileName = null;
         try {
             const { id } = req.params;
-            const { name } = req.body;
+            const { name, kategoryIndex } = req.body;
 
             const kategory = await Kategory.findOne(
                 { where: { id } }
@@ -91,7 +92,8 @@ class kategoryController {
             const [updatedRowsCount, updatedRows] = await Kategory.update(
                 {
                     name: name,
-                    image: newFileName
+                    image: newFileName,
+                    kategoryIndex: kategoryIndex
                 },
                 {
                     returning: true,

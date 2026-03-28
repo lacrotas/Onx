@@ -11,7 +11,6 @@ const CategoryTable = () => {
     const [mainCategories, setMainCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     
-    // Новое состояние для фильтрации по главной категории
     const [selectedFilterMainCategory, setSelectedFilterMainCategory] = useState('');
 
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -22,9 +21,15 @@ const CategoryTable = () => {
         name: '',
         imageFile: null,
         imageUrl: '',
-        mainKategoryId: ''
+        mainKategoryId: '',
+        kategoryIndex: ''
     });
     const fileInputRef = useRef(null);
+
+    // НОВОЕ: Состояния для быстрого редактирования
+    const [modifiedCategories, setModifiedCategories] = useState({});
+    const [isSaving, setIsSaving] = useState(false);
+    const hasChanges = Object.keys(modifiedCategories).length > 0;
 
     useEffect(() => {
         loadCategories();
@@ -34,10 +39,17 @@ const CategoryTable = () => {
     useEffect(() => {
         let result = categories.filter(category => {
             const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
-            // Проверка: если фильтр не выбран (''), то показываем все, иначе сверяем ID
             const matchesMainCategory = selectedFilterMainCategory === '' || category.mainKategoryId === parseInt(selectedFilterMainCategory);
             
             return matchesSearch && matchesMainCategory;
+        });
+
+        // НОВОЕ: Подмешиваем локальные изменения перед сортировкой
+        result = result.map(category => {
+            if (modifiedCategories[category.id]) {
+                return { ...category, ...modifiedCategories[category.id] };
+            }
+            return category;
         });
 
         if (sortConfig.key) {
@@ -48,6 +60,9 @@ const CategoryTable = () => {
                 if (sortConfig.key === 'mainKategoryId') {
                     aValue = getMainCategoryName(a.mainKategoryId);
                     bValue = getMainCategoryName(b.mainKategoryId);
+                } else if (sortConfig.key === 'kategoryIndex') {
+                    aValue = parseInt(a.kategoryIndex) || 0;
+                    bValue = parseInt(b.kategoryIndex) || 0;
                 }
 
                 if (aValue === null || aValue === undefined) aValue = '';
@@ -64,12 +79,13 @@ const CategoryTable = () => {
         }
 
         setFilteredCategories(result);
-    }, [searchTerm, selectedFilterMainCategory, categories, sortConfig, mainCategories]);
+    }, [searchTerm, selectedFilterMainCategory, categories, sortConfig, mainCategories, modifiedCategories]);
 
     const loadCategories = async () => {
         try {
             const data = await fetchAllKategory();
             setCategories(data);
+            setModifiedCategories({}); // Сбрасываем изменения при новой загрузке
         } catch (error) {
             console.error('Error loading categories:', error);
         }
@@ -104,9 +120,61 @@ const CategoryTable = () => {
         setSearchTerm(e.target.value);
     };
 
-    // Обработчик изменения фильтра в шапке
     const handleFilterMainCategoryChange = (e) => {
         setSelectedFilterMainCategory(e.target.value);
+    };
+
+    // НОВОЕ: Логика быстрого редактирования
+    const handleQuickEdit = (categoryId, field, newValue) => {
+        setModifiedCategories(prev => {
+            const categoryChanges = prev[categoryId] || {};
+            const originalCategory = categories.find(c => c.id === categoryId);
+            const newChanges = { ...categoryChanges, [field]: newValue };
+
+            // Если вернули к оригинальному значению - удаляем из изменений
+            if (originalCategory && String(originalCategory[field]) === String(newValue)) {
+                delete newChanges[field];
+            }
+
+            // Если для категории больше нет изменений - удаляем категорию из объекта
+            if (Object.keys(newChanges).length === 0) {
+                const newState = { ...prev };
+                delete newState[categoryId];
+                return newState;
+            }
+
+            return { ...prev, [categoryId]: newChanges };
+        });
+    };
+
+    const cancelChanges = () => {
+        if (window.confirm('Отменить все несохраненные изменения в таблице?')) {
+            setModifiedCategories({});
+        }
+    };
+
+    const handleApplyChanges = async () => {
+        setIsSaving(true);
+        try {
+            const updatePromises = Object.keys(modifiedCategories).map(categoryId => {
+                const changes = modifiedCategories[categoryId];
+                const myFormData = new FormData();
+
+                if (changes.kategoryIndex !== undefined) myFormData.append("kategoryIndex", changes.kategoryIndex);
+
+                return updateKategory(categoryId, myFormData);
+            });
+
+            await Promise.all(updatePromises);
+            setModifiedCategories({});
+            loadCategories();
+            setTimeout(() => { alert("Изменения успешно сохранены!") }, 200);
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении изменений");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const openAddModal = () => {
@@ -115,7 +183,8 @@ const CategoryTable = () => {
             name: '',
             imageFile: null,
             imageUrl: '',
-            mainKategoryId: mainCategories.length > 0 ? mainCategories[0].id : ''
+            mainKategoryId: mainCategories.length > 0 ? mainCategories[0].id : '',
+            kategoryIndex: ''
         });
         setIsModalOpen(true);
     };
@@ -126,7 +195,8 @@ const CategoryTable = () => {
             name: category.name,
             imageFile: null,
             imageUrl: `${process.env.REACT_APP_API_URL}static/images/${category.image}`,
-            mainKategoryId: category.mainKategoryId
+            mainKategoryId: category.mainKategoryId,
+            kategoryIndex: category.kategoryIndex
         });
         setIsModalOpen(true);
     };
@@ -172,11 +242,13 @@ const CategoryTable = () => {
         if (editingCategory) {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
+            myFormData.append("kategoryIndex", formData.kategoryIndex);
             await updateKategory(editingCategory.id, myFormData);
         } else {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
             myFormData.append("mainKategoryId", formData.mainKategoryId);
+            myFormData.append("kategoryIndex", formData.kategoryIndex);
             await postKategory(myFormData);
         }
         closeModal();
@@ -189,11 +261,13 @@ const CategoryTable = () => {
         if (editingCategory) {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
+            myFormData.append("kategoryIndex", formData.kategoryIndex);
             await updateKategory(editingCategory.id, myFormData);
         } else {
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
             myFormData.append("mainKategoryId", formData.mainKategoryId);
+            myFormData.append("kategoryIndex", formData.kategoryIndex);
             await postKategory(myFormData);
         }
         loadCategories();
@@ -220,6 +294,11 @@ const CategoryTable = () => {
                 mainCategories={mainCategories}
                 selectedFilterMainCategory={selectedFilterMainCategory}
                 handleFilterMainCategoryChange={handleFilterMainCategoryChange}
+                // Передаем новые пропсы
+                hasChanges={hasChanges}
+                isSaving={isSaving}
+                handleApplyChanges={handleApplyChanges}
+                cancelChanges={cancelChanges}
             />
 
             <main className="content-container">
@@ -234,6 +313,10 @@ const CategoryTable = () => {
                                 <th onClick={() => requestSort('mainKategoryId')} className="sortable my_p">
                                     Главная категория {getSortIndicator('mainKategoryId')}
                                 </th>
+                                {/* НОВОЕ: Столбец для индекса */}
+                                <th onClick={() => requestSort('kategoryIndex')} className="sortable my_p">
+                                    Индекс {getSortIndicator('kategoryIndex')}
+                                </th>
                                 <th className="my_p">Действия</th>
                             </tr>
                         </thead>
@@ -242,7 +325,9 @@ const CategoryTable = () => {
                                 <CategoryTableRow 
                                     key={category.id}
                                     category={category}
+                                    modifiedCategory={modifiedCategories[category.id]}
                                     getMainCategoryName={getMainCategoryName}
+                                    handleQuickEdit={handleQuickEdit}
                                     openEditModal={openEditModal}
                                     handleDelete={handleDelete}
                                 />

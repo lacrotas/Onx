@@ -3,12 +3,14 @@ import './CategoryTableRow.scss';
 
 const CategoryTableRow = ({
     category,
+    modifiedCategory,
     getMainCategoryName,
+    handleQuickEdit,
     openEditModal,
     handleDelete
 }) => {
     return (
-        <tr>
+        <tr className={modifiedCategory ? 'modified-row' : ''}>
             <td className="my_p truncate-text" title={category.name}>{category.name}</td>
             <td>
                 <div className="table-img-box">
@@ -20,6 +22,20 @@ const CategoryTableRow = ({
                 </div>
             </td>
             <td className="my_p">{getMainCategoryName(category.mainKategoryId)}</td>
+            
+            {/* НОВОЕ: Поле для быстрого редактирования индекса */}
+            <td>
+                <div className="index-input-wrapper">
+                    <input 
+                        type="number"
+                        className="quick-index-input my_p"
+                        value={modifiedCategory?.kategoryIndex !== undefined ? modifiedCategory.kategoryIndex : (category.kategoryIndex || '')}
+                        onChange={(e) => handleQuickEdit(category.id, 'kategoryIndex', e.target.value)}
+                        placeholder="0"
+                    />
+                </div>
+            </td>
+
             <td>
                 <div className="action-buttons">
                     <button 

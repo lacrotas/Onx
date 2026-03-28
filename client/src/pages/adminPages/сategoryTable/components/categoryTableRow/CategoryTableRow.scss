@@ -1,5 +1,9 @@
 tr {
-    transition: background-color 0.2s ease;
+    transition: background-color 0.3s ease;
+    
+    &.modified-row {
+        background: rgba(52, 199, 89, 0.05);
+    }
     
     &:last-child td { border-bottom: none; }
     &:hover td { background-color: #f9f9fb; }
@@ -32,6 +36,40 @@ td {
 
     .no-img {
         opacity: 0.5;
+    }
+}
+
+/* НОВОЕ: Стили инпута быстрого редактирования */
+.index-input-wrapper {
+    display: flex;
+    align-items: center;
+
+    .quick-index-input {
+        width: 80px;
+        padding: 6px 8px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        transition: all 0.2s;
+
+        &:hover {
+            border-color: var(--border-color);
+            background: #f5f5f7;
+        }
+        &:focus {
+            background: #fff;
+            border-color: #0071e3;
+            outline: none;
+        }
+        
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        &[type=number] {
+            -moz-appearance: textfield;
+        }
     }
 }
 

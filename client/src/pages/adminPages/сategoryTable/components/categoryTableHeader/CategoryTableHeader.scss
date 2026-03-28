@@ -67,5 +67,26 @@
             color: #1d1d1f;
             &:hover:not(:disabled) { background: #d0e5f9; }
         }
+
+        /* НОВЫЕ КНОПКИ СОХРАНЕНИЯ */
+        .apply-btn {
+            background: #34c759;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+            
+            &:hover:not(:disabled) {
+                background: #28a745;
+            }
+        }
+
+        .cancel-btn {
+            background: #ff3b30;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+
+            &:hover:not(:disabled) {
+                background: #d32f2f;
+            }
+        }
     }
 }

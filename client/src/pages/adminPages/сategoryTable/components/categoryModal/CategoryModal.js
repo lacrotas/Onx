@@ -23,7 +23,7 @@ const CategoryModal = ({
                 <div className="modal-header">
                     <h2 className="my_h2">{editingCategory ? 'Редактирование' : 'Добавление категории'}</h2>
                 </div>
-                
+                {console.log(formData)}
                 <form onSubmit={handleSubmit} className="category-form">
                     <div className="form-group">
                         <label className="my_p">Название:</label>
@@ -88,6 +88,18 @@ const CategoryModal = ({
                                 style={{ display: 'none' }}
                             />
                         </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="my_p">Порядок отображения:</label>
+                        <input
+                            type="text"
+                            name="kategoryIndex"
+                            value={formData.kategoryIndex}
+                            onChange={handleInputChange}
+                            required
+                            className="form-input my_p"
+                        />
                     </div>
 
                     <div className="modal-actions">

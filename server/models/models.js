@@ -54,6 +54,7 @@ const Kategory = sequelize.define('kategory', {
     mainKategoryId: { type: DataTypes.INTEGER },
     name: { type: DataTypes.STRING },
     image: { type: DataTypes.STRING },
+    kategoryIndex: { type: DataTypes.INTEGER },
 })
 // attribute
 const Attribute = sequelize.define('attribute', {

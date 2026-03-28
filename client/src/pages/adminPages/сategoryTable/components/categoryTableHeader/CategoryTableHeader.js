@@ -8,7 +8,11 @@ const CategoryTableHeader = ({
     openAddModal,
     mainCategories,
     selectedFilterMainCategory,
-    handleFilterMainCategoryChange
+    handleFilterMainCategoryChange,
+    hasChanges,
+    isSaving,
+    handleApplyChanges,
+    cancelChanges
 }) => {
     return (
         <header className="admin-nav">
@@ -32,6 +36,27 @@ const CategoryTableHeader = ({
                     <button type="button" className="add-btn my_p" onClick={openAddModal}>
                          Добавить
                     </button>
+
+                    {hasChanges && (
+                        <>
+                            <button
+                                type="button"
+                                className={`apply-btn my_p ${isSaving ? 'loading' : ''}`}
+                                onClick={handleApplyChanges}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? 'Сохранение...' : 'Применить изменения'}
+                            </button>
+                            <button
+                                type="button"
+                                className="cancel-btn my_p"
+                                onClick={cancelChanges}
+                                disabled={isSaving}
+                            >
+                                Отменить
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </header>
