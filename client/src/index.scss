@@ -31,11 +31,14 @@ body {
   background: #fbfbfd;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  overflow-y: auto; /* Разрешить вертикальную прокрутку */
+  -webkit-overflow-scrolling: touch; /* Плавный скролл для iOS */
 }
 
 .App {
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
   flex: 1;
   display: flex;
   align-items: center;
@@ -51,7 +54,7 @@ body {
   max-width: 1440px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
 }
 
