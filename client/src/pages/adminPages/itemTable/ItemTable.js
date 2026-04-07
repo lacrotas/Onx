@@ -5,6 +5,7 @@ import { fetchAllFiltersByKategoryId, updateFilter } from '../../../http/filterA
 import ItemTableHeader from './components/itemTableHeader/ItemTableHeader';
 import ItemTableRow from './components/itemTableRow/ItemTableRow';
 import ItemModal from './components/itemModal/ItemModal';
+import Loader from '../../../components/loader/Loader';
 import "./ItemTable.scss";
 
 const ItemTable = () => {
@@ -230,6 +231,7 @@ const ItemTable = () => {
             setModifiedItems({});
         }
     };
+
     // редактирование цены/наличия/показа и отправка на сервер
     const handleApplyChanges = async () => {
         setIsSaving(true);
@@ -247,7 +249,7 @@ const ItemTable = () => {
 
             await Promise.all(updatePromises);
             setModifiedItems({});
-            loadItems();
+            await loadItems();
             setTimeout(() => { alert("Изменения успешно сохранены!") }, 200);
         } catch (error) {
             console.error(error);
@@ -256,6 +258,7 @@ const ItemTable = () => {
             setIsSaving(false);
         }
     };
+
     // модалка по добавлению/редактированию товара
     const openAddModal = () => {
         setEditingItem(null);
@@ -280,6 +283,7 @@ const ItemTable = () => {
             loadCategoriesByMainCategory(initialMainCategoryId);
         }
     };
+
     const openEditModal = (item) => {
         setEditingItem(item);
 
@@ -316,6 +320,7 @@ const ItemTable = () => {
             loadFiltersForCategory(item.kategoryId, itemSpecifications);
         }
     };
+
     const openDuplicateModal = (item) => {
         setEditingItem(null);
 
@@ -350,19 +355,20 @@ const ItemTable = () => {
             loadFiltersForCategory(item.kategoryId, itemSpecifications);
         }
     };
+
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingItem(null);
         setFiltersForCategory([]);
         setCategoriesByMain([]);
     };
+
     const confirmAndCloseModal = () => {
         if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
             closeModal();
         }
     };
 
-    // обработка input
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         const val = type === 'checkbox' ? checked : value;
@@ -483,7 +489,6 @@ const ItemTable = () => {
         return `${process.env.REACT_APP_API_URL}static/images/${imageObj.url}`;
     };
 
-    // сбор данных для отправки на сервер
     const fillFormData = (myFormData) => {
         myFormData.append("mainKategoryId", formData.mainKategoryId);
         myFormData.append("kategoryId", formData.kategoryId);
@@ -504,17 +509,12 @@ const ItemTable = () => {
         myFormData.append("isShowed", formData.isShowed);
     };
 
-    // добавление/обновление/удаление данных на сервере
     const updateFilterAttributeValues = async (newSpecifications) => {
         try {
-            // Получаем актуальные фильтры с сервера
             const allFilters = await fetchAllFiltersByKategoryId(formData.kategoryId);
-
-            // Массив промисов для параллельной отправки (оптимизация скорости)
             const updatePromises = [];
 
             for (const filter of allFilters) {
-                // 1. Берем текущие значения из самого фильтра
                 let currentValues = [];
                 if (Array.isArray(filter.attributeValues)) {
                     currentValues = filter.attributeValues;
@@ -526,21 +526,16 @@ const ItemTable = () => {
                     }
                 }
 
-                // 2. Создаем Set для уникальности значений
                 const allValues = new Set(currentValues);
-                const initialSize = allValues.size; // Запоминаем размер до добавления
+                const initialSize = allValues.size;
 
-                // 3. Добавляем новое значение из формы (если оно заполнено)
                 const newValue = newSpecifications[filter.name];
                 if (newValue !== undefined && newValue !== null && newValue !== '') {
-                    // Приводим к строке, чтобы Set корректно искал дубликаты
                     allValues.add(String(newValue));
                 }
 
-                // 4. Отправляем запрос ТОЛЬКО если появилось новое значение
                 if (allValues.size > initialSize) {
                     const attributeValues = Array.from(allValues);
-
                     const myFormData = new FormData();
                     myFormData.append('name', filter.name);
                     myFormData.append('buttonType', filter.buttonType);
@@ -548,16 +543,13 @@ const ItemTable = () => {
                     myFormData.append('addition', filter.addition || '');
                     myFormData.append('attributeValues', JSON.stringify(attributeValues));
 
-                    // Добавляем запрос в массив, чтобы потом выполнить их разом
                     updatePromises.push(updateFilter(filter.id, myFormData));
                 }
             }
 
-            // Ждем выполнения всех необходимых запросов на обновление фильтров
             if (updatePromises.length > 0) {
                 await Promise.all(updatePromises);
             }
-
         } catch (error) {
             console.error('Ошибка при обновлении значений фильтров:', error);
         }
@@ -565,79 +557,93 @@ const ItemTable = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
-        fillFormData(myFormData);
+        setIsSaving(true);
+        try {
+            const myFormData = new FormData();
+            fillFormData(myFormData);
 
-        if (editingItem) {
-            await updateItemById(editingItem.id, myFormData);
-            setModifiedItems(prev => {
-                const newState = { ...prev };
-                delete newState[editingItem.id];
-                return newState;
-            });
-        } else {
-            await postItem(myFormData);
+            if (editingItem) {
+                await updateItemById(editingItem.id, myFormData);
+                setModifiedItems(prev => {
+                    const newState = { ...prev };
+                    delete newState[editingItem.id];
+                    return newState;
+                });
+            } else {
+                await postItem(myFormData);
+            }
+
+            await updateFilterAttributeValues(formData.specifications);
+            closeModal();
+            await loadItems();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении");
+        } finally {
+            setIsSaving(false);
         }
-
-        await updateFilterAttributeValues(formData.specifications);
-        closeModal();
-        loadItems();
     };
 
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
-        fillFormData(myFormData);
+        setIsSaving(true);
+        try {
+            const myFormData = new FormData();
+            fillFormData(myFormData);
 
-        if (editingItem) {
-            await updateItemById(editingItem.id, myFormData);
-        } else {
-            await postItem(myFormData);
+            if (editingItem) {
+                await updateItemById(editingItem.id, myFormData);
+            } else {
+                await postItem(myFormData);
+            }
+
+            await updateFilterAttributeValues(formData.specifications);
+            await loadItems();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении");
+        } finally {
+            setIsSaving(false);
         }
-
-        await updateFilterAttributeValues(formData.specifications);
-        loadItems();
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Вы действительно хотите удалить данный товар?')) {
-            const itemToDelete = items.find(item => item.id === id);
-            await deleteItemById(id);
+            setIsSaving(true);
+            try {
+                const itemToDelete = items.find(item => item.id === id);
+                await deleteItemById(id);
 
-            if (itemToDelete && itemToDelete.specificationsJSONB) {
-                const categoryItems = items.filter(item => item.id !== id && item.kategoryId === itemToDelete.kategoryId);
-                const allFilters = await fetchAllFiltersByKategoryId(itemToDelete.kategoryId);
+                if (itemToDelete && itemToDelete.specificationsJSONB) {
+                    const categoryItems = items.filter(item => item.id !== id && item.kategoryId === itemToDelete.kategoryId);
+                    const allFilters = await fetchAllFiltersByKategoryId(itemToDelete.kategoryId);
 
-                for (const filter of allFilters) {
-                    const allValues = new Set();
-                    categoryItems.forEach(item => {
-                        if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
-                            allValues.add(item.specificationsJSONB[filter.name]);
-                        }
-                    });
-                    const attributeValues = Array.from(allValues);
-                    const myFormData = new FormData();
-                    myFormData.append('name', filter.name);
-                    myFormData.append('buttonType', filter.buttonType);
-                    myFormData.append('kategoryId', filter.kategoryId);
-                    myFormData.append('addition', filter.addition || '');
-                    myFormData.append('attributeValues', JSON.stringify(attributeValues));
-                    await updateFilter(filter.id, myFormData);
+                    for (const filter of allFilters) {
+                        const allValues = new Set();
+                        categoryItems.forEach(item => {
+                            if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
+                                allValues.add(item.specificationsJSONB[filter.name]);
+                            }
+                        });
+                        const attributeValues = Array.from(allValues);
+                        const myFormData = new FormData();
+                        myFormData.append('name', filter.name);
+                        myFormData.append('buttonType', filter.buttonType);
+                        myFormData.append('kategoryId', filter.kategoryId);
+                        myFormData.append('addition', filter.addition || '');
+                        myFormData.append('attributeValues', JSON.stringify(attributeValues));
+                        await updateFilter(filter.id, myFormData);
+                    }
                 }
-            }
-            setItems(items.filter(item => item.id !== id));
-
-            if (modifiedItems[id]) {
-                setModifiedItems(prev => {
-                    const newState = { ...prev };
-                    delete newState[id];
-                    return newState;
-                });
+                await loadItems();
+            } catch (error) {
+                console.error(error);
+                alert("Ошибка при удалении");
+            } finally {
+                setIsSaving(false);
             }
         }
     };
-
-
 
     return (
         <div className="admin-item-editor">
@@ -669,12 +675,8 @@ const ItemTable = () => {
                                 <th onClick={() => requestSort('price')} className="sortable my_p">
                                     Цена {getSortIndicator('price')}
                                 </th>
-                                <th className="my_p">
-                                    Наличие
-                                </th>
-                                <th className="my_p">
-                                    Показан
-                                </th>
+                                <th className="my_p">Наличие</th>
+                                <th className="my_p">Показан</th>
                                 <th className="my_p">Действия</th>
                             </tr>
                         </thead>
@@ -722,6 +724,9 @@ const ItemTable = () => {
                 handleSpecificationChange={handleSpecificationChange}
                 handleSubmitWithoutClose={handleSubmitWithoutClose}
             />
+
+            {/* Глобальный лоадер */}
+            <Loader isVisible={isSaving} text="Синхронизация с сервером..." />
         </div>
     );
 };

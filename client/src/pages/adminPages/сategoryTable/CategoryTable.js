@@ -4,6 +4,7 @@ import CategoryTableHeader from './components/categoryTableHeader/CategoryTableH
 import CategoryTableRow from './components/categoryTableRow/CategoryTableRow';
 import CategoryModal from './components/categoryModal/CategoryModal';
 import "./CategoryTable.scss";
+import Loader from '../../../components/loader/Loader';
 
 const CategoryTable = () => {
     const [categories, setCategories] = useState([]);
@@ -26,7 +27,6 @@ const CategoryTable = () => {
     });
     const fileInputRef = useRef(null);
 
-    // НОВОЕ: Состояния для быстрого редактирования
     const [modifiedCategories, setModifiedCategories] = useState({});
     const [isSaving, setIsSaving] = useState(false);
     const hasChanges = Object.keys(modifiedCategories).length > 0;
@@ -44,7 +44,6 @@ const CategoryTable = () => {
             return matchesSearch && matchesMainCategory;
         });
 
-        // НОВОЕ: Подмешиваем локальные изменения перед сортировкой
         result = result.map(category => {
             if (modifiedCategories[category.id]) {
                 return { ...category, ...modifiedCategories[category.id] };
@@ -85,7 +84,7 @@ const CategoryTable = () => {
         try {
             const data = await fetchAllKategory();
             setCategories(data);
-            setModifiedCategories({}); // Сбрасываем изменения при новой загрузке
+            setModifiedCategories({}); 
         } catch (error) {
             console.error('Error loading categories:', error);
         }
@@ -124,19 +123,16 @@ const CategoryTable = () => {
         setSelectedFilterMainCategory(e.target.value);
     };
 
-    // НОВОЕ: Логика быстрого редактирования
     const handleQuickEdit = (categoryId, field, newValue) => {
         setModifiedCategories(prev => {
             const categoryChanges = prev[categoryId] || {};
             const originalCategory = categories.find(c => c.id === categoryId);
             const newChanges = { ...categoryChanges, [field]: newValue };
 
-            // Если вернули к оригинальному значению - удаляем из изменений
             if (originalCategory && String(originalCategory[field]) === String(newValue)) {
                 delete newChanges[field];
             }
 
-            // Если для категории больше нет изменений - удаляем категорию из объекта
             if (Object.keys(newChanges).length === 0) {
                 const newState = { ...prev };
                 delete newState[categoryId];
@@ -167,7 +163,7 @@ const CategoryTable = () => {
 
             await Promise.all(updatePromises);
             setModifiedCategories({});
-            loadCategories();
+            await loadCategories();
             setTimeout(() => { alert("Изменения успешно сохранены!") }, 200);
         } catch (error) {
             console.error(error);
@@ -238,45 +234,65 @@ const CategoryTable = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
-        if (editingCategory) {
+        setIsSaving(true);
+        try {
+            const myFormData = new FormData();
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
             myFormData.append("kategoryIndex", formData.kategoryIndex);
-            await updateKategory(editingCategory.id, myFormData);
-        } else {
-            myFormData.append("name", formData.name);
-            myFormData.append("image", formData.imageFile);
-            myFormData.append("mainKategoryId", formData.mainKategoryId);
-            myFormData.append("kategoryIndex", formData.kategoryIndex);
-            await postKategory(myFormData);
+            
+            if (editingCategory) {
+                await updateKategory(editingCategory.id, myFormData);
+            } else {
+                myFormData.append("mainKategoryId", formData.mainKategoryId);
+                await postKategory(myFormData);
+            }
+            closeModal();
+            await loadCategories();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении категории");
+        } finally {
+            setIsSaving(false);
         }
-        closeModal();
-        loadCategories();
     };
 
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
-        if (editingCategory) {
+        setIsSaving(true);
+        try {
+            const myFormData = new FormData();
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
             myFormData.append("kategoryIndex", formData.kategoryIndex);
-            await updateKategory(editingCategory.id, myFormData);
-        } else {
-            myFormData.append("name", formData.name);
-            myFormData.append("image", formData.imageFile);
-            myFormData.append("mainKategoryId", formData.mainKategoryId);
-            myFormData.append("kategoryIndex", formData.kategoryIndex);
-            await postKategory(myFormData);
+
+            if (editingCategory) {
+                await updateKategory(editingCategory.id, myFormData);
+            } else {
+                myFormData.append("mainKategoryId", formData.mainKategoryId);
+                await postKategory(myFormData);
+            }
+            await loadCategories();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении");
+        } finally {
+            setIsSaving(false);
         }
-        loadCategories();
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Вы уверены, что хотите удалить эту категорию?')) {
-            await deleteKategoryById(id);
-            loadCategories();
+            setIsSaving(true);
+            try {
+                await deleteKategoryById(id);
+                await loadCategories();
+            } catch (error) {
+                console.error(error);
+                alert("Ошибка при удалении");
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
@@ -294,7 +310,6 @@ const CategoryTable = () => {
                 mainCategories={mainCategories}
                 selectedFilterMainCategory={selectedFilterMainCategory}
                 handleFilterMainCategoryChange={handleFilterMainCategoryChange}
-                // Передаем новые пропсы
                 hasChanges={hasChanges}
                 isSaving={isSaving}
                 handleApplyChanges={handleApplyChanges}
@@ -313,7 +328,6 @@ const CategoryTable = () => {
                                 <th onClick={() => requestSort('mainKategoryId')} className="sortable my_p">
                                     Главная категория {getSortIndicator('mainKategoryId')}
                                 </th>
-                                {/* НОВОЕ: Столбец для индекса */}
                                 <th onClick={() => requestSort('kategoryIndex')} className="sortable my_p">
                                     Индекс {getSortIndicator('kategoryIndex')}
                                 </th>
@@ -351,6 +365,9 @@ const CategoryTable = () => {
                 fileInputRef={fileInputRef}
                 handleFileChange={handleFileChange}
             />
+
+            {/* Глобальный лоадер */}
+            <Loader isVisible={isSaving} text="Обновление категорий..." />
         </div>
     );
 };

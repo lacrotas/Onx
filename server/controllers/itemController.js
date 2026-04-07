@@ -7,7 +7,7 @@ async function filterAndUpdateImages(currentImagesFromDB, imageStringsFromFronte
     try {
         // 1. Нормализация входных данных
         const currentImages = Array.isArray(currentImagesFromDB) ? currentImagesFromDB : [];
-        
+
         let frontendOrderMap = [];
         if (Array.isArray(imageStringsFromFrontend)) {
             frontendOrderMap = imageStringsFromFrontend;
@@ -35,7 +35,7 @@ async function filterAndUpdateImages(currentImagesFromDB, imageStringsFromFronte
                 // Это старая картинка (URL или имя файла)
                 // Находим её имя в currentImages
                 const foundOldImage = currentImages.find(dbImg => itemString.includes(dbImg));
-                
+
                 if (foundOldImage) {
                     finalImages.push(foundOldImage);
                     imagesToKeep.push(foundOldImage);
@@ -295,6 +295,11 @@ class itemController {
             // Создаем объект только с теми полями, которые реально пришли с фронтенда
             const updateData = {};
 
+            // --- ДОБАВЛЕННЫЕ ПОЛЯ КАТЕГОРИЙ ---
+            if (req.body.mainKategoryId !== undefined) updateData.mainKategoryId = req.body.mainKategoryId;
+            if (req.body.kategoryId !== undefined) updateData.kategoryId = req.body.kategoryId;
+            // ----------------------------------
+
             if (req.body.itemGroupId !== undefined) updateData.itemGroupId = req.body.itemGroupId;
             if (req.body.name !== undefined) updateData.name = req.body.name;
             if (req.body.price !== undefined) updateData.price = req.body.price;
@@ -326,7 +331,7 @@ class itemController {
             if (req.body.imageStrings !== undefined) {
                 newProcessedImages = req.processedImages || [];
                 const oldImages = currentItem.images || [];
-                
+
                 updateData.images = await filterAndUpdateImages(
                     oldImages,
                     req.body.imageStrings,

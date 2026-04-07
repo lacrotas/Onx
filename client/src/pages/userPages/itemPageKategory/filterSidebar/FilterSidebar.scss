@@ -1,3 +1,4 @@
+/* --- VARIABLES --- */
 $bg-card: #ffffff;
 $text-main: #1d1d1f;
 $text-sec: #86868b;
@@ -5,20 +6,35 @@ $accent: #0071e3;
 $success: #34c759;
 $border: #d2d2d7;
 $radius: 20px;
+
 /* --- SIDEBAR STYLES --- */
 .sidebar {
+    // 1. Делаем блок липким
     position: sticky;
-    top: 100px;
+    top: 100px; // Отступ от верха хедера
     
+    // 2. Ограничиваем высоту (100% высоты экрана минус отступы)
+    // Это ключевое свойство для работы внутреннего скролла
+    height: calc(100vh - 120px); 
+    
+    // 3. Включаем Flexbox для управления внутренними частями
+    display: flex;
+    flex-direction: column;
+    
+    background: transparent; // Цвет берется от родителя или белый по желанию
+
     .sidebar-header {
+        flex-shrink: 0; // Шапка фильтров зафиксирована сверху
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
+        padding-right: 10px; // Запас под скроллбар
         
         .sidebar-title {
             font-size: 1.1rem;
             font-weight: 700;
+            color: $text-main;
         }
 
         .filters-list_close {
@@ -28,10 +44,36 @@ $radius: 20px;
         }
     }
 
+    /* --- КОНТЕЙНЕР ДЛЯ СКРОЛЛА --- */
+    // Мы не скроллим весь sidebar, а скроллим только контент ниже заголовка
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px; // Чтобы скроллбар не наезжал на чекбоксы
+
+    /* Стилизация скроллбара в стиле Apple (тонкий и аккуратный) */
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #d2d2d7; 
+        border-radius: 10px;
+        &:hover {
+            background: #86868b;
+        }
+    }
+
+    /* Стили для групп фильтров */
     .filter-group {
-        margin-bottom: 30px;
+        margin-bottom: 25px;
         border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         padding-bottom: 20px;
+
+        &:last-of-type {
+            border-bottom: none;
+        }
     }
 
     .filter-title {
@@ -65,6 +107,7 @@ $radius: 20px;
             align-items: center;
             justify-content: center;
             background: #fff;
+            flex-shrink: 0; // Чтобы чекбокс не сплющивался при длинном тексте
             transition: all 0.2s ease;
         }
 
@@ -95,10 +138,20 @@ $radius: 20px;
             outline: none;
             
             &:focus { border-color: $accent; }
+            
+            /* Убираем стрелочки в input type number */
+            &::-webkit-outer-spin-button,
+            &::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
         }
     }
 
     .btn-reset {
+        margin-top: 10px;
+        margin-bottom: 20px;
+        flex-shrink: 0; // Кнопка не должна сжиматься
         width: 100%;
         padding: 12px;
         background: transparent;
@@ -125,12 +178,13 @@ $radius: 20px;
         top: 0;
         left: -100%; // Скрыт за экраном
         width: 300px;
-        height: 100vh;
+        height: 100vh; // На мобилке на весь экран
+        max-height: 100vh;
         background: #fff;
         z-index: 1001;
         padding: 24px;
         transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-y: auto;
+        overflow-y: auto; // Скролл для мобильного меню
 
         &.open {
             left: 0;

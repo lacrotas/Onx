@@ -4,6 +4,7 @@ import { fetchAllKategory } from '../../../http/KategoryApi';
 import FilterTableHeader from './components/filterTableHeader/FilterTableHeader';
 import FilterCard from './components/filterCard/FilterCard';
 import FilterModal from './components/filterModal/FilterModal';
+import Loader from '../../../components/loader/Loader';
 import "./FilterTable.scss";
 
 const FilterTable = () => {
@@ -11,6 +12,9 @@ const FilterTable = () => {
     const [categories, setCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFilterCategory, setSelectedFilterCategory] = useState('');
+    
+    // Состояние для лоадера
+    const [isSaving, setIsSaving] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingFilter, setEditingFilter] = useState(null);
@@ -19,7 +23,7 @@ const FilterTable = () => {
         kategoryId: '',
         buttonType: 'check',
         addition: '',
-        filterIndex:''
+        filterIndex: ''
     });
 
     useEffect(() => {
@@ -30,7 +34,6 @@ const FilterTable = () => {
     const loadFilters = async () => {
         try {
             const data = await fetchAllFilters();
-            // Сортируем полученные фильтры по filterIndex
             const sortedData = data.sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0));
             setFilters(sortedData);
         } catch (error) {
@@ -59,6 +62,7 @@ const FilterTable = () => {
     };
 
     const saveFilterValues = async (filterObj, newValuesArray) => {
+        setIsSaving(true);
         try {
             const payload = {
                 name: filterObj.name,
@@ -66,7 +70,7 @@ const FilterTable = () => {
                 kategoryId: filterObj.kategoryId,
                 addition: filterObj.addition || '',
                 attributeValues: newValuesArray,
-                filterIndex: filterObj.filterIndex // Сохраняем индекс при обновлении значений
+                filterIndex: filterObj.filterIndex
             };
 
             await updateFilter(filterObj.id, payload);
@@ -74,6 +78,8 @@ const FilterTable = () => {
         } catch (error) {
             console.error(error);
             alert("Ошибка при сохранении значений");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -119,47 +125,68 @@ const FilterTable = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSaving(true);
+        try {
+            const payload = {
+                name: formData.name,
+                buttonType: formData.buttonType,
+                kategoryId: formData.kategoryId,
+                addition: formData.addition,
+                attributeValues: editingFilter ? (editingFilter.attributeValues || []) : [],
+                filterIndex: formData.filterIndex
+            };
 
-        const payload = {
-            name: formData.name,
-            buttonType: formData.buttonType,
-            kategoryId: formData.kategoryId,
-            addition: formData.addition,
-            attributeValues: editingFilter ? (editingFilter.attributeValues || []) : [],
-            filterIndex: formData.filterIndex
-        };
-        console.log(payload);
+            if (editingFilter) {
+                await updateFilter(editingFilter.id, payload);
+            } else {
+                await postFilterForKategory(payload);
+            }
 
-        if (editingFilter) {
-            await updateFilter(editingFilter.id, payload);
-        } else {
-            await postFilterForKategory(payload);
+            await loadFilters();
+            closeModal();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при сохранении фильтра");
+        } finally {
+            setIsSaving(false);
         }
-
-        loadFilters();
-        closeModal();
     };
 
     const handleSubmitWithoutClose = async (e) => {
         e.preventDefault();
-        
-        const payload = {
-            name: formData.name,
-            buttonType: formData.buttonType,
-            kategoryId: formData.kategoryId,
-            addition: formData.addition,
-            attributeValues: [],
-            filterIndex: filters.length
-        };
+        setIsSaving(true);
+        try {
+            const payload = {
+                name: formData.name,
+                buttonType: formData.buttonType,
+                kategoryId: formData.kategoryId,
+                addition: formData.addition,
+                attributeValues: [],
+                filterIndex: filters.length
+            };
 
-        await postFilterForKategory(payload);
-        loadFilters();
+            await postFilterForKategory(payload);
+            await loadFilters();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при создании");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Вы действительно хотите удалить данный фильтр?')) {
-            await deleteFilter(id);
-            loadFilters();
+            setIsSaving(true);
+            try {
+                await deleteFilter(id);
+                await loadFilters();
+            } catch (error) {
+                console.error(error);
+                alert("Ошибка при удалении");
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
@@ -185,7 +212,6 @@ const FilterTable = () => {
 
         return sortedKeys.map(key => ({
             categoryName: key,
-            // Дополнительная сортировка внутри группы на случай, если массив filters был изменен
             filters: grouped[key].sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0))
         }));
     };
@@ -244,6 +270,9 @@ const FilterTable = () => {
                 categories={categories}
                 buttonTypeOptions={buttonTypeOptions}
             />
+
+            {/* Глобальный лоадер */}
+            <Loader isVisible={isSaving} text="Обновление фильтров..." />
         </div>
     );
 };

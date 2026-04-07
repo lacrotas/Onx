@@ -1,40 +1,48 @@
 import "./CatalogInfoSlide.scss";
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { useHistory } from 'react-router-dom';
 import { ITEM_KATEGOTY_ROUTE } from "../../pages/appRouter/Const";
 import { fetchAllMainKategory, fetchAllKategoryByMainKategoryId } from "../../http/KategoryApi";
-import { useHistory } from 'react-router-dom';
 import { FiX } from "react-icons/fi";
-
 
 function CatalogInfoSlide({ setIsCategoryActive }) {
     const history = useHistory();
-    const [activeCategory, setActiveCategory] = useState(0);
-    const [mainCategory, setMainCategory] = useState([]);
-    const [category, setCategory] = useState([]);
-    const [podCategory, setPodCategory] = useState([]);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [catalogData, setCatalogData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Получаем все основные категории
-        fetchAllMainKategory().then(data => {
-            setMainCategory(data);
-
-            // Для каждой основной категории получаем подкатегории
-            Promise.all(
-                data.map(mainCat => fetchAllKategoryByMainKategoryId(mainCat.id))
-            ).then(subCategoryData => {
-                setCategory(subCategoryData);
-
-            });
-        });
+        const loadAllData = async () => {
+            try {
+                setIsLoading(true);
+                const mains = await fetchAllMainKategory();
+                const combined = await Promise.all(
+                    mains.map(async (m) => {
+                        const subs = await fetchAllKategoryByMainKategoryId(m.id);
+                        return { ...m, subs: subs || [] };
+                    })
+                );
+                setCatalogData(combined);
+            } catch (e) {
+                console.error("Ошибка загрузки:", e);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadAllData();
     }, []);
-    const handleClick = (newPath) => {
+
+    const navigateTo = (item) => {
         history.push({
-            pathname: ITEM_KATEGOTY_ROUTE,
-            state: { path: newPath },
+            pathname: `${ITEM_KATEGOTY_ROUTE}/${item.id}`,
+            state: { path: [item] },
         });
         setIsCategoryActive(false);
     };
+
+    if (isLoading) return null;
+
+    const activeGroup = catalogData[activeIndex];
 
     return (
         <div className="catalog-modal">
@@ -47,42 +55,40 @@ function CatalogInfoSlide({ setIsCategoryActive }) {
 
                 <div className="categories-container">
                     <div className="main-categories">
-                        {mainCategory.map((mainCategoryItem, index) => (
+                        {catalogData.map((item, index) => (
                             <div
-                                key={mainCategoryItem.id}
-                                className={`main-category ${activeCategory === index ? 'active' : ''} my_p`}
-                                onClick={() => setActiveCategory(index)}
+                                key={item.id}
+                                className={`main-category ${activeIndex === index ? 'active' : ''} my_p`}
+                                onClick={() => setActiveIndex(index)}
                             >
-                                {mainCategoryItem.name}
+                                {item.name}
                             </div>
                         ))}
                     </div>
 
                     <div className="subcategories-container">
-                        {category[activeCategory]?.map((categoryItem, categoryIndex) => {
-                            const mainCategoryItem = mainCategory[activeCategory];
-                            return (
-                                <div key={categoryItem.id} className="subcategory-group">
-                                    <NavLink
-                                        className="subcategory-title"
-                                        to={{
-                                            pathname: `${ITEM_KATEGOTY_ROUTE}/${categoryItem.id}`,
-                                            state: { path: [categoryItem] }
-                                        }}
-                                        onClick={() => handleClick([categoryItem])}
-                                    >
-                                        <p className="my_p">
-                                            {categoryItem.name}
-                                        </p>
-                                    </NavLink>
-                                </div>
-                            );
-                        })}
+                        <div className="podcategories">
+                            {activeGroup?.subs && activeGroup.subs.length > 0 ? (
+                                activeGroup.subs.map((sub) => (
+                                    <div 
+                                        key={sub.id} 
+                                        className="subcategory-group"
+                                        onClick={() => navigateTo(sub)}
+                                    >  
+                                        <div className="my_p subcategory-title">
+                                            {sub.name}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="my_p">Подкатегорий не найдено</div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div >
-    )
+        </div>
+    );
 }
 
 export default CatalogInfoSlide;
