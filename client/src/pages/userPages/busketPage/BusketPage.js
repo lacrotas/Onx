@@ -8,6 +8,7 @@ import './BusketPage.scss';
 import { NavLink } from 'react-router-dom';
 import { FiTrash2 } from 'react-icons/fi';
 import ModalWindow from '../../../components/modalWindow/ModalWindow';
+import CustomAlert from '../../../components/customAlert/CustomAlert';
 
 const BASKET_LOCAL_STORAGE_KEY = 'basket';
 
@@ -19,7 +20,7 @@ const BusketPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [localQuantities, setLocalQuantities] = useState({});
-
+    const [alertState, setAlertState] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [itemsToLoad, setItemsToLoad] = useState();
 
@@ -174,9 +175,6 @@ const BusketPage = () => {
 
     // --- УДАЛЕНИЕ ТОВАРА ---
     const handleRemoveItem = async (itemId) => {
-        if (!window.confirm('Вы действительно хотите удалить этот товар из корзины?')) {
-            return;
-        }
 
         // 1. Сначала обновляем UI
         const updatedItems = items.filter(item => item.id !== itemId);
@@ -263,6 +261,7 @@ const BusketPage = () => {
         <>
             {isModalOpen && <ModalWindow type="order" setIsModalActive={setIsModalOpen} itemsArr={itemsToLoad} />}
             <Header isAdminHeader={false} />
+            {alertState && <CustomAlert setIsModalActive={setAlertState} text={"Вы действительно хотите удалить этот товар из корзины?"} onConfirm={() => handleRemoveItem(alertState)} />}
             <div className="basket-page">
                 <div className="container">
                     <h1 className="page-title my_h1">Мои заказы</h1>
@@ -325,7 +324,7 @@ const BusketPage = () => {
                                             </div>
                                             <button
                                                 className="remove-item-icon"
-                                                onClick={() => handleRemoveItem(item.id)}
+                                                onClick={() => setAlertState(item.id)}
                                                 title="Удалить товар"
                                             >
                                                 <FiTrash2 size={18} />

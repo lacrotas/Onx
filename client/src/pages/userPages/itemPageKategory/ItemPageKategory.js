@@ -198,14 +198,24 @@ const ItemPageKategory = () => {
 
     const sortItems = (itemsToSort) => {
         const sortedItems = [...itemsToSort];
-        switch (sortOption) {
-            case 'price-asc': return sortedItems.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-            case 'price-desc': return sortedItems.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-            case 'rating': return sortedItems.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            default: return sortedItems;
-        }
-    };
 
+        return sortedItems.sort((a, b) => {
+            if (a.isExist !== b.isExist) {
+                return b.isExist ? 1 : -1;
+            }
+
+            switch (sortOption) {
+                case 'price-asc':
+                    return parseFloat(a.price) - parseFloat(b.price);
+                case 'price-desc':
+                    return parseFloat(b.price) - parseFloat(a.price);
+                case 'rating':
+                    return (b.rating || 0) - (a.rating || 0);
+                default:
+                    return 0;
+            }
+        });
+    };
     const handleFilterChange = (filterId, ...args) => {
         const filter = filters.find(f => f.id === filterId);
         if (!filter) return;

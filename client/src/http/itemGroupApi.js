@@ -17,11 +17,19 @@ function checkId(id) {
     }
     return false
 }
-
+export const fetchItemGroupById = async (id) => {
+    if (!id) {
+        return null;
+    } else {
+        const { data } = await $host.get('api/itemGroupRouter/getById/' + id);
+        return data;
+    }
+}
 export const fetchAllItemGroup = async (id) => {
     const { data } = await $host.get('api/itemGroupRouter/getAll');
     return data;
 }
+
 export const postItemGroup = async (item) => {
     const token = localStorage.getItem('token');
     try {

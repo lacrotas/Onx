@@ -1,317 +1,186 @@
-// ItemGroupTable.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchAllItemGroup, postItemGroup, updateItemGroup, deleteItemGroup } from '../../../http/itemGroupApi';
-import { fetchAllItem } from '../../../http/itemApi'; 
+import { fetchAllItem, updateItemById } from '../../../http/itemApi'; // Импортируем метод обновления товара
+import ItemGroupTableHeader from './components/ItemGroupTableHeader';
+import ItemGroupTableRow from './components/ItemGroupTableRow';
+import ItemGroupModal from './components/ItemGroupModal';
+import Loader from '../../../components/loader/Loader';
 import "./ItemGroupTable.scss";
 
 const ItemGroupTable = () => {
-    const [itemGroups, setItemGroups] = useState([]);
-    const [filteredItemGroups, setFilteredItemGroups] = useState([]);
-    const [items, setItems] = useState([]);
-    const [filteredItems, setFilteredItems] = useState([]);
+    const [groups, setGroups] = useState([]);
+    const [allItems, setAllItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [itemSearchTerm, setItemSearchTerm] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItemGroup, setEditingItemGroup] = useState(null);
+    const [editingGroup, setEditingGroup] = useState(null);
+
     const [formData, setFormData] = useState({
         name: '',
-        itemIds: []
+        itemIds: [],
+        selectedItemsData: [] // Для отображения выбранных товаров в модалке
     });
-    const fileInputRef = useRef(null);
 
-    // Load item groups and items on component mount
     useEffect(() => {
-        loadItemGroups();
-        loadItems();
+        loadData();
     }, []);
 
-    // Filter item groups based on search term
-    useEffect(() => {
-        const filtered = itemGroups.filter(group =>
-            group.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setFilteredItemGroups(filtered);
-    }, [searchTerm, itemGroups]);
-
-    // Filter items based on item search term
-    useEffect(() => {
-        const filtered = items.filter(item =>
-            item.name.toLowerCase().includes(itemSearchTerm.toLowerCase())
-        );
-        setFilteredItems(filtered);
-    }, [itemSearchTerm, items]);
-
-    const loadItemGroups = async () => {
+    const loadData = async () => {
         try {
-            const data = await fetchAllItemGroup();
-            // Приводим данные к единому формату
-            const normalizedData = data.map(group => ({
-                ...group,
-                itemIds: Array.isArray(group.itemIds) ? group.itemIds : (group.itemIds || [])
-            }));
-            setItemGroups(normalizedData);
-            setFilteredItemGroups(normalizedData);
+            const [groupsData, itemsData] = await Promise.all([
+                fetchAllItemGroup(),
+                fetchAllItem()
+            ]);
+            setGroups(groupsData);
+            setAllItems(itemsData);
         } catch (error) {
-            console.error('Error loading item groups:', error);
+            console.error('Ошибка загрузки данных:', error);
         }
-    };
-
-    const loadItems = async () => {
-        try {
-            const data = await fetchAllItem();
-            setItems(data);
-            setFilteredItems(data);
-        } catch (error) {
-            console.error('Error loading items:', error);
-        }
-    };
-
-    const handleSearch = (e) => {
-        setSearchTerm(e.target.value);
-    };
-
-    const handleItemSearch = (e) => {
-        setItemSearchTerm(e.target.value);
     };
 
     const openAddModal = () => {
-        setEditingItemGroup(null);
-        setFormData({
-            name: '',
-            itemIds: []
-        });
-        setItemSearchTerm(''); // Очищаем поиск при открытии
+        setEditingGroup(null);
+        setFormData({ name: '', itemIds: [], selectedItemsData: [] });
         setIsModalOpen(true);
     };
 
     const openEditModal = (group) => {
-        setEditingItemGroup(group);
+        setEditingGroup(group);
+        const selected = allItems.filter(item => group.itemIds.includes(item.id));
         setFormData({
             name: group.name,
-            itemIds: Array.isArray(group.itemIds) ? group.itemIds : []
+            itemIds: group.itemIds,
+            selectedItemsData: selected
         });
-        setItemSearchTerm(''); // Очищаем поиск при открытии
         setIsModalOpen(true);
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setEditingItemGroup(null);
-        setItemSearchTerm(''); // Очищаем поиск при закрытии
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleItemToggle = (itemId) => {
-        setFormData(prev => {
-            const newIds = [...prev.itemIds];
-            const index = newIds.indexOf(itemId);
-            if (index > -1) {
-                newIds.splice(index, 1); // Удаляем, если уже есть
-            } else {
-                newIds.push(itemId); // Добавляем, если нет
+    const handleDelete = async (id) => {
+        if (window.confirm('Удалить группу?')) {
+            setIsSaving(true);
+            try {
+                // Перед удалением группы желательно отвязать товары на фронте или это сделает бэкенд каскадно
+                await deleteItemGroup(id);
+                await loadData();
+            } catch (e) { 
+                alert("Ошибка при удалении"); 
+            } finally { 
+                setIsSaving(false); 
             }
-            return { ...prev, itemIds: newIds };
-        });
-    };
-
-    const handleSelectAll = () => {
-        setFormData(prev => ({
-            ...prev,
-            itemIds: filteredItems.map(item => item.id)
-        }));
-    };
-
-    const handleDeselectAll = () => {
-        setFormData(prev => ({
-            ...prev,
-            itemIds: []
-        }));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
+        if (formData.selectedItemsData.length === 0) {
+            return alert("Выберите хотя бы один товар");
+        }
+
+        setIsSaving(true);
         try {
-            myFormData.append("name", formData.name);
-            // Добавляем каждый ID в formData как отдельное значение
-            formData.itemIds.forEach(id => {
-                myFormData.append("itemIds", id);
-            });
-            
-            if (editingItemGroup) {
-                await updateItemGroup(editingItemGroup.id, myFormData);
+            const itemsInfoArray = formData.selectedItemsData.map(item => ({
+                name: item.name,
+                status: item.isExist,
+                image: item.images?.[0] || ''
+            }));
+
+            const payload = {
+                name: formData.name,
+                itemIds: formData.itemIds,
+                itemInfo: itemsInfoArray
+            };
+
+            let savedGroup;
+            if (editingGroup) {
+                // 1. Обновляем саму группу
+                savedGroup = await updateItemGroup(editingGroup.id, payload);
+                
+                // 2. Логика обновления связей в товарах:
+                // Находим товары, которые были в группе, но теперь удалены из неё
+                const itemsToRemove = editingGroup.itemIds.filter(id => !formData.itemIds.includes(id));
+                
+                const updatePromises = [
+                    // Привязываем новые/текущие товары к группе
+                    ...formData.itemIds.map(itemId => 
+                        updateItemById(itemId, { itemGroupId: editingGroup.id })
+                    ),
+                    // Отвязываем удаленные товары (ставим null)
+                    ...itemsToRemove.map(itemId => 
+                        updateItemById(itemId, { itemGroupId: null })
+                    )
+                ];
+                await Promise.all(updatePromises);
+
             } else {
-                await postItemGroup(myFormData);
+                // 1. Создаем новую группу
+                savedGroup = await postItemGroup(payload);
+                
+                // 2. Привязываем выбранные товары к ID созданной группы
+                const updatePromises = formData.itemIds.map(itemId => 
+                    updateItemById(itemId, { itemGroupId: savedGroup.id })
+                );
+                await Promise.all(updatePromises);
             }
-            loadItemGroups(); // Обновляем список после сохранения
-            closeModal();
-        } catch (error) {
-            console.error('Error saving item group:', error);
+
+            setIsModalOpen(false);
+            await loadData();
+        } catch (e) {
+            console.error(e);
+            alert("Ошибка сохранения и обновления товаров");
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this item group?')) {
-            deleteItemGroup(id).then(() => {
-                loadItemGroups(); // Обновляем список после удаления
-            }).catch(error => {
-                console.error('Error deleting item group:', error);
-            });
-        }
-    };
-
-    const getItemNames = (itemIds) => {
-        if (!itemIds || !Array.isArray(itemIds)) return 'No items';
-        const names = itemIds.map(id => {
-            const item = items.find(item => item.id === id);
-            return item ? item.name : 'Unknown';
-        });
-        return names.join(', ');
-    };
+    const filteredGroups = groups.filter(g =>
+        g.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
-        <div className="adminItemGroupTable">
-            <div className="admin-header">
-                <h1>Группы товаров</h1>
-                <div className="search-container">
-                    <input
-                        type="text"
-                        placeholder="Найти группу..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="search-input"
-                    />
-                </div>
-                <button onClick={openAddModal} className="add-button">
-                    Добавить группу
-                </button>
-            </div>
+        <div className="admin-item-editor">
+            <ItemGroupTableHeader
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                openAddModal={openAddModal}
+            />
 
-            <div className="table-container">
-                <table className="categories-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Название</th>
-                            <th>Товары</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredItemGroups.map(group => (
-                            <tr key={group.id}>
-                                <td>{group.id}</td>
-                                <td>{group.name}</td>
-                                <td>{getItemNames(group.itemIds)}</td>
-                                <td className="action-buttons">
-                                    <button
-                                        onClick={() => openEditModal(group)}
-                                        className="edit-button"
-                                    >
-                                        Обновить
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(group.id)}
-                                        className="delete-button"
-                                    >
-                                        Удалить
-                                    </button>
-                                </td>
+            <main className="content-container">
+                <div className="table-wrapper">
+                    <table className="apple-table">
+                        <thead>
+                            <tr>
+                                <th className="my_p">Фото (превью)</th>
+                                <th className="my_p">Название группы</th>
+                                <th className="my_p">Кол-во товаров</th>
+                                <th className="my_p">Действия</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2>{editingItemGroup ? 'Обновить' : 'Добавить'}</h2>
-                            <button className="close-button" onClick={closeModal}>×</button>
-                        </div>
-                        
-                        <form onSubmit={handleSubmit} className="modal-form">
-                            <div className="form-group">
-                                <label htmlFor="name">Название:</label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="form-input"
+                        </thead>
+                        <tbody>
+                            {filteredGroups.map(group => (
+                                <ItemGroupTableRow
+                                    key={group.id}
+                                    group={group}
+                                    onEdit={openEditModal}
+                                    onDelete={handleDelete}
                                 />
-                            </div>
-
-                            <div className="form-group">
-                                <div className="item-selection-header">
-                                    <label>Товары:</label>
-                                    <div className="item-selection-controls">
-                                        <button 
-                                            type="button" 
-                                            onClick={handleSelectAll}
-                                            className="select-all-button"
-                                        >
-                                            Выбрать все
-                                        </button>
-                                        <button 
-                                            type="button" 
-                                            onClick={handleDeselectAll}
-                                            className="deselect-all-button"
-                                        >
-                                            Снять выделение
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div className="item-search-container">
-                                    <input
-                                        type="text"
-                                        placeholder="Поиск товаров..."
-                                        value={itemSearchTerm}
-                                        onChange={handleItemSearch}
-                                        className="item-search-input"
-                                    />
-                                </div>
-                                
-                                <div className="items-list-container">
-                                    {filteredItems.length > 0 ? (
-                                        filteredItems.map(item => (
-                                            <label key={item.id} className="item-checkbox">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.itemIds.includes(item.id)}
-                                                    onChange={() => handleItemToggle(item.id)}
-                                                />
-                                                <span className="item-name">{item.name}</span>
-                                            </label>
-                                        ))
-                                    ) : (
-                                        <div className="no-items-message">
-                                            {items.length === 0 ? 'Нет доступных товаров' : 'Товары не найдены'}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="modal-buttons">
-                                <button type="button" onClick={closeModal} className="cancel-button">
-                                    Отмена
-                                </button>
-                                <button type="submit" className="save-button">
-                                    {editingItemGroup ? 'Обновить' : 'Добавить'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-            )}
+            </main>
+
+            <ItemGroupModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                formData={formData}
+                setFormData={setFormData}
+                allItems={allItems}
+                onSubmit={handleSubmit}
+                editingGroup={editingGroup}
+            />
+
+            <Loader isVisible={isSaving} text="Синхронизация..." />
         </div>
     );
 };

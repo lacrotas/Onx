@@ -1,15 +1,38 @@
 import "./ModalWindow.scss";
 import CustomButton from "../../customUI/customButton/CustomButton";
-function CustomAlert({ setIsModalActive, text }) {
+
+function CustomAlert({ setIsModalActive, text, onConfirm }) {
+    // Функция для обработки подтверждения
+    const handleConfirm = () => {
+        if (onConfirm) onConfirm();
+        setIsModalActive(false);
+    };
+
     return (
-        <div className="alert">
-            <div className="alert_content">
-                <p className="tiny_p">{text}</p>
-                <CustomButton dealOnClick={setIsModalActive} value={false} text={"Потвердить"} />
+        <div className="apple-alert-overlay">
+            <div className="apple-alert-container">
+                <div className="apple-alert-body">
+                    <p className="my_p">{text}</p>
+                </div>
+                <div className="apple-alert-actions">
+                    {onConfirm && <button
+                        className="apple-alert-btn cancel"
+                        onClick={() => setIsModalActive(false)}
+                    >
+                        Отмена
+                    </button>
+                    }
+                    <button
+                        className="apple-alert-btn confirm"
+                        onClick={handleConfirm}
+                    >
+                        ОК
+                    </button>
+                </div>
             </div>
-            <div className="modal_back" onClick={() => setIsModalActive(false)}></div>
-        </div >
-    )
+            <div className="apple-alert-blur" onClick={() => setIsModalActive(false)}></div>
+        </div>
+    );
 }
 
 export default CustomAlert;

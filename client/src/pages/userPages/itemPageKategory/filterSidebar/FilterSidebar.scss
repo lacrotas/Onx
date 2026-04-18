@@ -81,6 +81,7 @@ $radius: 20px;
         font-weight: 600;
         margin-bottom: 12px;
         color: $text-main;
+        text-transform: capitalize;
     }
 
     /* Кастомный чекбокс */
@@ -92,6 +93,7 @@ $radius: 20px;
         font-size: 0.9rem;
         color: $text-main;
         transition: color 0.2s ease;
+        text-transform: capitalize;
 
         &:hover { color: $accent; }
 

@@ -17,6 +17,7 @@ function AddReview({ closeModal, itemId }) {
     const [isAlertActive, setIsAlertActive] = useState(false);
     const [alertText, setAlertText] = useState("");
 
+    
     const getCurrentDate = () => {
         const today = new Date();
         const day = String(today.getDate()).padStart(2, '0');
@@ -54,7 +55,8 @@ function AddReview({ closeModal, itemId }) {
 
         const token = localStorage.getItem('token');
         if (!token) {
-            alert("Для написания отзыва войдите на сайт");
+            setIsAlertActive(true);
+            setAlertText("Для написания отзыва войдите на сайт");
             return;
         }
 
@@ -99,7 +101,7 @@ function AddReview({ closeModal, itemId }) {
     return (
         <>
             {isAlertActive && (
-                <CustomAlert text={alertText} setIsModalActive={closeAlert} />
+                <CustomAlert text={alertText} setIsModalActive={setIsAlertActive} />
             )}
 
             <div className="add-review-modal">

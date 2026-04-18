@@ -83,6 +83,7 @@ const Item = sequelize.define('item', {
     },
     video: { type: DataTypes.STRING },
     price: { type: DataTypes.STRING },
+    deliveryPrice:  { type: DataTypes.JSONB },
     description: { type: DataTypes.TEXT },
     rating: { type: DataTypes.STRING },
     reviewNumber: { type: DataTypes.STRING },
@@ -97,6 +98,7 @@ const ItemGroup = sequelize.define('itemGroup', {
         defaultValue: []
     },
     name: { type: DataTypes.STRING },
+    itemInfo: { type: DataTypes.JSONB },
 })
 
 // review

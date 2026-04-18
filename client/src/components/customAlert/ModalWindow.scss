@@ -1,40 +1,102 @@
-.alert {
+$apple-blue: #0071e3;
+$apple-separator: rgba(60, 60, 67, 0.36); // Цвет линий в iOS
+
+.apple-alert-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
-    min-height: 100vh;
-    z-index: 20;
+    height: 100vh;
+    display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    box-sizing: border-box;
 
-    .alert_content {
-        margin-top: calc(50vh - 95px);
-        margin-left: calc(50vw - 170px);
+    .apple-alert-container {
         position: relative;
-        z-index: 5;
-        background-color: #fff;
-        min-height: 150px;
-        border-radius: 20px;
-        width: 300px;
-        padding: 20px;
+        z-index: 10001;
+        background-color: rgba(255, 255, 255, 0.82); // Светлая тема iOS
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        
+        width: 100%;
+        max-width: 270px; // Стандартная ширина системного алерта
+        border-radius: 14px;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: space-between;
-        text-align: center;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        
+        animation: apple-alert-fade-in 0.2s ease-out;
+
+        .apple-alert-body {
+            padding: 19px 16px;
+            text-align: center;
+
+            .my_p {
+                margin: 0;
+                font-weight: 500;
+                line-height: 1.3;
+                color: #000;
+                font-size: 17px;
+            }
+        }
+
+        .apple-alert-actions {
+            display: flex;
+            border-top: 0.5px solid $apple-separator;
+
+            .apple-alert-btn {
+                flex: 1;
+                padding: 12px 8px;
+                background: none;
+                border: none;
+                font-size: 17px;
+                cursor: pointer;
+                outline: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.2s;
+
+                &.cancel {
+                    color: $apple-blue;
+                    font-weight: 400;
+                    border-right: 0.5px solid $apple-separator;
+                }
+
+                &.confirm {
+                    color: $apple-blue;
+                    font-weight: 600; // Жирный текст для главного действия
+                }
+
+                &:active {
+                    background-color: rgba(0, 0, 0, 0.05);
+                }
+            }
+        }
     }
 
-    .modal_back {
-        position: fixed;
+    .apple-alert-blur {
+        position: absolute;
         top: 0;
         left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba($color: #000000, $alpha: 0.7);
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.2); // Легкое затемнение фона
+        z-index: 10000;
     }
 }
 
-body.modal {
-    overflow: hidden;
+@keyframes apple-alert-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(1.1);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

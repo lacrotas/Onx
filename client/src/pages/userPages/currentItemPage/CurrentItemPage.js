@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { fetchItemId } from '../../../http/itemApi';
 import { fetchAllAttributeByKategoryId } from '../../../http/filterApi';
 import { updateBusket, fetchBusketByUserId } from '../../../http/busketApi';
 import { fetchMainKategoryById, fetchKategoryById } from '../../../http/KategoryApi';
+import { fetchItemGroupById } from '../../../http/itemGroupApi'; 
 import Header from "../../../components/header/Header";
 import Footer from "../../../components/footer/Footer";
 import { BUSKET_ROUTE, ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
@@ -14,30 +15,23 @@ import { FiShoppingCart, FiCheck } from 'react-icons/fi';
 import { IoIosArrowDown } from "react-icons/io";
 import ItemReviews from './itemReviews/ItemReviews';
 import ItemGallery from './ItemGallery/ItemGallery';
+import ItemVariantsSlider from './ItemVariantsSlider/ItemVariantsSlider'; // Импорт нового компонента
 
 const CurrentItemPage = () => {
     const history = useHistory();
     const { itemId } = useParams();
-    // Состояния данных
     const [item, setItem] = useState(null);
+    const [itemGroup, setItemGroup] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [mainKategory, setMainKategory] = useState(null);
     const [kategory, setKategory] = useState(null);
-
-    // Состояния интерфейса
     const [isInCart, setIsInCart] = useState(false);
-
-    // Состояния аккордеонов
     const [openInfor, setOpenInfor] = useState(true);
     const [openDescription, setOpenDescription] = useState(true);
     const [openReviews, setOpenReviews] = useState(true);
-
-    // Рефы для скролла
-    const specsInforListRef = useRef(null);
     const [itemFilters, setItemFilters] = useState([]);
     
-    // Проверка наличия товара в корзине
     const checkItemInCart = async () => {
         setIsInCart(false);
         try {
@@ -48,15 +42,12 @@ const CurrentItemPage = () => {
                 const userId = jwt_decode(token).id;
                 const busket = await fetchBusketByUserId(userId);
                 const currentItems = busket.itemsJsonb || [];
-
                 const itemsForLocalStorage = currentItems.map(i => ({
                     id: i.itemId || i.id,
                     count: i.count || 1
                 }));
-
                 localStorage.setItem('basket', JSON.stringify(itemsForLocalStorage));
                 window.dispatchEvent(new Event('cartUpdated'));
-
                 isFound = currentItems.some(i => String(i.itemId || i.id) === String(itemId));
             } else {
                 const savedBasket = localStorage.getItem('basket');
@@ -84,18 +75,27 @@ const CurrentItemPage = () => {
                     fetchKategoryById(itemData.kategoryId)
                 ]);
 
+                if (itemData.itemGroupId) {
+                    try {
+                        const groupData = await fetchItemGroupById(itemData.itemGroupId);
+                        setItemGroup(groupData);
+                    } catch (e) {
+                        console.error("Группа не загружена", e);
+                    }
+                } else {
+                    setItemGroup(null);
+                }
+
                 setItem(itemData);
                 setMainKategory(mkData);
                 setKategory(kData);
                 await checkItemInCart();
-
             } catch (err) {
                 setError('Ошибка загрузки');
             } finally {
                 setLoading(false);
             }
         };
-
         if (itemId) loadData();
     }, [itemId]);
 
@@ -103,21 +103,19 @@ const CurrentItemPage = () => {
         try {
             const token = localStorage.getItem('token');
             if (token) {
-                const busket = await fetchBusketByUserId(jwt_decode(token).id);
+                const userId = jwt_decode(token).id;
+                const busket = await fetchBusketByUserId(userId);
                 const currentItems = busket.itemsJsonb ? [...busket.itemsJsonb] : [];
-
                 if (!currentItems.some(i => i.itemId === parseInt(itemId))) {
                     currentItems.push({ itemId: parseInt(itemId), count });
                     await updateBusket(busket.id, { itemsJsonb: currentItems });
                 }
             }
-
             let localBasket = JSON.parse(localStorage.getItem('basket') || '[]');
             if (!localBasket.some(i => String(i.itemId || i.id) === String(itemId))) {
                 localBasket.push({ itemId: itemId, id: itemId, count: 1 });
                 localStorage.setItem('basket', JSON.stringify(localBasket));
             }
-
             window.dispatchEvent(new Event('cartUpdated'));
             setIsInCart(true);
             return true;
@@ -151,7 +149,6 @@ const CurrentItemPage = () => {
     return (
         <div className="apple-theme-page">
             <Header />
-
             <div className="apple-main-container">
                 <div className="apple-breadcrumbs">
                     {mainKategory && kategory && (
@@ -177,6 +174,15 @@ const CurrentItemPage = () => {
                             </span>
                         </div>
 
+                        {/* Используем новый компонент слайдера */}
+                        {itemGroup && (
+                            <ItemVariantsSlider 
+                                items={itemGroup} 
+                                currentId={itemId} 
+                                apiUrl={process.env.REACT_APP_API_URL} 
+                            />
+                        )}
+
                         <div className="apple-btn-group">
                             <button
                                 onClick={handleAddToCart}
@@ -186,7 +192,6 @@ const CurrentItemPage = () => {
                                 {isInCart ? 'В корзине' : 'Добавить в корзину'}
                                 {isInCart ? <FiCheck /> : <FiShoppingCart />}
                             </button>
-
                             <button
                                 onClick={handleBuyNow}
                                 className="apple-secondary-button my_p"
@@ -201,18 +206,13 @@ const CurrentItemPage = () => {
                                 <h3 className="my_h3">Характеристики</h3>
                                 {Object.entries(item.specificationsJSONB).slice(0, 5).map(([key, value]) => {
                                     if (value === "") return null;
-                                    
-                                    // Ищем добавку (единицу измерения)
                                     const filterMatch = itemFilters.find(f => f.name === key);
                                     const addition = filterMatch ? ` ${filterMatch.addition}` : "";
-
                                     return (
                                         <div key={key} className="apple-mini-spec">
                                             <span className="key my_p">{key}</span>
                                             <span className="dots"></span>
-                                            <span className="val my_p">
-                                                {value}{addition}
-                                            </span>
+                                            <span className="val my_p">{value}{addition}</span>
                                         </div>
                                     );
                                 })}
@@ -244,17 +244,13 @@ const CurrentItemPage = () => {
                             <div className="apple-specs-full-grid">
                                 {item.specificationsJSONB && Object.entries(item.specificationsJSONB).map(([key, value]) => {
                                     if (value === "") return null;
-
                                     const filterMatch = itemFilters.find(f => f.name === key);
                                     const addition = filterMatch ? ` ${filterMatch.addition}` : "";
-
                                     return (
                                         <div key={key} className="apple-full-spec-row">
                                             <span className="key my_p">{key}</span>
                                             <span className="dots"></span>
-                                            <span className="val my_p">
-                                                {value}{addition}
-                                            </span>
+                                            <span className="val my_p">{value}{addition}</span>
                                         </div>
                                     );
                                 })}

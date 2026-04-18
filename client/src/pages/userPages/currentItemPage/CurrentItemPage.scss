@@ -4,6 +4,7 @@ $apple-green: #34c759;
 $apple-black: #1d1d1f;
 $apple-grey: #86868b;
 $apple-bg: #f5f5f7;
+$apple-border: #d2d2d7;
 
 .apple-theme-page {
     background: #ffffff;
@@ -13,13 +14,23 @@ $apple-bg: #f5f5f7;
         max-width: 1400px;
         margin: 0 auto;
         padding: 40px 20px;
-        box-sizing: border-box; /* Добавлено для страховки от вылезающих паддингов */
+        box-sizing: border-box;
+
+        // Адаптив для контейнера
+        @media (max-width: 768px) {
+            padding: 20px 15px;
+        }
     }
 }
 
 .apple-breadcrumbs {
     margin-bottom: 30px;
     opacity: 0.8;
+
+    @media (max-width: 768px) {
+        margin-bottom: 15px;
+        display: none; // Часто хлебные крошки скрывают на мобилках для экономии места
+    }
 }
 
 .apple-grid-layout {
@@ -28,42 +39,45 @@ $apple-bg: #f5f5f7;
     gap: 60px;
     align-items: start;
     margin-bottom: 80px;
-    width: 100%; /* Убеждаемся, что сетка не выходит за пределы */
+    width: 100%;
+
+    @media (max-width: 1100px) {
+        gap: 30px;
+    }
 
     @media (max-width: 992px) {
         grid-template-columns: 1fr;
         gap: 40px;
+        margin-bottom: 40px;
     }
 }
 
 // ПАНЕЛЬ ИНФОРМАЦИИ
 .apple-info-col {
-    top: 100px;
-    min-width: 0; /* Страховка для правой колонки */
-
     .apple-product-title {
         margin-bottom: 20px;
+        @media (max-width: 768px) {
+            margin-bottom: 10px;
+        }
     }
 
     .apple-price-row {
         display: flex;
         align-items: center;
         gap: 20px;
-        margin-bottom: 35px;
+        margin-bottom: 25px;
+
+        @media (max-width: 480px) {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
 
         .apple-status-label {
             padding: 6px 14px;
             border-radius: 20px;
-
-            &.in {
-                background: #e6f4ea;
-                color: $apple-green;
-            }
-
-            &.out {
-                background: #fdf2f2;
-                color: #d93025;
-            }
+            &.in { background: #e6f4ea; color: $apple-green; }
+            &.out { background: #fdf2f2; color: #d93025; }
         }
     }
 
@@ -73,13 +87,26 @@ $apple-bg: #f5f5f7;
         gap: 12px;
         margin-bottom: 40px;
 
+        @media (max-width: 768px) {
+            margin-bottom: 30px;
+        }
+
         button {
             width: 100%;
             padding: 18px;
             border-radius: 16px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
+            font-weight: 600;
+            transition: transform 0.2s;
+
+            &:active {
+                transform: scale(0.98);
+            }
+
+            @media (max-width: 480px) {
+                padding: 15px;
+            }
         }
 
         .apple-primary-button {
@@ -89,59 +116,44 @@ $apple-bg: #f5f5f7;
             justify-content: center;
             align-items: center;
             gap: 12px;
-
-            &:hover {
-                opacity: 0.9;
-                transform: translateY(-1px);
-            }
-
-            &.success {
-                background: $apple-green;
-            }
-
-            &:disabled {
-                background: #d2d2d7;
-                cursor: not-allowed;
-            }
+            &.success { background: $apple-green; }
         }
 
         .apple-secondary-button {
-            background: #fff;
-            color: $apple-blue;
-            border: 1px solid $apple-blue;
-
-            &:hover {
-                background: #f0f7ff;
-            }
-
-            &:disabled {
-                color: #d2d2d7;
-                border-color: #d2d2d7;
-            }
+            background: #f5f5f7;
+            color: $apple-black;
         }
     }
 }
 
-// ХАРАКТЕРИСТИКИ С ТОЧКАМИ
-.apple-mini-spec,
-.apple-full-spec-row {
-    margin-top: 10px;
+// ХАРАКТЕРИСТИКИ
+.apple-mini-spec, .apple-full-spec-row {
     display: flex;
     align-items: baseline;
     margin-bottom: 14px;
-
-    .key {
+    
+    .key { 
         color: $apple-grey;
+        flex-shrink: 0;
     }
+    
+    .dots { 
+        flex: 1; 
+        border-bottom: 1px dotted $apple-border; 
+        margin: 0 10px; 
 
-    .dots {
-        flex: 1;
-        border-bottom: 1px dotted #d2d2d7;
-        margin: 0 10px;
+        @media (max-width: 480px) {
+            display: none; // На совсем маленьких экранах точки мешают
+        }
     }
-
-    .val {
+    
+    .val { 
         color: $apple-black;
+        text-align: right;
+    }
+
+    @media (max-width: 480px) {
+        justify-content: space-between;
     }
 }
 
@@ -150,17 +162,22 @@ $apple-bg: #f5f5f7;
     border: none;
     color: $apple-blue;
     cursor: pointer;
+    font-weight: 500;
     padding: 10px 0;
 }
 
-// НИЖНЯЯ ЧАСТЬ (Аккордеоны и описание)
+// АККОРДЕОНЫ
 .apple-bottom-details {
     margin-top: 40px;
     border-top: 1px solid #e5e5e7;
 
+    @media (max-width: 768px) {
+        margin-top: 20px;
+    }
+
     .apple-accordion-item {
         border-bottom: 1px solid #e5e5e7;
-
+        
         .apple-accordion-header {
             display: flex;
             justify-content: space-between;
@@ -168,12 +185,14 @@ $apple-bg: #f5f5f7;
             padding: 30px 0;
             cursor: pointer;
 
-            svg {
-                transition: transform 0.4s;
+            @media (max-width: 768px) {
+                padding: 20px 0;
+            }
 
-                &.open {
-                    transform: rotate(180deg);
-                }
+            svg { 
+                transition: transform 0.4s; 
+                flex-shrink: 0;
+                &.open { transform: rotate(180deg); } 
             }
         }
 
@@ -182,23 +201,34 @@ $apple-bg: #f5f5f7;
             overflow: hidden;
             transition: max-height 0.5s ease-in-out, opacity 0.3s;
             opacity: 0;
+            &.show { 
+                max-height: 5000px; 
+                opacity: 1; 
+                padding-bottom: 40px; 
 
-            &.show {
-                max-height: 5000px;
-                opacity: 1;
-                padding-bottom: 40px;
+                @media (max-width: 768px) {
+                    padding-bottom: 25px;
+                }
             }
         }
     }
 }
 
 .apple-rich-text {
-    color: #333;
-    max-width: 800px;
-    overflow-wrap: break-word; /* Предотвращает вылезание длинного текста без пробелов */
-    img {
-        max-width: 100%;
-        height: auto;
+    line-height: 1.6;
+    word-wrap: break-word;
+    
+    img { 
+        max-width: 100%; 
+        height: auto !important; 
+        border-radius: 12px; 
+    }
+
+    // Таблицы внутри описания часто ломают мобилку
+    table {
+        width: 100% !important;
+        display: block;
+        overflow-x: auto;
     }
 }
 
@@ -207,8 +237,12 @@ $apple-bg: #f5f5f7;
     grid-template-columns: 1fr 1fr;
     gap: 0 60px;
 
-    @media (max-width: 768px) {
-        grid-template-columns: 1fr;
+    @media (max-width: 992px) {
+        gap: 0 30px;
+    }
+
+    @media (max-width: 768px) { 
+        grid-template-columns: 1fr; 
     }
 }
 
@@ -217,4 +251,6 @@ $apple-bg: #f5f5f7;
     display: flex;
     justify-content: center;
     align-items: center;
+    text-align: center;
+    padding: 20px;
 }

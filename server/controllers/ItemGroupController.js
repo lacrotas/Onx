@@ -9,7 +9,7 @@ class ItemGroupController {
 
     async addItemGroup(req, res, next) {
         try {
-            const { name, itemIds } = req.body;
+            const { name, itemIds, itemInfo } = req.body;
 
             // Убираем дубликаты из itemIds
             const uniqueItemIds = itemIds ? [...new Set(itemIds)] : [];
@@ -17,6 +17,7 @@ class ItemGroupController {
             const itemGroup = await ItemGroup.create({
                 name,
                 itemIds: uniqueItemIds,
+                itemInfo: itemInfo,
             });
 
             return res.json(itemGroup);
@@ -56,7 +57,7 @@ class ItemGroupController {
     async updateItemGroupById(req, res) {
         try {
             const { id } = req.params;
-            const { name, itemIds, specificationsJSONB } = req.body;
+            const { name, itemIds, itemInfo } = req.body;
 
             const itemGroup = await ItemGroup.findOne({ where: { id } });
             
@@ -68,7 +69,7 @@ class ItemGroupController {
             const updateData = {};
 
             if (name !== undefined) updateData.name = name;
-            
+            if (itemInfo !== undefined) updateData.itemInfo = itemInfo;
             if (itemIds !== undefined) {
                 // Убираем дубликаты из новых itemIds
                 updateData.itemIds = [...new Set(itemIds)];
