@@ -13,10 +13,10 @@ import {
 } from '@dnd-kit/sortable';
 
 import {
-  postMainKategory,
-  fetchAllMainKategory,
-  updateMainKategory,
-  deleteMainKategoryById
+  postCategory,
+  fetchAllMainCategory,
+  updateCategory,
+  deleteCategoryById
 } from '../../../http/KategoryApi';
 import SortableCard from './sortableCard/SortableCard';
 import "./MainCategoryTable.scss";
@@ -28,14 +28,14 @@ const MainCategoryTable = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [formData, setFormData] = useState({ name: '', imageFile: null, imageUrl: '' });
+  const [formData, setFormData] = useState({ name: '', imageFile: null, imageUrl: '', seo_title: '', seo_desc: '', alias: '', parentId: 0});
 
   const fileInputRef = useRef(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const loadCategories = useCallback(async () => {
     try {
-      const data = await fetchAllMainKategory();
+      const data = await fetchAllMainCategory();
       const sorted = data.sort((a, b) => (a.gridItemIndex || 0) - (b.gridItemIndex || 0));
       setCategories(sorted);
       setHasChanges(false);
@@ -78,7 +78,7 @@ const MainCategoryTable = () => {
         const fd = new FormData();
         fd.append("gridItemIndex", cat.gridItemIndex);
         fd.append("gridSpace", cat.gridSpace || 1);
-        return updateMainKategory(cat.id, fd);
+        return updateCategory(cat.id, fd);
       });
       await Promise.all(updatePromises);
       setHasChanges(false);
@@ -97,11 +97,20 @@ const MainCategoryTable = () => {
       setFormData({
         name: category.name,
         imageFile: null,
-        imageUrl: `${process.env.REACT_APP_API_URL}static/images/${category.image}`
+        imageUrl: `${process.env.REACT_APP_API_URL}static/images/${category.image}`,
+        seo_title: category.seo_title,
+        alias: category.alias,
+        seo_desc: category.seo_desc,
+        parentId: 0,
       });
     } else {
       setEditingCategory(null);
-      setFormData({ name: '', imageFile: null, imageUrl: '' });
+      setFormData({ name: '', imageFile: null, imageUrl: '', 
+        seo_title: '',
+        alias: '',
+        seo_desc: '',
+        parentId: 0,
+      });
     }
     setIsModalOpen(!isModalOpen);
   };
@@ -120,7 +129,7 @@ const MainCategoryTable = () => {
   const handleDelete = async (id) => {
     if (window.confirm('При удалении категории удалятся все связанные товары. Продолжить?')) {
       try {
-        await deleteMainKategoryById(id);
+        await deleteCategoryById(id);
         loadCategories();
       } catch (error) {
         console.error(error);
@@ -133,15 +142,19 @@ const MainCategoryTable = () => {
     if (e) e.preventDefault();
     const fd = new FormData();
     fd.append("name", formData.name);
+    fd.append("seo_title", formData.seo_title);
+    fd.append("seo_desc", formData.seo_desc);
+    fd.append("alias", formData.alias);
+    fd.append("parentId", 0);
     if (formData.imageFile) {
       fd.append("image", formData.imageFile);
     }
 
     try {
       if (editingCategory) {
-        await updateMainKategory(editingCategory.id, fd);
+        await updateCategory(editingCategory.id, fd);
       } else {
-        await postMainKategory(fd);
+        await postCategory(fd);
       }
       setIsModalOpen(false);
       loadCategories();
@@ -206,7 +219,36 @@ const MainCategoryTable = () => {
                   required
                 />
               </div>
-
+              <div className="form-group">
+                <label className="label my_p">Seo title:</label>
+                <input
+                  type="text"
+                  className="form-input my_p"
+                  value={formData.seo_title}
+                  onChange={e => setFormData({ ...formData, seo_title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="label my_p">Seo description:</label>
+                <input
+                  type="text"
+                  className="form-input my_p"
+                  value={formData.seo_desc}
+                  onChange={e => setFormData({ ...formData, seo_desc: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="label my_p">Название в url:</label>
+                <input
+                  type="text"
+                  className="form-input my_p"
+                  value={formData.alias}
+                  onChange={e => setFormData({ ...formData, alias: e.target.value })}
+                  required
+                />
+              </div>
               <div className="form-group">
                 <label className="label my_p">Картинка:</label>
                 <div className="image-upload-container" onClick={() => fileInputRef.current.click()}>

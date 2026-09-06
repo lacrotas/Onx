@@ -1,8 +1,8 @@
 import "./CatalogItem.scss";
-import { ITEM_MAIN_ROUTE } from "../../../pages/appRouter/Const";
+// import { ITEM_MAIN_ROUTE } from "../../../pages/appRouter/Const";
 import { NavLink } from "react-router-dom/cjs/react-router-dom.min";
 
-export default function CatalogItem({ itemId, image, label, item_counter, featured }) {
+export default function CatalogItem({ itemAllias, image, label, item_counter, featured }) {
     const endings = ['товар', 'товара', 'товаров'];
 
     function getWordEnding(number, words) {
@@ -18,7 +18,7 @@ export default function CatalogItem({ itemId, image, label, item_counter, featur
 
     return (
         <NavLink
-            to={{ pathname: ITEM_MAIN_ROUTE + "/" + itemId, state: { path: { name: label } } }}
+            to={{ pathname: "/" + itemAllias, state: { path: { name: label } } }}
             onClick={() => window.scrollTo(0, 0)}
             className={`cat-card ${spanClass}`}
         >

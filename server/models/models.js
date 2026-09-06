@@ -17,7 +17,6 @@ const Qwestion = sequelize.define('qwestion', {
 // users
 const User = sequelize.define('users', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    busketId: { type: DataTypes.INTEGER },
     login: { type: DataTypes.STRING },
     mail: { type: DataTypes.STRING, unique: true },
     password: { type: DataTypes.STRING },
@@ -40,26 +39,26 @@ const Busket = sequelize.define('busket', {
     userId: { type: DataTypes.INTEGER },
     itemsJsonb: { type: DataTypes.JSONB },
 })
-// linked data
-// kategory
-const MainKategory = sequelize.define('mainKategory', {
+// Category
+const Category = sequelize.define('category', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    parentId: { type: DataTypes.INTEGER },
+    alias: { type: DataTypes.STRING },
+    seo_title: { type: DataTypes.STRING },
+    seo_desc: { type: DataTypes.STRING },
     name: { type: DataTypes.STRING, unique: true },
     image: { type: DataTypes.STRING },
     gridSpace: { type: DataTypes.INTEGER },
     gridItemIndex: { type: DataTypes.INTEGER },
-})
-const Kategory = sequelize.define('kategory', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    mainKategoryId: { type: DataTypes.INTEGER },
-    name: { type: DataTypes.STRING },
-    image: { type: DataTypes.STRING },
-    kategoryIndex: { type: DataTypes.INTEGER },
+    categoryIndex: { type: DataTypes.INTEGER },
+    itemsCount: { type: DataTypes.INTEGER, defaultValue: 0, allowNull: false },
+}, {
+    tableName: 'category', // Фиксирует имя таблицы в БД
 })
 // attribute
 const Attribute = sequelize.define('attribute', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    kategoryId: { type: DataTypes.INTEGER },
+    categoryId: { type: DataTypes.INTEGER },
     name: { type: DataTypes.STRING },
     buttonType: { type: DataTypes.STRING },
     addition: { type: DataTypes.STRING },
@@ -73,9 +72,12 @@ const Attribute = sequelize.define('attribute', {
 // items
 const Item = sequelize.define('item', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    mainKategoryId: { type: DataTypes.INTEGER },
-    kategoryId: { type: DataTypes.INTEGER },
+    categoryId: { type: DataTypes.INTEGER },
+    alias: { type: DataTypes.STRING },
+    seo_title: { type: DataTypes.STRING },
+    seo_desc: { type: DataTypes.STRING },
     itemGroupId: { type: DataTypes.INTEGER, allowNull: true },
+    alias: { type: DataTypes.STRING, unique: true },
     name: { type: DataTypes.STRING },
     images: {
         type: DataTypes.ARRAY(DataTypes.STRING),
@@ -83,7 +85,7 @@ const Item = sequelize.define('item', {
     },
     video: { type: DataTypes.STRING },
     price: { type: DataTypes.STRING },
-    deliveryPrice:  { type: DataTypes.JSONB },
+    deliveryPrice: { type: DataTypes.JSONB },
     description: { type: DataTypes.TEXT },
     rating: { type: DataTypes.STRING },
     reviewNumber: { type: DataTypes.STRING },
@@ -117,56 +119,47 @@ const Review = sequelize.define('review', {
     isShowed: { type: DataTypes.BOOLEAN },
 })
 
-// relation between kategoryes
-MainKategory.hasMany(Kategory, {
-    foreignKey: 'mainKategoryId',
+// ==================== СВЯЗИ МЕЖДУ МОДЕЛЯМИ ====================
+
+
+// 2. Связь между атрибутами и категориями (Kategory <-> Attribute)
+Category.hasMany(Attribute, {
+    foreignKey: 'categoryId',
     onDelete: 'CASCADE'
 });
-Kategory.belongsTo(MainKategory, {
-    foreignKey: 'mainKategoryId',
+Attribute.belongsTo(Category, {
+    foreignKey: 'categoryId',
     onDelete: 'CASCADE'
 });
 
-// relation betweem attribute and kategory
-Kategory.hasMany(Attribute, {
-    foreignKey: 'kategoryId',
-    onDelete: 'CASCADE'
+// 3. Связь между категориями и товарами (MainKategory/Kategory <-> Item)
+Category.hasMany(Item, {
+    foreignKey: 'categoryId',
+    onDelete: 'CASCADE',
+    as: 'items'
 });
-Attribute.belongsTo(Kategory, {
-    foreignKey: 'kategoryId',
+Item.belongsTo(Category, {
+    foreignKey: 'categoryId',
     onDelete: 'CASCADE'
 });
 
-// relation between kategoryes and item
-MainKategory.hasMany(Item, {
-    foreignKey: 'mainKategoryId',
-    onDelete: 'CASCADE'
-});
-Item.belongsTo(MainKategory, {
-    foreignKey: 'mainKategoryId',
-    onDelete: 'CASCADE'
-});
-Kategory.hasMany(Item, {
-    foreignKey: 'kategoryId',
-    onDelete: 'CASCADE'
-});
-Item.belongsTo(Kategory, {
-    foreignKey: 'kategoryId',
-    onDelete: 'CASCADE'
-});
-ItemGroup.hasMany(Item, { foreignKey: 'itemId', onDelete: 'CASCADE' });
-Item.hasMany(Review, { foreignKey: 'itemId', onDelete: 'CASCADE' });
 
-// user
+// 4. Группы товаров (ItemGroup <-> Item)
+ItemGroup.hasMany(Item, { foreignKey: 'itemGroupId', as: 'items' });
+Item.belongsTo(ItemGroup, { foreignKey: 'itemGroupId', as: 'group' });
+
+// 5. Пользователи, Корзины и Заказы (User <-> Busket / Order)
 User.hasOne(Busket, { foreignKey: 'userId', as: 'busket' });
 Busket.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+User.hasMany(Order, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Order.belongsTo(User, { foreignKey: 'userId' });
 
 module.exports = {
     Slider,
     Qwestion,
     User,
-    MainKategory,
-    Kategory,
+    Category,
     Attribute,
     ItemGroup,
     Item,

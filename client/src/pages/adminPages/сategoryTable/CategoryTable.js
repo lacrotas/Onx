@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchAllKategory, fetchAllMainKategory, postKategory, updateKategory, deleteKategoryById } from '../../../http/KategoryApi';
+import { fetchAllKategory, fetchAllMainCategory, postCategory, updateCategory, deleteCategoryById } from '../../../http/KategoryApi';
 import CategoryTableHeader from './components/categoryTableHeader/CategoryTableHeader';
 import CategoryTableRow from './components/categoryTableRow/CategoryTableRow';
 import CategoryModal from './components/categoryModal/CategoryModal';
@@ -23,7 +23,10 @@ const CategoryTable = () => {
         imageFile: null,
         imageUrl: '',
         mainKategoryId: '',
-        kategoryIndex: ''
+        categoryIndex: '',
+        seo_desc: '',
+        seo_title: '',
+        alias: ''
     });
     const fileInputRef = useRef(null);
 
@@ -56,12 +59,12 @@ const CategoryTable = () => {
                 let aValue = a[sortConfig.key];
                 let bValue = b[sortConfig.key];
 
-                if (sortConfig.key === 'mainKategoryId') {
-                    aValue = getMainCategoryName(a.mainKategoryId);
-                    bValue = getMainCategoryName(b.mainKategoryId);
-                } else if (sortConfig.key === 'kategoryIndex') {
-                    aValue = parseInt(a.kategoryIndex) || 0;
-                    bValue = parseInt(b.kategoryIndex) || 0;
+                if (sortConfig.key === 'id') {
+                    aValue = getMainCategoryName(a.id);
+                    bValue = getMainCategoryName(b.id);
+                } else if (sortConfig.key === 'categoryIndex') {
+                    aValue = parseInt(a.categoryIndex) || 0;
+                    bValue = parseInt(b.categoryIndex) || 0;
                 }
 
                 if (aValue === null || aValue === undefined) aValue = '';
@@ -83,22 +86,26 @@ const CategoryTable = () => {
     const loadCategories = async () => {
         try {
             const data = await fetchAllKategory();
-            setCategories(data);
+            // Защита от null/undefined
+            setCategories(Array.isArray(data) ? data : []);
             setModifiedCategories({}); 
         } catch (error) {
             console.error('Error loading categories:', error);
+            setCategories([]);
         }
     };
 
     const loadMainCategories = async () => {
         try {
-            const data = await fetchAllMainKategory();
-            setMainCategories(data);
-            if (data.length > 0 && !editingCategory) {
-                setFormData(prev => ({ ...prev, mainKategoryId: data[0].id }));
+            const data = await fetchAllMainCategory();
+            const safeData = Array.isArray(data) ? data : [];
+            setMainCategories(safeData);
+            if (safeData.length > 0 && !editingCategory) {
+                setFormData(prev => ({ ...prev, mainKategoryId: safeData[0].id }));
             }
         } catch (error) {
             console.error('Error loading main categories:', error);
+            setMainCategories([]);
         }
     };
 
@@ -156,9 +163,9 @@ const CategoryTable = () => {
                 const changes = modifiedCategories[categoryId];
                 const myFormData = new FormData();
 
-                if (changes.kategoryIndex !== undefined) myFormData.append("kategoryIndex", changes.kategoryIndex);
+                if (changes.categoryIndex !== undefined) myFormData.append("categoryIndex", changes.categoryIndex);
 
-                return updateKategory(categoryId, myFormData);
+                return updateCategory(categoryId, myFormData);
             });
 
             await Promise.all(updatePromises);
@@ -178,9 +185,12 @@ const CategoryTable = () => {
         setFormData({
             name: '',
             imageFile: null,
+            seo_title: '',
+            alias: '',
+            seo_desc: '',
             imageUrl: '',
             mainKategoryId: mainCategories.length > 0 ? mainCategories[0].id : '',
-            kategoryIndex: ''
+            categoryIndex: ''
         });
         setIsModalOpen(true);
     };
@@ -190,9 +200,12 @@ const CategoryTable = () => {
         setFormData({
             name: category.name,
             imageFile: null,
+            seo_title: category.seo_title,
+            alias: category.alias,
+            seo_desc: category.seo_desc,
             imageUrl: `${process.env.REACT_APP_API_URL}static/images/${category.image}`,
             mainKategoryId: category.mainKategoryId,
-            kategoryIndex: category.kategoryIndex
+            categoryIndex: category.categoryIndex
         });
         setIsModalOpen(true);
     };
@@ -237,15 +250,18 @@ const CategoryTable = () => {
         setIsSaving(true);
         try {
             const myFormData = new FormData();
+            myFormData.append("seo_title", formData.seo_title);
+            myFormData.append("alias", formData.alias);
+            myFormData.append("seo_desc", formData.seo_desc);
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
-            myFormData.append("kategoryIndex", formData.kategoryIndex);
+            myFormData.append("categoryIndex", formData.categoryIndex);
             
             if (editingCategory) {
-                await updateKategory(editingCategory.id, myFormData);
+                await updateCategory(editingCategory.id, myFormData);
             } else {
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
-                await postKategory(myFormData);
+                myFormData.append("parentId", formData.parentId);
+                await postCategory(myFormData);
             }
             closeModal();
             await loadCategories();
@@ -262,15 +278,18 @@ const CategoryTable = () => {
         setIsSaving(true);
         try {
             const myFormData = new FormData();
+            myFormData.append("seo_title", formData.seo_title);
+            myFormData.append("seo_desc", formData.seo_desc);
+            myFormData.append("alias", formData.alias);
             myFormData.append("name", formData.name);
             myFormData.append("image", formData.imageFile);
-            myFormData.append("kategoryIndex", formData.kategoryIndex);
+            myFormData.append("categoryIndex", formData.categoryIndex);
 
             if (editingCategory) {
-                await updateKategory(editingCategory.id, myFormData);
+                await updateCategory(editingCategory.id, myFormData);
             } else {
                 myFormData.append("mainKategoryId", formData.mainKategoryId);
-                await postKategory(myFormData);
+                await postCategory(myFormData);
             }
             await loadCategories();
         } catch (error) {
@@ -285,7 +304,7 @@ const CategoryTable = () => {
         if (window.confirm('Вы уверены, что хотите удалить эту категорию?')) {
             setIsSaving(true);
             try {
-                await deleteKategoryById(id);
+                await deleteCategoryById(id);
                 await loadCategories();
             } catch (error) {
                 console.error(error);
@@ -296,8 +315,9 @@ const CategoryTable = () => {
         }
     };
 
-    const getMainCategoryName = (mainKategoryId) => {
-        const mainCat = mainCategories.find(cat => cat.id === mainKategoryId);
+    const getMainCategoryName = (parentId) => {
+        const mainCat = mainCategories.find(cat => cat.id === parentId);
+        // console.log(mainCategories);
         return mainCat ? mainCat.name : 'Unknown';
     };
 
@@ -325,17 +345,17 @@ const CategoryTable = () => {
                                     Название {getSortIndicator('name')}
                                 </th>
                                 <th className="my_p">Картинка</th>
-                                <th onClick={() => requestSort('mainKategoryId')} className="sortable my_p">
-                                    Главная категория {getSortIndicator('mainKategoryId')}
+                                <th onClick={() => requestSort('id')} className="sortable my_p">
+                                    Главная категория {getSortIndicator('id')}
                                 </th>
-                                <th onClick={() => requestSort('kategoryIndex')} className="sortable my_p">
-                                    Индекс {getSortIndicator('kategoryIndex')}
+                                <th onClick={() => requestSort('categoryIndex')} className="sortable my_p">
+                                    Индекс {getSortIndicator('categoryIndex')}
                                 </th>
                                 <th className="my_p">Действия</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredCategories.map(category => (
+                            {filteredCategories.map(category => ( (category.parentId != 0)?
                                 <CategoryTableRow 
                                     key={category.id}
                                     category={category}
@@ -345,6 +365,7 @@ const CategoryTable = () => {
                                     openEditModal={openEditModal}
                                     handleDelete={handleDelete}
                                 />
+                            :<></>
                             ))}
                         </tbody>
                     </table>

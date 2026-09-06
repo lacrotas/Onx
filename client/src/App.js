@@ -4,10 +4,10 @@ import AppRouter from "./pages/appRouter/AppRouter";
 function App() {
   return (
     <>
-      <div class="animated-border">
-        <div class="layer waves"></div>
-        <div class="layer geo"></div>
-        <div class="layer details"></div>
+      <div className="animated-border">
+        <div className="layer waves"></div>
+        <div className="layer geo"></div>
+        <div className="layer details"></div>
       </div>
       <div className="App">
         <BrowserRouter>

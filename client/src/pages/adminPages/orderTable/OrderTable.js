@@ -69,7 +69,7 @@ const OrderTable = () => {
     const loadData = async () => {
         try {
             const data = await fetchAllOrders();
-            console.log(data);
+            // console.log(data);
             // Сортируем по умолчанию новые сверху
             data.sort((a, b) => b.id - a.id);
             setOrders(data);

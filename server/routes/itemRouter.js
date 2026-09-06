@@ -6,38 +6,33 @@ const { authenticateToken, requireAdmin } = require('../middleware/authMiddlewar
 const { processMultipleImages, processVideo } = require('../middleware/MediaProcessor');
 
 router.get('/getAll', itemController.getAllItems);
-router.get('/getAllByNameSubst/:substring', itemController.getItemsByNameSubstring);
-router.get('/getAllByKategoryId/:kategoryId',
+
+// get by params
+router.get('/getItemByParam/:param', itemController.getItemById);
+router.get('/getAllByKategoryId/:id',
     validateParams([
-        { param: 'kategoryId', type: 'integer', min: 1, name: 'ID категории' }
+        { param: 'categoryId', type: 'integer', min: 1, name: 'ID категории' }
     ]),
-    itemController.getAllItemsByKategoryId);
-router.get('/getAllJSONBByKategoryId/:kategoryId',
-    validateParams([
-        { param: 'kategoryId', type: 'integer', min: 1, name: 'ID категории' }
-    ]),
-    itemController.getAttributeValuesForCategory);
-router.get('/getAllByMainKategoryId/:mainKategoryId',
-    validateParams([
-        { param: 'mainKategoryId', type: 'integer', min: 1, name: 'ID главной категории' }
-    ]),
-    itemController.getAllItemsByMainKategoryId);
+    itemController.getAllItemsByCategoryId);
 router.get('/getAllByItemGroupId/:itemGroupId',
     validateParams([
         { param: 'itemGroupId', type: 'integer', min: 1, name: 'ID группы товаров' }
     ]),
-    itemController.getAllItemsByItemGroupIdId);
-router.get('/getItemById/:id',
+    itemController.getAllItemsByItemGroupId);
+// for getting all possible variation for filter
+router.get('/getAllJSONBByKategoryId/:categoryId',
     validateParams([
-        { param: 'id', type: 'integer', min: 1, name: 'ID товара' }
+        { param: 'kategoryId', type: 'integer', min: 1, name: 'ID категории' }
     ]),
-    itemController.getItemById);
+    itemController.getAttributeValuesForCategory);
+// for search
+router.get('/getAllByNameSubst/:substring', itemController.getItemsByNameSubstring);
 
+// methods
 router.post('/add', authenticateToken, requireAdmin,
     processMultipleImages('images', 'images'),
     processVideo('video', 'video'),
     itemController.addItem);
-
 router.delete('/delete/:id',
     validateParams([
         { param: 'id', type: 'integer', min: 1, name: 'ID товара' }

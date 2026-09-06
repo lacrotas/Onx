@@ -3,7 +3,7 @@ import CustomInput from "../../../../customUI/customInput/CustomInput";
 import CustomButton from "../../../../customUI/customButton/CustomButton";
 import CustomSelect from "../../../../customUI/customSelect/CustomSelect";
 import "./AddCategory.scss";
-import { updatePodKategory, fetchAllMainKategory } from "../../../../http/KategoryApi";
+import { updatePodKategory, fetchAllMainCategory } from "../../../../http/KategoryApi";
 import React, { useState, useEffect } from 'react';
 import { LOGIN_ROUTE } from "../../../../pages/appRouter/Const";
 import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
@@ -17,7 +17,7 @@ function AddCategory({ value }) {
     const [mainKategoryLabel, setMainKategoryLabel] = useState([]);
 
     useEffect(() => {
-        fetchAllMainKategory().then(data => {
+        fetchAllMainCategory().then(data => {
             setMainKategoryId(data.map(item => item.id));
             setMainKategoryLabel(data.map(item => item.name));
         });

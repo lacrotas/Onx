@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchAllKategoryByMainKategoryId, fetchMainKategoryById } from "../../../http/KategoryApi";
-import { ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE, ITEM_PREVIEW_ROUTE } from "../../../pages/appRouter/Const";
+import { fetchCategoryByParentId, fetchCategoryByParam } from "../../../http/KategoryApi";
+import { ITEM_KATEGOTY_ROUTE } from "../../../pages/appRouter/Const";
 import { NavLink } from "react-router-dom/cjs/react-router-dom.min";
 import "./ItemPageMainKategory.scss";
 import Header from '../../../components/header/Header';
@@ -9,17 +9,16 @@ import Footer from '../../../components/footer/Footer';
 import Breadcrumbs from "../../../components/breadcrumbs/Breadcrumbs";
 
 const ItemPageMainKategory = () => {
-    const { maincategoryId } = useParams();
+    const { allias } = useParams();
     const [categories, setCategories] = useState([]);
     const [mainCategories, setMainCategories] = useState([]);
-
     useEffect(() => {
         const loadData = async () => {
             try {
-                const mainCategoriesData = await fetchMainKategoryById(maincategoryId);
-                setMainCategories(mainCategoriesData);
-                if (maincategoryId) {
-                    const categoriesData = await fetchAllKategoryByMainKategoryId(maincategoryId);
+                const mainCategoriesData = await fetchCategoryByParam(allias);
+                if (mainCategoriesData) {
+                    setMainCategories(mainCategoriesData);
+                    const categoriesData = await fetchCategoryByParentId(mainCategoriesData.id);
                     setCategories(Array.isArray(categoriesData) ? categoriesData : []);
                 }
             } catch (err) {
@@ -28,19 +27,16 @@ const ItemPageMainKategory = () => {
         };
 
         loadData();
-    }, [maincategoryId]);
+    }, [allias]);
 
     return (
         <>
             <Header isAdminHeader={false} />
-
             <div className="item-page-main-kategory">
                 <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategories.name }]} />
-
                 <div className="page-header">
-                    <h1 className="page-title my_h2">{mainCategories.name}.</h1>
+                    <h1 className="page-title my_h2">{mainCategories.name}</h1>
                 </div>
-
                 <section className="subcat-grid">
                     {[...categories]
                         .sort((a, b) => (parseInt(a.kategoryIndex) || 0) - (parseInt(b.kategoryIndex) || 0))
@@ -48,7 +44,7 @@ const ItemPageMainKategory = () => {
                             <NavLink
                                 key={category.id}
                                 to={{
-                                    pathname: ITEM_KATEGOTY_ROUTE + "/" + category.id,
+                                    pathname: allias + "/" + category.alias,
                                     state: { path: { name: category.name } }
                                 }}
                                 className="subcat-card"

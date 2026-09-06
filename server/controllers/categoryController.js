@@ -1,22 +1,64 @@
-const { MainKategory } = require('../models/models');
+const { Category } = require('../models/models');
 const ApiError = require('../error/ApiError');
 const { mediaProcessor } = require('../middleware/MediaProcessor');
 
-class MainKategoryController {
-    async addMainKategory(req, res, next) {
+class CategoryController {
+
+    async getAllCategory(req, res) {
+        const categories = await Category.findAll();
+        return res.json(categories);
+    }
+    // get by params 
+    async getAllCategoryByParentId(req, res) {
+        const { id } = req.params;
+        const curentCategory = await Category.findAll({ where: { parentId:  id  } });
+        if (!Category) {
+            return res.status(404).json({ message: "Категория не найдена" });
+        }
+        return res.json(curentCategory);
+    }
+    async getCategoryById(req, res) {
+        const { param } = req.params;
+        let curentCategory;
+        if (!isNaN(param)) {
+            curentCategory = await Category.findOne({ where: { id: param } });
+        } else {
+            curentCategory = await Category.findOne({ where: { alias: param } });
+        }
+        if (!curentCategory) {
+            return res.status(404).json({ message: "Категория не найдена" });
+        }
+        return res.json(curentCategory);
+    }
+    async getAllMainCategory(req, res) {
+        const curentCategory = await Category.findAll({ where: { parentId:  0  } });
+        if (!Category) {
+            return res.status(404).json({ message: "Категория не найдена" });
+        }
+        return res.json(curentCategory);
+    }
+
+    // methots
+    async addCategory(req, res, next) {
         let fileName = null;
 
         try {
-            const { name } = req.body;
+            const { name,  seo_title, alias, parentId, seo_desc } = req.body;
 
             fileName = req.processedImage || null;
 
-            const mainKategory = await MainKategory.create({
+            const curentCategory = await Category.create({
                 name,
-                image: fileName
+                image: fileName,
+                gridItemIndex: 1,
+                gridSpace: 1,
+                seo_title: seo_title,
+                seo_desc: seo_desc,
+                alias: alias,
+                parentId: parentId
             });
 
-            return res.json(mainKategory);
+            return res.json(curentCategory);
 
         } catch (e) {
             // Если произошла ошибка при создании категории - удаляем загруженное изображение
@@ -30,33 +72,21 @@ class MainKategoryController {
             next(ApiError.badRequest(e.message));
         }
     }
-
-    async getAllMainKategory(req, res) {
-        const mainKategory = await MainKategory.findAll();
-        return res.json(mainKategory);
-    }
-
-    async getMainKategoryById(req, res) {
-        const { id } = req.params;
-        const mainKategory = await MainKategory.findOne({ where: { id } });
-        return res.json(mainKategory);
-    }
-
-    async deleteMainKategoryById(req, res) {
+    async deleteCategoryById(req, res) {
         try {
             const { id } = req.params;
-            const kategory = await MainKategory.findOne({ where: { id } });
+            const curentCategory = await Category.findOne({ where: { id } });
 
-            if (!kategory) {
+            if (!curentCategory) {
                 return res.status(404).json({ error: 'Категория не найдена' });
             }
 
             // Удаляем файл изображения
-            if (kategory.image) {
-                await mediaProcessor.deleteOldFiles(kategory.image, 'images');
+            if (curentCategory.image) {
+                await mediaProcessor.deleteOldFiles(curentCategory.image, 'images');
             }
 
-            await kategory.destroy();
+            await curentCategory.destroy();
             return res.json({ message: 'Категория удалена' });
 
         } catch (error) {
@@ -64,30 +94,33 @@ class MainKategoryController {
             return res.status(500).json({ error: 'Ошибка сервера' });
         }
     }
-
-    async updateMainKategoryById(req, res) {
+    async updateCategoryById(req, res) {
         let newFileName = null;
         let oldFileName = null;
 
         try {
             const { id } = req.params;
-            const { name, gridSpace, gridItemIndex } = req.body;
+            const { name, gridSpace, gridItemIndex, seo_title, alias, parentId, seo_desc } = req.body;
 
-            const mainKategory = await MainKategory.findOne({ where: { id } });
-            if (!mainKategory) {
+            const curentCategory = await Category.findOne({ where: { id } });
+            if (!curentCategory) {
                 return res.status(404).json({ message: 'Категория не найдена' });
             }
 
-            oldFileName = mainKategory.image;
+            oldFileName = curentCategory.image;
             newFileName = req.processedImage || oldFileName;
 
             // Обновляем категорию БЕЗ предварительного удаления старого изображения
-            const [updatedRowsCount, updatedRows] = await MainKategory.update(
+            const [updatedRowsCount, updatedRows] = await Category.update(
                 {
                     name: name,
                     image: newFileName,
                     gridItemIndex: gridItemIndex,
-                    gridSpace: gridSpace
+                    gridSpace: gridSpace,
+                    seo_title: seo_title,
+                    seo_desc: seo_desc,
+                    alias: alias,
+                    parentId: parentId
                 },
                 {
                     returning: true,
@@ -137,4 +170,4 @@ class MainKategoryController {
     }
 }
 
-module.exports = new MainKategoryController();
+module.exports = new CategoryController();

@@ -7,9 +7,9 @@ import {
     ITEM_KATEGOTY_ROUTE
 } from './Const';
 import BusketPage from "../userPages/busketPage/BusketPage";
-import ItemPage from "../userPages/itemPage/ItemPage";
+// import ItemPage from "../userPages/itemPage/ItemPage";
 import MainAdminPage from "../adminPages/MainAdminPage";
-import ItemFullPreview from "../userPages/itemPage/components/itemFullPreview/ItemFullPreview";
+// import ItemFullPreview from "../userPages/itemPage/components/itemFullPreview/ItemFullPreview";
 import ItemSearchPage from "../userPages/itemSearchPage/ItemSearchPage";
 import ItemPageMainKategory from "../userPages/itemPageMainKategory/ItemPageMainKategory";
 import ItemPageKategory from "../userPages/itemPageKategory/ItemPageKategory";
@@ -25,10 +25,10 @@ export const publicRoutes = [
         path: BUSKET_ROUTE + '/:userId?',
         Component: BusketPage
     },
-    {
-        path: ITEM_ROUTE + '/:maincategory/:category?',
-        Component: ItemPage
-    },
+    // {
+    //     path: ITEM_ROUTE + '/:maincategory/:category?',
+    //     Component: ItemPage
+    // },
     {
         path: LOGIN_ROUTE,
         Component: AuthPage
@@ -38,17 +38,18 @@ export const publicRoutes = [
         Component: ItemSearchPage
     },
     {
-        path: ITEM_PREVIEW_ROUTE + '/:itemId',
-        Component: CurrentItemPage
-    },
-    {
-        path: ITEM_MAIN_ROUTE + '/:maincategoryId/:categoryId?',
+        path: '/:allias',
         Component: ItemPageMainKategory
     },
     {
-        path: ITEM_KATEGOTY_ROUTE + '/:categoryId?',
+        path: '/:mainAllias/:allias?',
         Component: ItemPageKategory
     },
+    {
+        path: '/:mainAllias/:allias/:itemAllias?',
+        Component: CurrentItemPage
+    },
+
 ];
 
 export const adminRoutes = [
@@ -59,48 +60,3 @@ export const adminRoutes = [
     },
 
 ]
-//     {
-//         path: MAIN_ROUTE,
-//         Component: MainPage
-//     },
-//     {
-//         path: EXPERT_ADMIN_ROUTE + '/:id',
-//         Component: AdminCurrentExpertInfo
-//     },
-//     {
-//         path: EXPERT_ADMIN_ROUTE,
-//         Component: AdminExpertPage
-//     },
-//     {
-//         path: ADMIN_MAIN_ROUTE,
-//         Component: AdminMainPage
-//     },
-//     {
-//         path: COUNTRY_ADMIN_ROUTE,
-//         Component: AdminCountryPage
-//     },
-//     {
-//         path: CITY_ADMIN_ROUTE,
-//         Component: AdminCityPage
-//     },
-//     {
-//         path: CITY_ADMIN_ROUTE + "/:id",
-//         Component: CurrentAdminCityPage
-//     },
-//     {
-//         path: MEATING_ADMIN_ROUTE,
-//         Component: AdminMeatingPage
-//     },
-//     {
-//         path: ADD_ADMIN_ROUTE,
-//         Component: MainPage
-//     },
-//     {
-//         path: USER_REDUCT,
-//         Component: AdminUserReductPage
-//     },
-//     {
-//         path: ADMIN_SPONSOR,
-//         Component: AdminSponsorPage
-//     }
-// ];

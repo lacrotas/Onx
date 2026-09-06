@@ -67,6 +67,12 @@ async function filterAndUpdateImages(currentImagesFromDB, imageStringsFromFronte
 
 class itemController {
 
+    async getAllItems(req, res) {
+        const items = await Item.findAll();
+        return res.json(items);
+    }
+
+    // get by params
     async getItemsByNameSubstring(req, res) {
         const { substring } = req.params;
         try {
@@ -82,7 +88,102 @@ class itemController {
             return res.status(500).json({ message: "Error fetching items", error });
         }
     }
+    // async getItemById(req, res) {
+    //     const { id } = req.params
+    //     const item = await Item.findOne(
+    //         { where: { id } }
+    //     );
+    //     return res.json(item);
+    // }
+    async getItemById(req, res) {
+        const { param } = req.params;
+        let curentItem;
+        if (!isNaN(param)) {
+            curentItem = await Item.findOne({ where: { id: param } });
+        } else {
+            curentItem = await Item.findOne({ where: { alias: param } });
+        }
+        if (!curentItem) {
+            return res.status(404).json({ message: "Категория не найдена" });
+        }
+        return res.json(curentItem);
+    }
+    async getAllItemsByItemGroupId(req, res) {
+        const { itemGroupId } = req.params
+        const items = await Item.findAll(
+            { where: { itemGroupId } }
+        );
+        return res.json(items);
+    }
+    async getAllItemsByCategoryId(req, res) {
+        const { id } = req.params;
+        const items = await Item.findAll({ where: { categoryId: id } });
 
+        if (!items) {
+            return res.status(404).json({ message: "Товары не найдены" });
+        }
+        return res.json(items);
+    }
+    async getAttributeValuesForCategory(req, res) {
+        try {
+            // Правильно извлекаем kategoryId из params
+            const { categoryId } = req.params;
+
+            // Преобразуем в число и проверяем
+            const categoryIdNum = parseInt(kategoryId, 10);
+            if (isNaN(categoryIdNum)) {
+                return res.status(400).json({
+                    error: 'Некорректный ID категории'
+                });
+            }
+
+            const items = await Item.findAll({
+                where: {
+                    kategoryId: categoryIdNum, // Используем число
+                    isShowed: true // Добавляем фильтр для показанных товаров
+                },
+                attributes: ['id', 'specificationsJSONB']
+            });
+
+            const attributesMap = {};
+
+            items.forEach(item => {
+                const specs = item.specificationsJSONB;
+                if (specs && typeof specs === 'object') {
+                    Object.keys(specs).forEach(attributeName => {
+                        const value = specs[attributeName];
+                        if (value !== null && value !== undefined && value !== '') {
+                            if (!attributesMap[attributeName]) {
+                                attributesMap[attributeName] = new Set();
+                            }
+                            attributesMap[attributeName].add(String(value));
+                        }
+                    });
+                }
+            });
+
+            // Преобразуем Set в массив и сортируем
+            const result = {};
+            Object.keys(attributesMap).forEach(attrName => {
+                result[attrName] = Array.from(attributesMap[attrName])
+                    .sort((a, b) => a.localeCompare(b));
+            });
+
+            return res.json({
+                success: true,
+                categoryId: categoryIdNum,
+                attributes: result
+            });
+
+        } catch (error) {
+            console.error('Error getting attribute values:', error);
+            return res.status(500).json({
+                error: 'Ошибка при получении значений атрибутов'
+            });
+        }
+    }
+
+    // methods
     async addItem(req, res, next) {
         let processedImages = [];
         let processedVideo = null;
@@ -161,103 +262,6 @@ class itemController {
             }
         }
     }
-
-    async getAllItems(req, res) {
-        const items = await Item.findAll();
-        return res.json(items);
-    }
-
-    async getItemById(req, res) {
-        const { id } = req.params
-        const item = await Item.findOne(
-            { where: { id } }
-        );
-        return res.json(item);
-    }
-
-    async getAllItemsByMainKategoryId(req, res) {
-        const { mainKategoryId } = req.params
-        const items = await Item.findAll(
-            { where: { mainKategoryId } }
-        );
-        return res.json(items);
-    }
-
-    async getAllItemsByItemGroupIdId(req, res) {
-        const { itemGroupId } = req.params
-        const items = await Item.findAll(
-            { where: { itemGroupId } }
-        );
-        return res.json(items);
-    }
-
-    async getAllItemsByKategoryId(req, res) {
-        const { kategoryId } = req.params
-        const items = await Item.findAll(
-            { where: { kategoryId } }
-        );
-        return res.json(items);
-    }
-
-    async getAttributeValuesForCategory(req, res) {
-        try {
-            // Правильно извлекаем kategoryId из params
-            const { kategoryId } = req.params;
-
-            // Преобразуем в число и проверяем
-            const categoryIdNum = parseInt(kategoryId, 10);
-            if (isNaN(categoryIdNum)) {
-                return res.status(400).json({
-                    error: 'Некорректный ID категории'
-                });
-            }
-
-            const items = await Item.findAll({
-                where: {
-                    kategoryId: categoryIdNum, // Используем число
-                    isShowed: true // Добавляем фильтр для показанных товаров
-                },
-                attributes: ['id', 'specificationsJSONB']
-            });
-
-            const attributesMap = {};
-
-            items.forEach(item => {
-                const specs = item.specificationsJSONB;
-                if (specs && typeof specs === 'object') {
-                    Object.keys(specs).forEach(attributeName => {
-                        const value = specs[attributeName];
-                        if (value !== null && value !== undefined && value !== '') {
-                            if (!attributesMap[attributeName]) {
-                                attributesMap[attributeName] = new Set();
-                            }
-                            attributesMap[attributeName].add(String(value));
-                        }
-                    });
-                }
-            });
-
-            // Преобразуем Set в массив и сортируем
-            const result = {};
-            Object.keys(attributesMap).forEach(attrName => {
-                result[attrName] = Array.from(attributesMap[attrName])
-                    .sort((a, b) => a.localeCompare(b));
-            });
-
-            return res.json({
-                success: true,
-                categoryId: categoryIdNum,
-                attributes: result
-            });
-
-        } catch (error) {
-            console.error('Error getting attribute values:', error);
-            return res.status(500).json({
-                error: 'Ошибка при получении значений атрибутов'
-            });
-        }
-    }
-
     async deleteItemById(req, res) {
         try {
             const { id } = req.params;
@@ -275,7 +279,6 @@ class itemController {
             return res.status(500).json({ error: 'Ошибка сервера' });
         }
     }
-
     async updateItemById(req, res) {
         let newProcessedImages = [];
         let currentItem = null;

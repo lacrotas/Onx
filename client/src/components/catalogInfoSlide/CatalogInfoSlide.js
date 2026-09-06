@@ -2,7 +2,7 @@ import "./CatalogInfoSlide.scss";
 import { useState, useEffect } from "react";
 import { useHistory } from 'react-router-dom';
 import { ITEM_KATEGOTY_ROUTE } from "../../pages/appRouter/Const";
-import { fetchAllMainKategory, fetchAllKategoryByMainKategoryId } from "../../http/KategoryApi";
+import { fetchAllMainCategory, fetchAllKategoryByMainKategoryId } from "../../http/KategoryApi";
 import { FiX } from "react-icons/fi";
 
 function CatalogInfoSlide({ setIsCategoryActive }) {
@@ -15,7 +15,7 @@ function CatalogInfoSlide({ setIsCategoryActive }) {
         const loadAllData = async () => {
             try {
                 setIsLoading(true);
-                const mains = await fetchAllMainKategory();
+                const mains = await fetchAllMainCategory();
                 const combined = await Promise.all(
                     mains.map(async (m) => {
                         const subs = await fetchAllKategoryByMainKategoryId(m.id);

@@ -21,7 +21,7 @@ const CategoryTableRow = ({
                     )}
                 </div>
             </td>
-            <td className="my_p">{getMainCategoryName(category.mainKategoryId)}</td>
+            <td className="my_p">{getMainCategoryName(category.parentId)}</td>
             
             {/* НОВОЕ: Поле для быстрого редактирования индекса */}
             <td>

@@ -5,7 +5,7 @@ const { authenticateToken, requireAdmin } = require('../middleware/authMiddlewar
 const validateParams = require('../middleware/validateParams');
 
 
-router.get('/getAllByKategoryId/:kategoryId',
+router.get('/getAllByCategoryId/:categoryId',
     validateParams([
         { param: 'kategoryId', type: 'integer', min: 1, name: 'ID категории' }
     ]),

@@ -4,7 +4,7 @@ import { FiCheck, FiShoppingCart, FiBell } from "react-icons/fi";
 import { ITEM_PREVIEW_ROUTE } from "../../../appRouter/Const";
 import './ItemCard.scss';
 
-const ItemCard = ({ item, isInCart, onAddToCart, renderStars, categoryName }) => {
+const ItemCard = ({ item, isInCart, onAddToCart, renderStars, categoryName, alias, mainAlias }) => {
     // Кастомный рендер звезд для нового стиля
     const renderModernStars = (rating) => {
         const rounded = Math.round(rating || 0);
@@ -18,7 +18,7 @@ const ItemCard = ({ item, isInCart, onAddToCart, renderStars, categoryName }) =>
             <NavLink
                 className="card-link"
                 to={{
-                    pathname: `${ITEM_PREVIEW_ROUTE}/${item.id}`,
+                    pathname: `/${mainAlias}/${alias}/${item.alias}`,
                     state: { path: [item.id] }
                 }}
             >

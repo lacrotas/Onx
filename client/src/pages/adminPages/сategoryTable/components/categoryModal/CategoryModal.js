@@ -16,14 +16,12 @@ const CategoryModal = ({
     handleFileChange
 }) => {
     if (!isModalOpen) return null;
-
     return (
         <div className="modal-overlay" onClick={confirmAndCloseModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <h2 className="my_h2">{editingCategory ? 'Редактирование' : 'Добавление категории'}</h2>
                 </div>
-                {console.log(formData)}
                 <form onSubmit={handleSubmit} className="category-form">
                     <div className="form-group">
                         <label className="my_p">Название:</label>
@@ -42,7 +40,7 @@ const CategoryModal = ({
                             <label className="my_p">Главная категория:</label>
                             <select
                                 name="mainKategoryId"
-                                value={formData.mainKategoryId}
+                                value={formData.id}
                                 onChange={handleInputChange}
                                 className="form-select my_p"
                                 required
@@ -59,7 +57,7 @@ const CategoryModal = ({
                         <div className="form-group">
                             <label className="my_p">Главная категория:</label>
                             <div className="form-static my_p">
-                                {getMainCategoryName(editingCategory.mainKategoryId)}
+                                {getMainCategoryName(editingCategory.parentId)}
                             </div>
                         </div>
                     )}
@@ -94,8 +92,44 @@ const CategoryModal = ({
                         <label className="my_p">Порядок отображения:</label>
                         <input
                             type="text"
-                            name="kategoryIndex"
-                            value={formData.kategoryIndex}
+                            name="categoryIndex"
+                            value={formData.categoryIndex}
+                            onChange={handleInputChange}
+                            required
+                            className="form-input my_p"
+                        />
+                    </div>
+                    
+                    <div className="form-group">
+                        <label className="my_p">Ссылка в url:</label>
+                        <input
+                            type="text"
+                            name="alias"
+                            value={formData.alias}
+                            onChange={handleInputChange}
+                            required
+                            className="form-input my_p"
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="my_p">Seo title:</label>
+                        <input
+                            type="text"
+                            name="seo_title"
+                            value={formData.seo_title}
+                            onChange={handleInputChange}
+                            required
+                            className="form-input my_p"
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label className="my_p">Seo description:</label>
+                        <input
+                            type="text"
+                            name="seo_desc"
+                            value={formData.seo_desc}
                             onChange={handleInputChange}
                             required
                             className="form-input my_p"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchAllMainKategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
+import { fetchAllMainCategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
 import { fetchAllItem, postItem, deleteItemById, updateItemById } from '../../../http/itemApi';
-import { fetchAllFiltersByKategoryId, updateFilter } from '../../../http/filterApi';
+import { fetchAllFiltersByCategoryId, updateFilter } from '../../../http/filterApi';
 import ItemTableHeader from './components/itemTableHeader/ItemTableHeader';
 import ItemTableRow from './components/itemTableRow/ItemTableRow';
 import ItemModal from './components/itemModal/ItemModal';
@@ -109,7 +109,7 @@ const ItemTable = () => {
 
     const loadMainCategories = async () => {
         try {
-            const data = await fetchAllMainKategory();
+            const data = await fetchAllMainCategory();
             setMainCategories(data);
         } catch (error) {
             console.error('Error loading main categories:', error);
@@ -156,7 +156,7 @@ const ItemTable = () => {
         }
 
         try {
-            const data = await fetchAllFiltersByKategoryId(kategoryId);
+            const data = await fetchAllFiltersByCategoryId(kategoryId);
             setFiltersForCategory(data);
 
             const newSpecs = {};
@@ -511,7 +511,7 @@ const ItemTable = () => {
 
     const updateFilterAttributeValues = async (newSpecifications) => {
         try {
-            const allFilters = await fetchAllFiltersByKategoryId(formData.kategoryId);
+            const allFilters = await fetchAllFiltersByCategoryId(formData.kategoryId);
             const updatePromises = [];
 
             for (const filter of allFilters) {
@@ -616,7 +616,7 @@ const ItemTable = () => {
 
                 if (itemToDelete && itemToDelete.specificationsJSONB) {
                     const categoryItems = items.filter(item => item.id !== id && item.kategoryId === itemToDelete.kategoryId);
-                    const allFilters = await fetchAllFiltersByKategoryId(itemToDelete.kategoryId);
+                    const allFilters = await fetchAllFiltersByCategoryId(itemToDelete.kategoryId);
 
                     for (const filter of allFilters) {
                         const allValues = new Set();

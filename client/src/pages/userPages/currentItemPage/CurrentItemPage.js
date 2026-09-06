@@ -1,80 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { fetchItemId } from '../../../http/itemApi';
-import { fetchAllAttributeByKategoryId } from '../../../http/filterApi';
-import { updateBusket, fetchBusketByUserId } from '../../../http/busketApi';
-import { fetchMainKategoryById, fetchKategoryById } from '../../../http/KategoryApi';
+import { fetchCategoryByParam } from '../../../http/KategoryApi';
 import { fetchItemGroupById } from '../../../http/itemGroupApi'; 
 import Header from "../../../components/header/Header";
 import Footer from "../../../components/footer/Footer";
-import { BUSKET_ROUTE, ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
+import { ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
 import "./CurrentItemPage.scss";
-import jwt_decode from 'jwt-decode';
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
 import { FiShoppingCart, FiCheck } from 'react-icons/fi';
 import { IoIosArrowDown } from "react-icons/io";
 import ItemReviews from './itemReviews/ItemReviews';
 import ItemGallery from './ItemGallery/ItemGallery';
-import ItemVariantsSlider from './ItemVariantsSlider/ItemVariantsSlider'; // Импорт нового компонента
+import ItemVariantsSlider from './ItemVariantsSlider/ItemVariantsSlider';
+import AddToCart from '../../../customUI/addToCartButton/AddToCartButton'; // Импортируем созданный компонент
 
 const CurrentItemPage = () => {
-    const history = useHistory();
-    const { itemId } = useParams();
+    const { allias, mainAllias, itemAllias } = useParams();
     const [item, setItem] = useState(null);
     const [itemGroup, setItemGroup] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [mainKategory, setMainKategory] = useState(null);
     const [kategory, setKategory] = useState(null);
-    const [isInCart, setIsInCart] = useState(false);
     const [openInfor, setOpenInfor] = useState(true);
     const [openDescription, setOpenDescription] = useState(true);
     const [openReviews, setOpenReviews] = useState(true);
     const [itemFilters, setItemFilters] = useState([]);
-    
-    const checkItemInCart = async () => {
-        setIsInCart(false);
-        try {
-            const token = localStorage.getItem('token');
-            let isFound = false;
-
-            if (token) {
-                const userId = jwt_decode(token).id;
-                const busket = await fetchBusketByUserId(userId);
-                const currentItems = busket.itemsJsonb || [];
-                const itemsForLocalStorage = currentItems.map(i => ({
-                    id: i.itemId || i.id,
-                    count: i.count || 1
-                }));
-                localStorage.setItem('basket', JSON.stringify(itemsForLocalStorage));
-                window.dispatchEvent(new Event('cartUpdated'));
-                isFound = currentItems.some(i => String(i.itemId || i.id) === String(itemId));
-            } else {
-                const savedBasket = localStorage.getItem('basket');
-                if (savedBasket) {
-                    const parsedBasket = JSON.parse(savedBasket);
-                    isFound = parsedBasket.some(i => String(i.itemId || i.id) === String(itemId));
-                }
-            }
-            setIsInCart(isFound);
-        } catch (e) {
-            console.error("Ошибка проверки корзины:", e);
-        }
-    };
 
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                const itemData = await fetchItemId(itemId);
-                const filterData = await fetchAllAttributeByKategoryId(itemData.kategoryId);
-                setItemFilters(filterData || []);
+                const itemData = await fetchItemId(itemAllias);
+                const categoryData = await fetchCategoryByParam(allias);
+                const mainCategoryData = await fetchCategoryByParam(mainAllias);
                 
-                const [mkData, kData] = await Promise.all([
-                    fetchMainKategoryById(itemData.mainKategoryId),
-                    fetchKategoryById(itemData.kategoryId)
-                ]);
-
                 if (itemData.itemGroupId) {
                     try {
                         const groupData = await fetchItemGroupById(itemData.itemGroupId);
@@ -87,53 +48,16 @@ const CurrentItemPage = () => {
                 }
 
                 setItem(itemData);
-                setMainKategory(mkData);
-                setKategory(kData);
-                await checkItemInCart();
+                setMainKategory(mainCategoryData);
+                setKategory(categoryData);
             } catch (err) {
                 setError('Ошибка загрузки');
             } finally {
                 setLoading(false);
             }
         };
-        if (itemId) loadData();
-    }, [itemId]);
-
-    const addToCart = async (count = 1) => {
-        try {
-            const token = localStorage.getItem('token');
-            if (token) {
-                const userId = jwt_decode(token).id;
-                const busket = await fetchBusketByUserId(userId);
-                const currentItems = busket.itemsJsonb ? [...busket.itemsJsonb] : [];
-                if (!currentItems.some(i => i.itemId === parseInt(itemId))) {
-                    currentItems.push({ itemId: parseInt(itemId), count });
-                    await updateBusket(busket.id, { itemsJsonb: currentItems });
-                }
-            }
-            let localBasket = JSON.parse(localStorage.getItem('basket') || '[]');
-            if (!localBasket.some(i => String(i.itemId || i.id) === String(itemId))) {
-                localBasket.push({ itemId: itemId, id: itemId, count: 1 });
-                localStorage.setItem('basket', JSON.stringify(localBasket));
-            }
-            window.dispatchEvent(new Event('cartUpdated'));
-            setIsInCart(true);
-            return true;
-        } catch (error) {
-            alert('Ошибка при добавлении');
-            return false;
-        }
-    };
-
-    const handleAddToCart = () => {
-        if (isInCart) history.push(BUSKET_ROUTE);
-        else addToCart(1);
-    };
-
-    const handleBuyNow = async () => {
-        if (!isInCart) await addToCart(1);
-        history.push(BUSKET_ROUTE);
-    };
+        if (allias) loadData();
+    }, [allias, itemAllias, mainAllias]);
 
     const scrollToFullDetails = () => {
         const element = document.getElementById('full-spec');
@@ -154,8 +78,8 @@ const CurrentItemPage = () => {
                     {mainKategory && kategory && (
                         <Breadcrumbs items={[
                             { title: "Главная", path: "/" },
-                            { title: mainKategory.name, path: ITEM_MAIN_ROUTE + "/" + mainKategory.id },
-                            { title: kategory.name, path: ITEM_KATEGOTY_ROUTE + "/" + kategory.id },
+                            { title: mainKategory.name, path:  "/" + mainKategory.alias },
+                            { title: kategory.name, path: "/" + mainKategory.alias + "/" + kategory.alias },
                             { title: item.name }
                         ]} />
                     )}
@@ -174,32 +98,35 @@ const CurrentItemPage = () => {
                             </span>
                         </div>
 
-                        {/* Используем новый компонент слайдера */}
                         {itemGroup && (
                             <ItemVariantsSlider 
                                 items={itemGroup} 
-                                currentId={itemId} 
+                                currentId={item.id} 
                                 apiUrl={process.env.REACT_APP_API_URL} 
                             />
                         )}
 
-                        <div className="apple-btn-group">
-                            <button
-                                onClick={handleAddToCart}
-                                className={`apple-primary-button my_p ${isInCart ? 'success' : ''}`}
-                                disabled={!item.isExist}
-                            >
-                                {isInCart ? 'В корзине' : 'Добавить в корзину'}
-                                {isInCart ? <FiCheck /> : <FiShoppingCart />}
-                            </button>
-                            <button
-                                onClick={handleBuyNow}
-                                className="apple-secondary-button my_p"
-                                disabled={!item.isExist}
-                            >
-                                Купить сейчас
-                            </button>
-                        </div>
+                        <AddToCart item={item}>
+                            {({ isInCart, handleAddToCart, handleBuyNow }) => (
+                                <div className="apple-btn-group">
+                                    <button
+                                        onClick={handleAddToCart}
+                                        className={`apple-primary-button my_p ${isInCart ? 'success' : ''}`}
+                                        disabled={!item.isExist}
+                                    >
+                                        {isInCart ? 'В корзине' : 'Добавить в корзину'}
+                                        {isInCart ? <FiCheck /> : <FiShoppingCart />}
+                                    </button>
+                                    <button
+                                        onClick={handleBuyNow}
+                                        className="apple-secondary-button my_p"
+                                        disabled={!item.isExist}
+                                    >
+                                        Купить сейчас
+                                    </button>
+                                </div>
+                            )}
+                        </AddToCart>
 
                         {item.specificationsJSONB && (
                             <div className="apple-preview-specs">

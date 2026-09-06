@@ -1,6 +1,45 @@
 import { $authHost, $host } from "./index";
 import jwt_decode from "jwt-decode";
 
+// get all
+export const fetchAllItem = async () => {
+    const { data } = await $host.get('api/itemRouter/getAll');
+    return data;
+}
+export const fetchAllItemByName = async (substring) => {
+    try {
+        const { data } = await $host.get('api/itemRouter/getAllByNameSubst/' + substring);
+        return data;
+    } catch (e) {
+        console.log(e);
+        return false;
+    }
+}
+export const fetchItemId = async (param) => {
+    if (!param) {
+        return null;
+    } else {
+        const { data } = await $host.get('api/itemRouter/getItemByParam/' + param);
+        return data;
+    }
+}
+export const fetchAllItemByKategoryId = async (id) => {
+    if (!id) {
+        return null;
+    } else {
+        const { data } = await $host.get('api/itemRouter/getAllByKategoryId/' + id);
+        return data;
+    }
+}
+export const fetchAllItemByMainKategoryId = async (id) => {
+    if (!id) {
+        return null;
+    } else {
+        const { data } = await $host.get('api/itemRouter/getAllByMainKategoryId/' + id);
+        return data;
+    }
+}
+// methods
 export const postItem = async (item) => {
     const token = localStorage.getItem('token');
     try {
@@ -20,43 +59,6 @@ export const postItem = async (item) => {
             alert("Произошла ошибка при сохранении.");
         }
         return false;
-    }
-}
-export const fetchAllItem = async () => {
-    const { data } = await $host.get('api/itemRouter/getAll');
-    return data;
-}
-export const fetchAllItemByName = async (substring) => {
-    try {
-        const { data } = await $host.get('api/itemRouter/getAllByNameSubst/' + substring);
-        return data;
-    } catch (e) {
-        console.log(e);
-        return false;
-    }
-}
-export const fetchItemId = async (id) => {
-    if (!id) {
-        return null;
-    } else {
-        const { data } = await $host.get('api/itemRouter/getItemById/' + id);
-        return data;
-    }
-}
-export const fetchAllItemByKategoryId = async (id) => {
-    if (!id) {
-        return null;
-    } else {
-        const { data } = await $host.get('api/itemRouter/getAllByKategoryId/' + id);
-        return data;
-    }
-}
-export const fetchAllItemByMainKategoryId = async (id) => {
-    if (!id) {
-        return null;
-    } else {
-        const { data } = await $host.get('api/itemRouter/getAllByMainKategoryId/' + id);
-        return data;
     }
 }
 export const deleteItemById = async (id) => {

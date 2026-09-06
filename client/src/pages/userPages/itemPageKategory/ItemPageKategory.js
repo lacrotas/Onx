@@ -1,23 +1,21 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useHistory, NavLink } from 'react-router-dom';
 import { fetchAllItemByKategoryId } from '../../../http/itemApi';
-import { fetchAllFiltersByKategoryId } from "../../../http/filterApi";
-import { fetchKategoryById, fetchMainKategoryById, fetchAllKategoryByMainKategoryId } from "../../../http/KategoryApi";
+import { fetchAllFiltersByCategoryId } from "../../../http/filterApi";
+import { fetchCategoryByParam, fetchCategoryByParentId } from "../../../http/KategoryApi";
 import "./ItemPageKategory.scss";
 import Header from '../../../components/header/Header';
 import Footer from '../../../components/footer/Footer';
-import { ITEM_PREVIEW_ROUTE, BUSKET_ROUTE, ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
+import { ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
 import { FaSort } from "react-icons/fa";
 import { LiaFilterSolid } from "react-icons/lia";
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
-import jwt_decode from 'jwt-decode';
-import { updateBusket, fetchBusketByUserId } from '../../../http/busketApi';
 import ItemCard from './itemCard/ItemCard';
 import FilterSidebar from './filterSidebar/FilterSidebar';
+import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
 
 const ItemPageKategory = () => {
-    const history = useHistory();
-    const { categoryId } = useParams();
+    const { allias, mainAllias } = useParams();
     const [items, setItems] = useState([]);
     const [filters, setFilters] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -26,7 +24,6 @@ const ItemPageKategory = () => {
     const [sortOption, setSortOption] = useState('default');
     const [selectedFilters, setSelectedFilters] = useState({});
 
-    const [cartItemIds, setCartItemIds] = useState(new Set());
     const [category, setCategory] = useState(null);
     const [allCategory, setAllCategory] = useState(null);
     const [mainCategory, setMainCategory] = useState(null);
@@ -42,7 +39,6 @@ const ItemPageKategory = () => {
         } else {
             document.body.style.overflow = 'unset';
         }
-        // Сброс стиля при размонтировании компонента
         return () => {
             document.body.style.overflow = 'unset';
         };
@@ -53,80 +49,6 @@ const ItemPageKategory = () => {
             ...prev,
             [filterId]: !prev[filterId]
         }));
-    };
-
-    // --- ЛОГИКА КОРЗИНЫ ---
-    const fetchCartItems = async () => {
-        const idsInCart = new Set();
-        try {
-            const userId = localStorage.getItem('token');
-            if (userId) {
-                const busket = await fetchBusketByUserId(jwt_decode(userId).id);
-                const currentItems = busket.itemsJsonb || [];
-                const itemsForLocalStorage = currentItems.map(item => ({
-                    id: item.itemId || item.id,
-                    count: item.count || 1
-                }));
-                localStorage.setItem('basket', JSON.stringify(itemsForLocalStorage));
-                currentItems.forEach(item => {
-                    idsInCart.add(String(item.itemId || item.id));
-                });
-            } else {
-                const savedBasket = localStorage.getItem('basket');
-                if (savedBasket) {
-                    const parsedBasket = JSON.parse(savedBasket);
-                    if (Array.isArray(parsedBasket)) {
-                        parsedBasket.forEach(item => {
-                            idsInCart.add(String(item.itemId || item.id));
-                        });
-                    }
-                }
-            }
-            setCartItemIds(idsInCart);
-        } catch (e) {
-            console.error("Ошибка при проверке корзины:", e);
-        }
-    };
-
-    const handleAddToCart = async (e, item) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const itemIdStr = String(item.id);
-
-        if (cartItemIds.has(itemIdStr)) {
-            history.push(BUSKET_ROUTE);
-            return;
-        }
-
-        try {
-            const userId = localStorage.getItem('token');
-            if (userId) {
-                const busket = await fetchBusketByUserId(jwt_decode(userId).id);
-                const currentItems = busket.itemsJsonb ? [...busket.itemsJsonb] : [];
-                if (!currentItems.some(i => String(i.itemId || i.id) === itemIdStr)) {
-                    currentItems.push({ itemId: item.id, count: 1 });
-                    await updateBusket(busket.id, { itemsJsonb: currentItems });
-                }
-            }
-
-            let existingBasket = [];
-            const savedBasket = localStorage.getItem('basket');
-            if (savedBasket) {
-                try { existingBasket = JSON.parse(savedBasket); } catch (e) { }
-            }
-
-            if (!existingBasket.some(i => String(i.itemId || i.id) === itemIdStr)) {
-                const updatedBasket = [...existingBasket, { id: item.id, count: 1 }];
-                localStorage.setItem('basket', JSON.stringify(updatedBasket));
-            }
-
-            setCartItemIds(prev => new Set(prev).add(itemIdStr));
-            window.dispatchEvent(new Event('cartUpdated'));
-
-        } catch (error) {
-            console.error('Ошибка добавления в корзину:', error);
-            alert('Ошибка при добавлении товара');
-        }
     };
 
     useEffect(() => {
@@ -141,34 +63,34 @@ const ItemPageKategory = () => {
         };
     }, []);
 
+    // получение данных о товарах
     useEffect(() => {
         const loadData = async () => {
             try {
-                if (categoryId) {
-                    const categoryData = await fetchKategoryById(categoryId);
-                    const mainCategoryData = await fetchMainKategoryById(categoryData.mainKategoryId);
-                    const allCategoryData = await fetchAllKategoryByMainKategoryId(categoryData.mainKategoryId);
-
+                if (allias) {
+                    const categoryData = await fetchCategoryByParam(allias);
+                    const mainCategoryData = await fetchCategoryByParam(mainAllias);
                     setCategory(categoryData);
                     setMainCategory(mainCategoryData);
-                    setAllCategory(Array.isArray(allCategoryData) ? allCategoryData : []);
-                }
-
-                if (categoryId) {
-                    const filtersData = await fetchAllFiltersByKategoryId(categoryId);
-                    const filtersArray = Array.isArray(filtersData) ? filtersData : [];
-                    setFilters(filtersArray);
-
-                    const initialOpenFilters = {};
-                    filtersArray.forEach(filter => {
-                        if (filter.buttonType !== 'check') {
-                            initialOpenFilters[filter.id] = true;
+                    if(mainCategoryData){
+                        const allCategoryData = await fetchCategoryByParentId(mainCategoryData.id);
+                        setAllCategory(allCategoryData);
+                    }
+                    
+                    if (categoryData) {
+                        setItemsLoading(true);
+                        try {
+                            const data = await fetchAllItemByKategoryId(categoryData.id);
+                            const filterData = await fetchAllFiltersByCategoryId(categoryData.id);
+                            setFilters(filterData);
+                            setItems(Array.isArray(data) ? data : []);
+                        } catch (err) {
+                            setError('Ошибка загрузки товаров');
+                            setItems([]);
+                        } finally {
+                            setItemsLoading(false);
                         }
-                    });
-                    setOpenFilters(initialOpenFilters);
-
-                    await loadItems();
-                    await fetchCartItems();
+                    }
                 }
             } catch (err) {
                 console.error('Ошибка загрузки:', err);
@@ -179,22 +101,7 @@ const ItemPageKategory = () => {
         };
 
         loadData();
-        // eslint-disable-next-line
-    }, [categoryId]);
-
-    const loadItems = async () => {
-        if (!categoryId) return;
-        setItemsLoading(true);
-        try {
-            const data = await fetchAllItemByKategoryId(categoryId);
-            setItems(Array.isArray(data) ? data : []);
-        } catch (err) {
-            setError('Ошибка загрузки товаров');
-            setItems([]);
-        } finally {
-            setItemsLoading(false);
-        }
-    };
+    }, [allias]);
 
     const sortItems = (itemsToSort) => {
         const sortedItems = [...itemsToSort];
@@ -216,6 +123,7 @@ const ItemPageKategory = () => {
             }
         });
     };
+
     const handleFilterChange = (filterId, ...args) => {
         const filter = filters.find(f => f.id === filterId);
         if (!filter) return;
@@ -294,38 +202,33 @@ const ItemPageKategory = () => {
 
     if (loading) return <><Header isAdminHeader={false} /><div className="loading">Загрузка данных...</div><Footer /></>;
     if (error) return <Header isAdminHeader={false} /> && <div className="error">{error}</div> && <Footer />;
-
     return (
         <>
             <Header isAdminHeader={false} />
             <div className="category-page-wrapper">
-
-                {/* Затемнение для мобильных фильтров */}
                 <div
                     onClick={() => setMobileFilters(false)}
                     className={mobileFilters ? 'filters-list_back open' : 'filters-list_back close'}
                 ></div>
 
-
                 {mainCategory && category && (
-                    <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategory.name, path: ITEM_MAIN_ROUTE + "/" + mainCategory.id }, { title: category.name }]} />
+                    <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategory.name, path: '/'+ mainAllias }, { title: category.name }]} />
                 )}
 
                 <div className="controls-area">
-                    {allCategory.map(category => (
+                    {allCategory && allCategory.map(cat => (
                         <NavLink
-                            key={category.id}
+                            key={cat.id}
                             to={{
-                                pathname: ITEM_KATEGOTY_ROUTE + "/" + category.id,
-                                state: { path: { name: category.name } }
+                                pathname: cat.alias,
+                                state: { path: { name: cat.name } }
                             }} >
-                            <div className={`filter-pill my_p  ${category.id == categoryId ? "active" : ""}`}>{category.name}</div>
+                            <div className={`filter-pill my_p ${cat.id === category?.id ? "active" : ""}`}>{cat.name}</div>
                         </NavLink>
                     ))}
                 </div>
 
                 <div className="main-container">
-
                     {items.length > 0 && (
                         <FilterSidebar
                             mobileFilters={mobileFilters}
@@ -341,7 +244,6 @@ const ItemPageKategory = () => {
                     )}
 
                     <main className="content-area">
-
                         <div className='main-content_header'>
                             <h1 className='item-page-kategory_label my_h1'>{category ? category.name : 'Категория'}</h1>
 
@@ -384,13 +286,19 @@ const ItemPageKategory = () => {
                                 ) : (
                                     <div className="product-grid">
                                         {filteredAndSortedItems.map(item => (
-                                            <ItemCard
-                                                key={item.id}
-                                                item={item}
-                                                isInCart={cartItemIds.has(String(item.id))}
-                                                onAddToCart={handleAddToCart}
-                                                renderStars={renderStars}
-                                            />
+                                            /* Оборачиваем каждую карточку в AddToCart */
+                                            <AddToCart key={item.id} item={item}>
+                                                {({ isInCart, handleAddToCart }) => (
+                                                    <ItemCard
+                                                        item={item}
+                                                        isInCart={isInCart}
+                                                        onAddToCart={handleAddToCart}
+                                                        renderStars={renderStars}
+                                                        mainAlias={mainAllias}
+                                                        alias={allias}
+                                                    />
+                                                )}
+                                            </AddToCart>
                                         ))}
                                     </div>
                                 )}
@@ -398,7 +306,7 @@ const ItemPageKategory = () => {
                         )}
                     </main>
                 </div>
-            </div >
+            </div>
             <Footer />
         </>
     );

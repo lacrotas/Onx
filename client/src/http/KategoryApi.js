@@ -18,15 +18,34 @@ function checkId(id) {
     return false
 }
 
-/* main kategory */
-export const fetchAllMainKategory = async () => {
-    const { data } = await $host.get('api/mainKategoryRouter/getAll');
+export const fetchAllMainCategory = async () => {
+    const { data } = await $host.get('api/categoryRouter/getAllMainCategory');
     return data;
 }
-export const postMainKategory = async (item) => {
+export const fetchAllKategory = async () => {
+    const { data } = await $host.get('api/categoryRouter/getAll');
+    return data;
+}
+export const fetchCategoryByParam = async (param) => {
+    if (!param) {
+        return null;
+    }
+    const { data } = await $host.get('api/categoryRouter/getCategoryByParam/' + param);
+    return data;
+}
+
+export const fetchCategoryByParentId = async (param) => {
+    if (!param) {
+        return null;
+    }
+    const { data } = await $host.get('api/categoryRouter/getParentCategoryByParam/' + param);
+    return data;
+}
+// methods
+export const postCategory = async (item) => {
     const token = localStorage.getItem('token');
     try {
-        const { data } = await $host.post('api/mainKategoryRouter/add', item, {
+        const { data } = await $host.post('api/categoryRouter/add', item, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -43,14 +62,36 @@ export const postMainKategory = async (item) => {
         return false;
     }
 }
-
-export const deleteMainKategoryById = async (id) => {
+export const updateCategory = async (id, item) => {
+    if (checkId(id)) {
+        return null;
+    }
+    try {
+        const token = localStorage.getItem('token');
+        const { data } = await $host.put('api/categoryRouter/update/' + id, item, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+        return data;
+    } catch (e) {
+        if (e.response && e.response.status === 413) {
+            alert("Ошибка: Слишком большой размер загружаемых файлов!");
+        } else if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованны");
+        } else {
+            alert("Произошла ошибка при сохранении.");
+        }
+        return false;
+    }
+}
+export const deleteCategoryById = async (id) => {
     if (checkId(id)) {
         return null;
     }
     const token = localStorage.getItem('token');
     try {
-        const { data } = await $host.delete('api/mainKategoryRouter/delete/' + id, {
+        const { data } = await $host.delete('api/categoryRouter/delete/' + id, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -68,36 +109,16 @@ export const deleteMainKategoryById = async (id) => {
         return false;
     }
 }
-export const updateMainKategory = async (id, item) => {
-    if (checkId(id)) {
-        return null;
-    }
+
+// хз
+
+
+
+
+export const fetchMainKategoryById = async (param) => {
+ 
     try {
-        const token = localStorage.getItem('token');
-        const { data } = await $host.put('api/mainKategoryRouter/update/' + id, item, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
-        return data;
-    } catch (e) {
-        if (e.response && e.response.status === 413) {
-            alert("Ошибка: Слишком большой размер загружаемых файлов!");
-        } else if (e.response && e.response.status === 401) {
-            alert("Вы не авторизованны");
-        } else {
-            alert("Произошла ошибка при сохранении.");
-        }
-        return false;
-    }
-}
-export const fetchMainKategoryById = async (id) => {
-    if (checkId(id)) {
-        return null;
-    }
-    const token = localStorage.getItem('token');
-    try {
-        const { data } = await $host.get('api/mainKategoryRouter/getMainKategoryById/' + id)
+        const { data } = await $host.get('api/mainKategoryRouter/getMainKategoryById/' + param)
         return data;
     } catch {
         return false
@@ -105,24 +126,17 @@ export const fetchMainKategoryById = async (id) => {
 }
 
 /* kategory */
-export const fetchAllKategory = async () => {
-    const { data } = await $host.get('api/kategoryRouter/getAll');
-    return data;
-}
-export const fetchAllKategoryByMainKategoryId = async (id) => {
-    if (checkId(id)) {
-        return null;
+
+export const fetchAllKategoryByMainKategoryId = async (param) => {
+    try {
+        // Убедитесь, что путь в роутере сервера настроен на принятие :param
+        const { data } = await $host.get('api/kategoryRouter/getAllKategory/' + param);
+        return data;
+    } catch {
+        return [];
     }
-    const { data } = await $host.get('api/kategoryRouter/getAllKategory/' + id);
-    return data;
 }
-export const fetchKategoryById = async (id) => {
-    if (checkId(id)) {
-        return null;
-    }
-    const { data } = await $host.get('api/kategoryRouter/getKategory/' + id);
-    return data;
-}
+
 export const deleteKategoryById = async (id) => {
     if (checkId(id)) {
         return null;
@@ -293,43 +307,3 @@ export const deletePodKategoryById = async (id) => {
         return false
     }
 }
-// export const deleteOneSlider = async (id) => {
-//     if (!id || isNaN(id)) {
-//         return null;
-//     } else {
-//         const token = localStorage.getItem('token');
-//         const { data } = await $host.delete('api/sliderRouter/delete/' + id, {
-//             headers: {
-//                 Authorization: `Bearer ${token}`
-//             }
-//         }
-//         )
-//         return data;
-//     }
-// }
-
-// export const fetchOneMeating = async (id) => {
-//     if (!id || isNaN(id)) {
-//         return null;
-//     } else {
-//         const { data } = await $host.get('api/meating/' + id)
-//         return data;
-//     }
-// }
-
-// export const deleteMeatingsByCityId = async (id) => {
-//     if (!id || isNaN(id)) {
-//         return null;
-//     } else {
-//         try {
-//             const token = localStorage.getItem('token');
-//             const { data } = await $host.delete('api/meating/deleteByCityId/' + id, {
-//                 headers: {
-//                     Authorization: `Bearer ${token}`
-//                 }
-//             }
-//             )
-//             return data;
-//         } catch (e) { }
-//     }
-// }

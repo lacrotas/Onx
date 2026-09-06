@@ -11,11 +11,9 @@ router.use('/user', userRouter)
 router.use('/busketRouter', busketRouter)
 
 /* kategory routers */
-const mainKategoryRouter = require('./mainKategoryRouter');
-const kategoryRouter = require('./kategoryRouter');
+const CategoryRouter = require('./categoryRouter');
 
-router.use('/mainKategoryRouter', mainKategoryRouter);
-router.use('/kategoryRouter', kategoryRouter);
+router.use('/categoryRouter', CategoryRouter);
 
 /* item routers */
 const attributeRouter = require('./attributeRouter');

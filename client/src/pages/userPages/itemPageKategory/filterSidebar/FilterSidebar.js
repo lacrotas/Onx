@@ -53,7 +53,6 @@ const FilterSidebar = ({
             {[...filters]
                 .sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0))
                 .map(filter => {
-                    console.log(filter);
 
                     if (filter.buttonType === 'select') {
                         const filterValues = getFilterValues(filter);

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { Kategory, MainKategory, Item, Review, Slider } = require('../models/models');
+const { Category, Item, Review, Slider } = require('../models/models');
 class ImageDeletionService {
     constructor() {
         this.addBeforeDestroyHooks();
@@ -45,12 +45,9 @@ class ImageDeletionService {
 
     // before destroy hooks
     addBeforeDestroyHooks() {
-        this.addBeforeDestroyHookForModel(MainKategory, Kategory, 'image', 'mainKategoryId');
-        this.addBeforeDestroyHookForModel(MainKategory, Item, 'image', 'mainKategoryId');
-        this.addBeforeDestroyHookForModel(Kategory, Item, 'images', 'kategoryId');
+        this.addBeforeDestroyHookForModel(Category, Item, 'images', 'categoryId');
         this.addBeforeDestroyHookForModel(Item, Review, 'images', 'itemId');
-        this.addBeforeDestroyHookForModel(MainKategory, Item, ['images', 'video'], 'mainKategoryId'); 
-        this.addBeforeDestroyHookForModel(Kategory, Item, ['images', 'video'], 'kategoryId');
+        this.addBeforeDestroyHookForModel(Category, Item, ['images', 'video'], 'categoryId');
     }
 
     addBeforeDestroyHookForModel(parentModel, childModel, imageField, foreignKey) {
@@ -80,8 +77,7 @@ class ImageDeletionService {
 
     // after destroy hooks
     addAfterDestroyHooks() {
-        this.addAfterDestroyHookForModel(Kategory, 'image');
-        this.addAfterDestroyHookForModel(MainKategory, 'image');
+        this.addAfterDestroyHookForModel(Category, 'image');
         this.addAfterDestroyHookForModel(Item, 'images');
         this.addAfterDestroyHookForModel(Item, 'video');
         this.addAfterDestroyHookForModel(Slider, 'image');

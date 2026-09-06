@@ -22,11 +22,11 @@ export const fetchAllFilters = async (id) => {
     const { data } = await $host.get('api/attributeRouter/getAll');
     return data;
 }
-export const fetchAllFiltersByKategoryId = async (id) => {
+export const fetchAllFiltersByCategoryId = async (id) => {
     if (!id) {
         return null;
     } else {
-        const { data } = await $host.get('api/attributeRouter/getAllByKategoryId/' + id);
+        const { data } = await $host.get('api/attributeRouter/getAllByCategoryId/' + id);
         return data;
     }
 }

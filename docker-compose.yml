@@ -1,43 +1,50 @@
-services:
-  db:
-    image: postgres:17-alpine
-    container_name: maxistore_db
-    restart: always
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
-      POSTGRES_DB: ${DB_NAME:-maxistore}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5432:5432"
+# Редирект HTTP -> HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name onx.by www.onx.by;
+    return 301 https://$host$request_uri;
+}
 
-  server:
-    build: ./server
-    container_name: maxistore_server
-    restart: always
-    depends_on:
-      - db
-    env_file:
-      - ./server/.env
-    environment:
-      # Переопределяем хост БД для работы внутри сети Docker
-      - DB_HOST=db
-      - PORT=5000
-    ports:
-      - "5000:5000"
-    volumes:
-      # Чтобы загруженные картинки сохранялись на хосте
-      - ./server/static:/app/static
+# HTTPS сервер
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name onx.by www.onx.by;
 
-  client:
-    build: ./client
-    container_name: maxistore_client
-    restart: always
-    depends_on:
-      - server
-    ports:
-      - "80:80"
+    ssl_certificate /etc/letsencrypt/live/onx.by/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/onx.by/privkey.pem;
 
-volumes:
-  postgres_data:
+    # 1. Запросы к API Node.js
+    location /api/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 2. Изображения и видео из папки server/static/images и server/static/video
+    location ~* ^/(images|video)/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # 3. Фронтенд (React) — обрабатывает все остальные пути, включая свои /static/js и /static/css
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

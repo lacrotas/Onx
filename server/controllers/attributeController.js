@@ -4,9 +4,9 @@ const ApiError = require('../error/ApiError');
 class attributeController {
 
     async getAllAttributeByKategoryId(req, res) {
-        const { kategoryId } = req.params
+        const { categoryId } = req.params
         const attribute = await Attribute.findAll(
-            { where: { kategoryId } }
+            { where: { categoryId } }
         );
         return res.json(attribute);
     }

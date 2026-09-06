@@ -98,6 +98,31 @@ const ItemModal = ({
                         </div>
                     </div>
 
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label className="my_p">Seo title:</label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                required
+                                className="form-input my_p"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="my_p">Ссылка url:</label>
+                            <input
+                                type="number"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleInputChange}
+                                required
+                                className="form-input my_p"
+                            />
+                        </div>
+                    </div>
+
                     <div className="form-row checkbox-row">
                         <label className="custom-checkbox my_p">
                             <input
