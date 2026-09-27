@@ -1,8 +1,10 @@
+@import '../../../shared/styles/adminTheme';
+
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(5px);
+    background: $admin-bg-overlay;
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -10,83 +12,115 @@
     padding: 20px;
 
     .modal-content {
-        background: #fff;
-        border-radius: var(--radius-lg);
+        background: $admin-bg-sidebar;
+        border: 1px solid $admin-border;
+        border-radius: $admin-radius-xl;
         width: 100%;
-        max-width: 500px;
-        /* Ограничиваем максимальную высоту окна для появления скролла */
+        max-width: 660px;
         max-height: 90vh; 
         display: flex;
         flex-direction: column;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        box-shadow: $admin-shadow-lg;
         overflow: hidden;
 
         .modal-header {
-            padding: 24px 30px;
-            border-bottom: 1px solid var(--border-color);
-            h2 { margin: 0; }
+            padding: 24px 32px;
+            border-bottom: 1px solid $admin-border;
+            h2 { 
+                margin: 0; 
+                color: $admin-text-main;
+                font-size: var(--admin-modal-title-fs, 24px);
+                font-weight: 700;
+                letter-spacing: -0.01em;
+            }
         }
 
         .category-form {
-            padding: 30px;
+            padding: 28px 32px;
             overflow-y: auto;
-            /* Заставляем форму занимать оставшуюся высоту */
             flex: 1; 
+            @include scrollbar-custom;
 
             .form-group {
-                margin-bottom: 20px;
+                margin-bottom: 22px;
 
                 label {
                     display: block;
-                    margin-bottom: 8px;
-                    opacity: 0.8;
+                    margin-bottom: 9px;
+                    color: #cbd5e1;
+                    font-size: var(--admin-modal-label-fs, 15.5px);
+                    font-weight: 600;
                 }
 
                 .form-input,
                 .form-select {
                     width: 100%;
-                    padding: 12px 16px;
-                    border: 1px solid var(--border-color);
-                    border-radius: var(--radius-sm);
-                    background: #fbfbfd;
+                    height: var(--admin-modal-input-h, 48px);
+                    padding: 0 16px;
+                    border: 1px solid $admin-border;
+                    border-radius: $admin-radius-md;
+                    background: $admin-bg-input;
+                    color: $admin-text-main;
                     outline: none;
-                    transition: all 0.2s;
+                    transition: $admin-transition;
+                    font-size: var(--admin-modal-input-fs, 16px);
+                    box-sizing: border-box;
 
                     &:focus {
-                        background: #fff;
-                        border-color: #0071e3;
-                        box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+                        border-color: $admin-border-focus;
+                        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+                    }
+                }
+
+                .form-select {
+                    cursor: pointer;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 14px center;
+                    background-size: 16px;
+                    padding-right: 40px;
+
+                    option {
+                        background: $admin-bg-sidebar;
+                        color: $admin-text-main;
+                        padding: 8px 12px;
                     }
                 }
 
                 .form-static {
-                    padding: 12px 16px;
-                    background-color: #f5f5f7;
-                    border: 1px solid var(--border-color);
-                    border-radius: var(--radius-sm);
-                    color: #1d1d1f;
+                    padding: 13px 16px;
+                    background-color: rgba(255, 255, 255, 0.04);
+                    border: 1px solid $admin-border;
+                    border-radius: $admin-radius-md;
+                    color: $admin-text-main;
+                    font-size: var(--admin-modal-input-fs, 16px);
+                    font-weight: 500;
                 }
 
                 .image-upload-container {
                     width: 100%;
-                    min-height: 200px;
-                    border: 2px dashed var(--border-color);
-                    border-radius: var(--radius-sm);
+                    min-height: 220px;
+                    border: 2px dashed $admin-border-hover;
+                    border-radius: $admin-radius-md;
+                    background: $admin-bg-input;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
                     overflow: hidden;
                     position: relative;
-                    transition: border-color 0.3s ease;
+                    transition: $admin-transition;
 
                     &:hover {
-                        border-color: var(--accent);
+                        border-color: $admin-primary;
+                        background: rgba(99, 102, 241, 0.04);
                     }
 
                     .image-preview-container {
                         width: 100%;
-                        height: 200px;
+                        height: 220px;
                         
                         .uploaded-image {
                             width: 100%;
@@ -100,21 +134,33 @@
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        gap: 10px;
+                        gap: 12px;
+                        color: $admin-text-secondary;
+                        font-size: 15.5px;
+                        font-weight: 500;
+
+                        .placeholder-icon {
+                            font-size: 38px;
+                        }
                     }
 
                     .image-overlay {
                         position: absolute;
                         inset: 0;
-                        background: rgba(0, 0, 0, 0.5);
+                        background: rgba(0, 0, 0, 0.65);
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         opacity: 0;
-                        transition: opacity 0.3s ease;
+                        transition: opacity 0.2s ease;
 
                         .overlay-text {
                             color: #fff;
+                            font-size: 15px;
+                            font-weight: 600;
+                            padding: 8px 16px;
+                            background: rgba(0, 0, 0, 0.4);
+                            border-radius: 999px;
                         }
                     }
 
@@ -128,41 +174,46 @@
                 display: flex;
                 justify-content: flex-end;
                 gap: 12px;
-                margin-top: 30px;
-                
-                /* Делаем панель кнопок "прилипающей" к низу при скролле */
-                position: sticky;
-                bottom: -30px; /* Компенсируем нижний padding формы */
-                background: #fff; /* Фон, чтобы контент не просвечивал */
+                margin-top: 28px;
                 padding-top: 20px;
-                padding-bottom: 30px;
-                margin-bottom: -30px;
-                border-top: 1px solid var(--border-color);
-                z-index: 10;
+                border-top: 1px solid rgba(255, 255, 255, 0.05);
 
                 button {
-                    padding: 12px 24px;
-                    border-radius: 99px;
+                    height: var(--admin-modal-btn-h, 46px);
+                    padding: 0 24px;
+                    border-radius: $admin-radius-md;
                     border: none;
                     cursor: pointer;
-                    transition: transform 0.2s;
+                    font-size: var(--admin-modal-btn-fs, 15.5px);
+                    font-weight: 600;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: $admin-transition;
+                    white-space: nowrap;
 
                     &.btn-cancel {
-                        background: #e5e5ea;
-                        color: #1d1d1f;
-                        &:hover { background: #d1d1d6; }
+                        background: rgba(255, 255, 255, 0.08);
+                        border: 1px solid $admin-border;
+                        color: $admin-text-main;
+                        &:hover { background: rgba(255, 255, 255, 0.14); }
                     }
 
                     &.btn-secondary {
-                        background: #e8f2fc;
-                        color: #1d1d1f;
-                        &:hover { background: #d0e5f9; transform: translateY(-1px); }
+                        background: rgba(99, 102, 241, 0.15);
+                        border: 1px solid rgba(99, 102, 241, 0.3);
+                        color: $admin-primary;
+                        &:hover { background: rgba(99, 102, 241, 0.25); transform: translateY(-1px); }
                     }
 
                     &.btn-primary {
-                        background: #e8f2fc;
-                        color: #1d1d1f;
-                        &:hover { background: #d0e5f9; transform: translateY(-1px); }
+                        background: $admin-accent-gradient;
+                        color: #fff;
+                        box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+                        &:hover { 
+                            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.5); 
+                            transform: translateY(-1px); 
+                        }
                     }
                 }
             }

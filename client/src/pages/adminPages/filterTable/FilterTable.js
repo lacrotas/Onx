@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchAllFilters, postFilterForKategory, updateFilter, deleteFilter } from '../../../http/filterApi';
 import { fetchAllKategory } from '../../../http/KategoryApi';
-import FilterTableHeader from './components/filterTableHeader/FilterTableHeader';
+import AdminPageHeader from '../shared/components/AdminPageHeader';
 import FilterCard from './components/filterCard/FilterCard';
 import FilterModal from './components/filterModal/FilterModal';
 import Loader from '../../../components/loader/Loader';
@@ -13,9 +13,7 @@ const FilterTable = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedFilterCategory, setSelectedFilterCategory] = useState('');
     
-    // Состояние для лоадера
     const [isSaving, setIsSaving] = useState(false);
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingFilter, setEditingFilter] = useState(null);
     const [formData, setFormData] = useState({
@@ -34,7 +32,7 @@ const FilterTable = () => {
     const loadFilters = async () => {
         try {
             const data = await fetchAllFilters();
-            const sortedData = data.sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0));
+            const sortedData = (Array.isArray(data) ? data : []).sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0));
             setFilters(sortedData);
         } catch (error) {
             console.error('Error loading filters:', error);
@@ -44,9 +42,10 @@ const FilterTable = () => {
     const loadCategories = async () => {
         try {
             const data = await fetchAllKategory();
-            setCategories(data);
-            if (data.length > 0 && !editingFilter) {
-                setFormData(prev => ({ ...prev, kategoryId: data[0].id }));
+            const safeData = Array.isArray(data) ? data : [];
+            setCategories(safeData);
+            if (safeData.length > 0 && !editingFilter) {
+                setFormData(prev => ({ ...prev, kategoryId: safeData[0].id }));
             }
         } catch (error) {
             console.error('Error loading categories:', error);
@@ -226,15 +225,27 @@ const FilterTable = () => {
     ];
 
     return (
-        <div className="admin-filter-editor">
-            <FilterTableHeader
+        <div className="admin-page-container admin-filter-editor">
+            <AdminPageHeader
+                title="Фильтры характеристик"
+                count={filters.length}
                 searchTerm={searchTerm}
-                handleSearch={handleSearch}
-                openAddModal={openAddModal}
-                categories={categories}
-                selectedFilterCategory={selectedFilterCategory}
-                handleFilterCategoryChange={handleFilterCategoryChange}
-            />
+                onSearch={handleSearch}
+                searchPlaceholder="Поиск фильтра..."
+                onAdd={openAddModal}
+                addButtonText="Добавить фильтр"
+            >
+                <select
+                    value={selectedFilterCategory}
+                    onChange={handleFilterCategoryChange}
+                    className="admin-form-select"
+                >
+                    <option value="">Все категории</option>
+                    {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+            </AdminPageHeader>
 
             <main className="content-container">
                 {groupedData.length === 0 ? (
@@ -271,7 +282,6 @@ const FilterTable = () => {
                 buttonTypeOptions={buttonTypeOptions}
             />
 
-            {/* Глобальный лоадер */}
             <Loader isVisible={isSaving} text="Обновление фильтров..." />
         </div>
     );

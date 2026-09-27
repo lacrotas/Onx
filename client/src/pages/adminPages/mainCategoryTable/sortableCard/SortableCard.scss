@@ -1,12 +1,15 @@
+@import '../../shared/styles/adminTheme';
+
 .cat-card {
     position: relative;
-    height: 400px;
-    border-radius: var(--radius, 20px);
+    height: 380px;
+    border-radius: $admin-radius-lg;
     overflow: hidden;
-    background: #000;
+    background: $admin-bg-sidebar;
     cursor: grab;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: $admin-shadow-sm;
+    border: 1px solid $admin-border;
 
     &:active {
         cursor: grabbing;
@@ -14,7 +17,7 @@
     
     &.dragging {
         opacity: 0.5;
-        transform: scale(0.95);
+        transform: scale(0.97);
     }
 
     @media (min-width: 768px) { &.span-2 { grid-column: span 2; } }
@@ -31,20 +34,20 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        opacity: 0.85;
-        transition: transform 0.5s ease;
+        opacity: 0.75;
+        transition: transform 0.5s ease, opacity 0.3s ease;
         display: block;
     }
 
     &:hover .cat-img {
-        transform: scale(1.08);
-        opacity: 0.7;
+        transform: scale(1.05);
+        opacity: 0.6;
     }
 
     .card-controls {
         position: absolute;
-        top: 15px;
-        right: 15px;
+        top: 14px;
+        right: 14px;
         display: flex;
         gap: 8px;
         z-index: 50;
@@ -55,17 +58,28 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: #fff;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid $admin-border;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            color: $admin-text-main;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: $admin-transition;
 
             &:hover { 
-                transform: scale(1.1); 
+                transform: scale(1.1);
+                background: rgba(99, 102, 241, 0.9);
+                border-color: rgba(99, 102, 241, 0.5);
+                color: #fff;
+            }
+
+            &.delete:hover {
+                background: rgba(239, 68, 68, 0.9);
+                border-color: rgba(239, 68, 68, 0.5);
+                color: #fff;
             }
         }
 
@@ -78,37 +92,42 @@
                 top: 110%;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(10px);
-                border-radius: 12px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                background: $admin-bg-sidebar;
+                backdrop-filter: blur(12px);
+                border: 1px solid $admin-border;
+                border-radius: $admin-radius-md;
+                box-shadow: $admin-shadow-lg;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
                 z-index: 200;
-                min-width: 90px;
+                min-width: 100px;
                 animation: dropDownAnim 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
                 .size-option {
-                    padding: 10px 15px;
+                    padding: 9px 14px;
                     border: none;
                     background: none;
                     cursor: pointer;
-                    transition: all 0.2s ease;
+                    transition: $admin-transition;
                     text-align: center;
-                    border-bottom: 1px solid rgba(0,0,0,0.05);
+                    border-bottom: 1px solid $admin-border;
+                    color: $admin-text-secondary;
+                    font-size: 12.5px;
 
                     &:last-child {
                         border-bottom: none;
                     }
 
                     &:hover {
-                        background: rgba(0, 113, 227, 0.1);
+                        background: rgba(255, 255, 255, 0.08);
+                        color: $admin-text-main;
                     }
 
                     &.selected {
-                        background: var(--accent, #0071e3);
-                        color: #fff;
+                        background: rgba(99, 102, 241, 0.2);
+                        color: $admin-primary;
+                        font-weight: 600;
                     }
                 }
             }
@@ -116,6 +135,7 @@
 
         .ctrl-btn.active {
             transform: scale(1.1);
+            background: rgba(99, 102, 241, 0.9);
         }
     }
     
@@ -128,17 +148,22 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 30px;
+        padding: 24px;
         box-sizing: border-box;
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.4) 60%, transparent);
-        color: #fff;
+        background: linear-gradient(to top, rgba(11, 15, 25, 0.95), rgba(11, 15, 25, 0.5) 60%, transparent);
+        color: $admin-text-main;
         pointer-events: none;
 
         .cat-title {
-            margin-bottom: 6px;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            margin-bottom: 4px;
+            font-size: 18px;
+            font-weight: 700;
+            color: $admin-text-main;
+        }
+
+        .cat-subtitle {
+            color: $admin-text-secondary;
+            font-size: 12px;
         }
     }
 }
@@ -159,7 +184,7 @@
         }
 
         .cat-overlay {
-            padding: 20px;
+            padding: 16px;
         }
     }
 }

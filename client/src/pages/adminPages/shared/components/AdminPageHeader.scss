@@ -1,0 +1,238 @@
+@import '../styles/adminTheme';
+
+.admin-page-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 32px;
+    background: $admin-bg-sidebar;
+    border-bottom: 1px solid $admin-border;
+    flex-wrap: wrap;
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .header-title {
+            margin: 0;
+            font-size: var(--admin-fs-h1, 26px);
+            font-family: var(--admin-font-heading);
+            font-weight: 700;
+            color: $admin-text-main;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3px 11px;
+            font-size: 13px;
+            font-family: var(--admin-font-medium);
+            font-weight: 600;
+            color: $admin-primary;
+            background: rgba($admin-primary, 0.15);
+            border: 1px solid rgba($admin-primary, 0.3);
+            border-radius: 999px;
+        }
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .header-filters {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .admin-form-select {
+            height: var(--admin-input-height, 42px);
+            min-width: 190px;
+            padding: 0 36px 0 14px;
+            background-color: $admin-bg-input;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            border: 1px solid $admin-border;
+            border-radius: $admin-radius-md;
+            color: $admin-text-main;
+            font-size: var(--admin-fs-input, 15px);
+            outline: none;
+            cursor: pointer;
+            transition: $admin-transition;
+            box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+
+            &:hover {
+                border-color: $admin-border-hover;
+            }
+
+            &:focus {
+                border-color: $admin-border-focus;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            }
+
+            option {
+                background: $admin-bg-sidebar;
+                color: $admin-text-main;
+                padding: 8px 12px;
+            }
+        }
+    }
+
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            color: $admin-text-muted;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 250px;
+            height: var(--admin-input-height, 40px);
+            padding: 0 34px 0 36px;
+            background: $admin-bg-input;
+            border: 1px solid $admin-border;
+            border-radius: $admin-radius-md;
+            color: $admin-text-main;
+            font-size: var(--admin-fs-input, 14.5px);
+            font-family: var(--admin-font-main);
+            outline: none;
+            transition: $admin-transition;
+
+            &::placeholder {
+                color: $admin-text-muted;
+            }
+
+            &:focus {
+                border-color: $admin-border-focus;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+                width: 280px;
+            }
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            color: $admin-text-muted;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: $admin-transition;
+
+            &:hover {
+                color: $admin-text-main;
+                background: rgba(255, 255, 255, 0.1);
+            }
+        }
+    }
+
+    .bulk-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .btn-apply {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: var(--admin-btn-height, 40px);
+            padding: 0 16px;
+            background: $admin-success;
+            border: none;
+            border-radius: $admin-radius-md;
+            color: #ffffff;
+            font-size: var(--admin-fs-small, 14px);
+            font-family: var(--admin-font-medium);
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            transition: $admin-transition;
+
+            &:hover:not(:disabled) {
+                background: darken($admin-success, 6%);
+                transform: translateY(-1px);
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+        }
+
+        .btn-cancel-changes {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: var(--admin-btn-height, 40px);
+            padding: 0 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid $admin-border;
+            border-radius: $admin-radius-md;
+            color: $admin-text-secondary;
+            font-size: var(--admin-fs-small, 14px);
+            font-family: var(--admin-font-main);
+            cursor: pointer;
+            transition: $admin-transition;
+
+            &:hover:not(:disabled) {
+                background: rgba(255, 255, 255, 0.1);
+                color: $admin-text-main;
+            }
+        }
+    }
+
+    .btn-add-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: var(--admin-btn-height, 40px);
+        padding: 0 18px;
+        background: $admin-accent-gradient;
+        border: none;
+        border-radius: $admin-radius-md;
+        color: #ffffff;
+        font-size: var(--admin-fs-small, 14px);
+        font-family: var(--admin-font-medium);
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+        transition: $admin-transition;
+
+        &:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+        }
+
+        &:active {
+            transform: translateY(0);
+        }
+    }
+}

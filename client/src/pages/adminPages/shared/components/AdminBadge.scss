@@ -1,0 +1,57 @@
+@import '../styles/adminTheme';
+
+.admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+
+    .badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    &.badge-success {
+        color: $admin-success;
+        background: $admin-success-bg;
+        border: 1px solid rgba($admin-success, 0.25);
+    }
+
+    &.badge-warning {
+        color: $admin-warning;
+        background: $admin-warning-bg;
+        border: 1px solid rgba($admin-warning, 0.25);
+    }
+
+    &.badge-danger {
+        color: $admin-danger;
+        background: $admin-danger-bg;
+        border: 1px solid rgba($admin-danger, 0.25);
+    }
+
+    &.badge-info {
+        color: $admin-info;
+        background: $admin-info-bg;
+        border: 1px solid rgba($admin-info, 0.25);
+    }
+
+    &.badge-primary {
+        color: $admin-primary;
+        background: rgba($admin-primary, 0.15);
+        border: 1px solid rgba($admin-primary, 0.3);
+    }
+
+    &.badge-neutral {
+        color: $admin-text-secondary;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid $admin-border;
+    }
+}

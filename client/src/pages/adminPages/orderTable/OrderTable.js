@@ -1,19 +1,34 @@
 import React, { useState, useEffect } from 'react';
-// Импортируйте ваши реальные функции API
+import { FiEdit2, FiTrash2, FiShoppingBag } from 'react-icons/fi';
 import { fetchAllOrders, updateOrder, deleteOrder } from '../../../http/orderApi';
-import "./OrderTable.scss";
+import { useAdminTable } from '../shared/hooks/useAdminTable';
+import AdminPageHeader from '../shared/components/AdminPageHeader';
+import { AdminTable } from '../shared/components/AdminTable';
+import { AdminModal } from '../shared/components/AdminModal';
+import { AdminBadge } from '../shared/components/AdminBadge';
+import './OrderTable.scss';
 
-const OrderTable = () => {
+const COLUMNS = [
+    { label: '№', sortKey: 'id', width: '80px' },
+    { label: 'Дата', sortKey: 'createdAt', width: '150px' },
+    { label: 'Клиент', sortKey: 'name' },
+    { label: 'Телефон', sortKey: 'phone' },
+    { label: 'Оплата' },
+    { label: 'Сумма', sortKey: 'price', align: 'right', width: '130px' },
+    { label: 'Статус', sortKey: 'orderStage', align: 'center', width: '140px' },
+    { label: 'Действия', align: 'right', width: '130px' }
+];
+
+const STAGE_LABELS = {
+    start: { label: 'Новый', variant: 'warning' },
+    inProcess: { label: 'В обработке', variant: 'info' },
+    finished: { label: 'Завершен', variant: 'success' },
+    canceled: { label: 'Отменен', variant: 'danger' }
+};
+
+export default function OrderTable() {
     const [orders, setOrders] = useState([]);
-    const [filteredOrders, setFilteredOrders] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-
-    // Вкладки соответствуют стадиям заказа
-    const [activeTab, setActiveTab] = useState('start');
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingOrder, setEditingOrder] = useState(null);
+    const [selectedStage, setSelectedStage] = useState('all');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -23,93 +38,49 @@ const OrderTable = () => {
         payment: '',
         price: 0,
         orderStage: 'start',
-        itemsJsonb: [] // Для отображения состава заказа
+        itemsJsonb: []
+    });
+
+    const {
+        searchTerm,
+        handleSearch,
+        sortConfig,
+        requestSort,
+        getSortIndicator,
+        filteredItems,
+        isModalOpen,
+        editingItem,
+        openEditModal,
+        closeModal,
+        isLoading,
+        setIsLoading,
+        isSaving,
+        setIsSaving
+    } = useAdminTable({
+        items: orders,
+        searchFields: ['name', 'phone', 'adress', 'id'],
+        customFilter: (item) => selectedStage === 'all' || item.orderStage === selectedStage,
+        initialSort: { key: 'id', direction: 'descending' }
     });
 
     useEffect(() => {
-        loadData();
+        loadOrders();
     }, []);
 
-    useEffect(() => {
-        let result = orders.filter(order => {
-            // Фильтрация по вкладкам (стадиям)
-            if (order.orderStage !== activeTab) return false;
-
-            // Поиск
-            const search = searchTerm.toLowerCase();
-            const name = (order.name || '').toLowerCase();
-            const adress = (order.adress || '').toLowerCase();
-            const phone = (order.phone || '').toLowerCase();
-            const id = order.id.toString();
-
-            return name.includes(search) ||
-                adress.includes(search) ||
-                phone.includes(search) ||
-                id.includes(search);
-        });
-
-        // Сортировка
-        if (sortConfig.key) {
-            result.sort((a, b) => {
-                let aValue = a[sortConfig.key];
-                let bValue = b[sortConfig.key];
-
-                if (aValue === null || aValue === undefined) aValue = '';
-                if (bValue === null || bValue === undefined) bValue = '';
-
-                if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-                if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
-                return 0;
-            });
-        }
-
-        setFilteredOrders(result);
-    }, [searchTerm, orders, sortConfig, activeTab]);
-
-    const loadData = async () => {
+    const loadOrders = async () => {
+        setIsLoading(true);
         try {
             const data = await fetchAllOrders();
-            // console.log(data);
-            // Сортируем по умолчанию новые сверху
-            data.sort((a, b) => b.id - a.id);
-            setOrders(data);
+            const safeData = Array.isArray(data) ? data : [];
+            setOrders(safeData);
         } catch (error) {
-            console.error('Error loading orders:', error);
+            console.error('Ошибка загрузки заказов:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleString('ru-RU');
-    };
-
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortIndicator = (key) => {
-        if (sortConfig.key !== key) return null;
-        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
-    };
-
-    const handleSearch = (e) => setSearchTerm(e.target.value);
-
-    const openEditModal = (order) => {
-        setEditingOrder(order);
-
-        // Парсим itemsJsonb если это строка, или оставляем как есть если объект
-        let items = [];
-        if (typeof order.itemsJsonb === 'string') {
-            try { items = JSON.parse(order.itemsJsonb); } catch (e) { }
-        } else if (Array.isArray(order.itemsJsonb)) {
-            items = order.itemsJsonb;
-        }
-
+    const handleOpenEdit = (order) => {
         setFormData({
             name: order.name || '',
             adress: order.adress || '',
@@ -118,19 +89,9 @@ const OrderTable = () => {
             payment: order.payment || '',
             price: order.price || 0,
             orderStage: order.orderStage || 'start',
-            itemsJsonb: items
+            itemsJsonb: Array.isArray(order.itemsJsonb) ? order.itemsJsonb : []
         });
-        setIsModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setEditingOrder(null);
-    };
-    const confirmAndCloseModal = () => {
-        if (window.confirm('Хотите ли вы закрыть форму? Несохраненные данные будут потеряны.')) {
-            closeModal();
-        }
+        openEditModal(order);
     };
 
     const handleInputChange = (e) => {
@@ -140,246 +101,274 @@ const OrderTable = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!editingItem) return;
+
+        setIsSaving(true);
         try {
-            // Отправляем обновленные данные
-            // Предполагается, что updateOrder принимает ID и объект/FormData
-            await updateOrder(editingOrder.id, {
+            await updateOrder(editingItem.id, {
                 name: formData.name,
                 adress: formData.adress,
                 phone: formData.phone,
                 comment: formData.comment,
-                price: formData.price,
+                payment: formData.payment,
+                price: parseFloat(formData.price) || 0,
                 orderStage: formData.orderStage
-                // itemsJsonb обычно не редактируют через админку таким образом, но можно добавить
             });
 
-            // Обновляем локальный стейт или перезагружаем данные
-            loadData();
+            await loadOrders();
             closeModal();
         } catch (error) {
-            alert('Ошибка сделай скрин и пришли мне', error);
+            console.error('Ошибка обновления заказа:', error);
+            alert('Ошибка при сохранении заказа');
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('Вы уверены, что хотите удалить этот заказ?')) {
+        if (window.confirm(`Удалить заказ #${id}?`)) {
             try {
                 await deleteOrder(id);
-                setOrders(orders.filter(o => o.id !== id));
+                await loadOrders();
             } catch (error) {
-                alert('Ошибка сделай скрин и пришли мне', error);
+                console.error('Ошибка удаления заказа:', error);
+                alert('Ошибка при удалении заказа');
             }
         }
     };
 
-    // Хелпер для перевода стадий
-    const getStageName = (stage) => {
-        switch (stage) {
-            case 'start': return 'Новый';
-            case 'inProcess': return 'В обработке';
-            case 'finished': return 'Завершен';
-            default: return stage;
-        }
+    const formatDate = (dateString) => {
+        if (!dateString) return '—';
+        const d = new Date(dateString);
+        return d.toLocaleDateString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
 
     return (
-        <div className="adminOrderTable">
-            <div className="admin-header">
-                <h1>Управление заказами</h1>
-
-                <div className="tabs-container">
+        <div className="admin-page-container admin-orders-view">
+            <AdminPageHeader
+                title="Заказы"
+                count={filteredItems.length}
+                searchTerm={searchTerm}
+                onSearch={handleSearch}
+                searchPlaceholder="Поиск по имени, номеру, телефону..."
+            >
+                {/* Вкладки стадий заказа */}
+                <div className="order-stage-tabs">
                     <button
-                        className={`tab-button ${activeTab === 'start' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('start')}
+                        type="button"
+                        className={`stage-tab-btn ${selectedStage === 'all' ? 'active' : ''}`}
+                        onClick={() => setSelectedStage('all')}
                     >
-                        Новые
+                        Все ({orders.length})
                     </button>
                     <button
-                        className={`tab-button ${activeTab === 'inProcess' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('inProcess')}
+                        type="button"
+                        className={`stage-tab-btn ${selectedStage === 'start' ? 'active' : ''}`}
+                        onClick={() => setSelectedStage('start')}
                     >
-                        В обработке
+                        Новые ({orders.filter(o => o.orderStage === 'start').length})
                     </button>
                     <button
-                        className={`tab-button ${activeTab === 'finished' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('finished')}
+                        type="button"
+                        className={`stage-tab-btn ${selectedStage === 'inProcess' ? 'active' : ''}`}
+                        onClick={() => setSelectedStage('inProcess')}
                     >
-                        Завершенные
+                        В обработке ({orders.filter(o => o.orderStage === 'inProcess').length})
+                    </button>
+                    <button
+                        type="button"
+                        className={`stage-tab-btn ${selectedStage === 'finished' ? 'active' : ''}`}
+                        onClick={() => setSelectedStage('finished')}
+                    >
+                        Завершенные ({orders.filter(o => o.orderStage === 'finished').length})
                     </button>
                 </div>
+            </AdminPageHeader>
 
-                <div className="search-container">
-                    <input
-                        type="text"
-                        placeholder="Поиск по имени, адресу, телефону..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="search-input"
-                    />
-                </div>
-            </div>
+            <AdminTable
+                columns={COLUMNS}
+                data={filteredItems}
+                sortConfig={sortConfig}
+                onSort={requestSort}
+                getSortIndicator={getSortIndicator}
+                isLoading={isLoading}
+                emptyMessage="Заказы не найдены"
+                renderRow={(order) => {
+                    const stageConfig = STAGE_LABELS[order.orderStage] || { label: order.orderStage || 'Новый', variant: 'neutral' };
 
-            <div className="table-container">
-                <table className="categories-table">
-                    <thead>
-                        <tr>
-                            <th onClick={() => requestSort('id')}>ID{getSortIndicator('id')}</th>
-                            <th onClick={() => requestSort('createdAt')}>Дата{getSortIndicator('createdAt')}</th>
-                            <th onClick={() => requestSort('name')}>Имя{getSortIndicator('name')}</th>
-                            <th onClick={() => requestSort('payment')}>Оплата{getSortIndicator('payment')}</th>
-                            <th onClick={() => requestSort('phone')}>Телефон{getSortIndicator('phone')}</th>
-                            <th onClick={() => requestSort('price')}>Сумма{getSortIndicator('price')}</th>
-                            <th onClick={() => requestSort('orderStage')}>Статус{getSortIndicator('orderStage')}</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredOrders.length > 0 ? (
-                            filteredOrders.map(order => (
-                                <tr key={order.id}>
-                                    <td>{order.id}</td>
-                                    <td>{formatDate(order.createdAt)}</td>
-                                    <td>{order.name}</td>
-                                    <td>{order.payment}</td>
-                                    <td>{order.phone}</td>
-                                    <td>{order.price} ₽</td>
-                                    <td>
-                                        <span className={`status-badge status-${order.orderStage}`}>
-                                            {getStageName(order.orderStage)}
-                                        </span>
-                                    </td>
-                                    <td className="action-buttons">
-                                        <button onClick={() => openEditModal(order)} className="edit-button">Ред.</button>
-                                        <button onClick={() => handleDelete(order.id)} className="delete-button">Удалить</button>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>
-                                    Заказов в этой категории не найдено
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={() => confirmAndCloseModal()}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h2>Заказ №{editingOrder?.id}</h2>
-
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-row-split">
-                                <div className="form-group">
-                                    <label>Статус заказа:</label>
-                                    <select
-                                        name="orderStage"
-                                        value={formData.orderStage}
-                                        onChange={handleInputChange}
-                                        className="form-select"
-                                        style={{ borderColor: '#3498db', background: '#f0f8ff' }}
+                    return (
+                        <tr key={order.id}>
+                            <td style={{ color: '#818cf8', fontWeight: 700 }}>#{order.id}</td>
+                            <td style={{ color: '#94a3b8', fontSize: '12.5px' }}>{formatDate(order.createdAt)}</td>
+                            <td style={{ fontWeight: 600 }}>{order.name || 'Без имени'}</td>
+                            <td style={{ color: '#94a3b8' }}>{order.phone || '—'}</td>
+                            <td>
+                                <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>
+                                    {order.payment || 'Не указана'}
+                                </span>
+                            </td>
+                            <td className="text-right" style={{ fontWeight: 700 }}>
+                                {order.price ? `${order.price} BYN` : '0 BYN'}
+                            </td>
+                            <td className="text-center">
+                                <AdminBadge variant={stageConfig.variant} dot>
+                                    {stageConfig.label}
+                                </AdminBadge>
+                            </td>
+                            <td className="text-right">
+                                <div className="action-buttons-group">
+                                    <button
+                                        type="button"
+                                        className="btn-action edit"
+                                        onClick={() => handleOpenEdit(order)}
+                                        title="Просмотр и редактирование"
                                     >
-                                        <option value="start">Новый</option>
-                                        <option value="inProcess">В обработке</option>
-                                        <option value="finished">Завершен</option>
-                                    </select>
+                                        <FiEdit2 />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn-action delete"
+                                        onClick={() => handleDelete(order.id)}
+                                        title="Удалить"
+                                    >
+                                        <FiTrash2 />
+                                    </button>
                                 </div>
-                                <div className="form-group">
-                                    <label>Сумма:</label>
-                                    <input
-                                        type="number"
-                                        name="price"
-                                        value={formData.price}
-                                        onChange={handleInputChange}
-                                        className="form-input"
-                                    />
-                                </div>
-                            </div>
+                            </td>
+                        </tr>
+                    );
+                }}
+            />
 
-                            <div className="form-group">
-                                <label>Имя клиента:</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                />
-                            </div>
+            {/* Модальное окно просмотра / редактирования заказа */}
+            <AdminModal
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                title={`Заказ #${editingItem?.id}`}
+                subtitle={`Оформлен: ${formatDate(editingItem?.createdAt)}`}
+                onSubmit={handleSubmit}
+                isSubmitting={isSaving}
+                submitText="Сохранить изменения"
+                maxWidth="760px"
+            >
+                <div className="admin-form-row">
+                    <div className="admin-form-group">
+                        <label className="admin-form-label">Статус заказа</label>
+                        <select
+                            name="orderStage"
+                            value={formData.orderStage}
+                            onChange={handleInputChange}
+                            className="admin-form-select"
+                        >
+                            <option value="start">Новый</option>
+                            <option value="inProcess">В обработке</option>
+                            <option value="finished">Завершен</option>
+                            <option value="canceled">Отменен</option>
+                        </select>
+                    </div>
 
-                            <div className="form-group">
-                                <label>Адрес доставки:</label>
-                                <input
-                                    type="text"
-                                    name="adress"
-                                    value={formData.adress}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Телефон:</label>
-                                <input
-                                    type="text"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Способ оплаты:</label>
-                                <input
-                                    type="text"
-                                    name="payment"
-                                    value={formData.payment}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Комментарий к заказу:</label>
-                                <textarea
-                                    name="comment"
-                                    value={formData.comment}
-                                    onChange={handleInputChange}
-                                    className="form-input"
-                                    rows="3"
-                                />
-                            </div>
-
-                            {/* Блок просмотра товаров */}
-                            <div className="order-items-preview">
-                                <h3>Состав заказа:</h3>
-                                <div className="items-list">
-                                    {formData.itemsJsonb && formData.itemsJsonb.length > 0 ? (
-                                        formData.itemsJsonb.map((item, idx) => (
-                                            <div key={idx} className="order-item-row">
-                                                <span>{item.name || 'Товар'}</span>
-                                                <span className="dots"></span>
-                                                <span>{item.count || 1} шт. x {item.price} ₽</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p>Нет товаров</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="modal-buttons">
-                                <button type="button" onClick={() => confirmAndCloseModal()} className="cancel-button">Отмена</button>
-                                <button type="submit" className="save-button">Сохранить</button>
-                            </div>
-                        </form>
+                    <div className="admin-form-group">
+                        <label className="admin-form-label">Итоговая сумма (BYN)</label>
+                        <input
+                            type="number"
+                            name="price"
+                            value={formData.price}
+                            onChange={handleInputChange}
+                            className="admin-form-input"
+                        />
                     </div>
                 </div>
-            )}
+
+                <div className="admin-form-row">
+                    <div className="admin-form-group">
+                        <label className="admin-form-label">Имя клиента</label>
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            className="admin-form-input"
+                        />
+                    </div>
+
+                    <div className="admin-form-group">
+                        <label className="admin-form-label">Телефон</label>
+                        <input
+                            type="text"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            className="admin-form-input"
+                        />
+                    </div>
+                </div>
+
+                <div className="admin-form-group">
+                    <label className="admin-form-label">Адрес доставки</label>
+                    <input
+                        type="text"
+                        name="adress"
+                        value={formData.adress}
+                        onChange={handleInputChange}
+                        className="admin-form-input"
+                    />
+                </div>
+
+                <div className="admin-form-row">
+                    <div className="admin-form-group">
+                        <label className="admin-form-label">Способ оплаты</label>
+                        <input
+                            type="text"
+                            name="payment"
+                            value={formData.payment}
+                            onChange={handleInputChange}
+                            className="admin-form-input"
+                        />
+                    </div>
+                </div>
+
+                <div className="admin-form-group">
+                    <label className="admin-form-label">Комментарий клиента</label>
+                    <textarea
+                        name="comment"
+                        value={formData.comment}
+                        onChange={handleInputChange}
+                        className="admin-form-textarea"
+                    />
+                </div>
+
+                {/* Состав заказа (товары) */}
+                <div className="order-items-section">
+                    <h3 className="section-subtitle">
+                        <FiShoppingBag /> Состав заказа ({formData.itemsJsonb.length})
+                    </h3>
+                    {formData.itemsJsonb.length > 0 ? (
+                        <div className="order-items-list">
+                            {formData.itemsJsonb.map((item, idx) => (
+                                <div key={idx} className="order-item-card">
+                                    <div className="item-info">
+                                        <span className="item-name">{item.name || `Товар #${item.id}`}</span>
+                                        {item.price && (
+                                            <span className="item-price">{item.price} BYN</span>
+                                        )}
+                                    </div>
+                                    <div className="item-qty">
+                                        Кол-во: <strong>{item.count || item.quantity || 1}</strong>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p style={{ color: '#64748b', fontSize: '13px' }}>Товары не указаны</p>
+                    )}
+                </div>
+            </AdminModal>
         </div>
     );
-};
-
-export default OrderTable;
+}

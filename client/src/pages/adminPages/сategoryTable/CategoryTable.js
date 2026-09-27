@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchAllKategory, fetchAllMainCategory, postCategory, updateCategory, deleteCategoryById } from '../../../http/KategoryApi';
-import CategoryTableHeader from './components/categoryTableHeader/CategoryTableHeader';
+import AdminPageHeader from '../shared/components/AdminPageHeader';
+import { AdminTable } from '../shared/components/AdminTable';
 import CategoryTableRow from './components/categoryTableRow/CategoryTableRow';
 import CategoryModal from './components/categoryModal/CategoryModal';
 import "./CategoryTable.scss";
@@ -350,56 +351,63 @@ const CategoryTable = () => {
         return mainCat ? mainCat.name : 'Unknown';
     };
 
+    const subCategories = filteredCategories.filter(c => c.parentId != 0);
+
+    const COLUMNS = [
+        { label: 'Название', sortKey: 'name' },
+        { label: 'Картинка', width: '110px' },
+        { label: 'Главная категория', sortKey: 'parentId' },
+        { label: 'Индекс', sortKey: 'categoryIndex', width: '130px' },
+        { label: 'Действия', align: 'right', width: '190px' }
+    ];
+
     return (
-        <div className="admin-category-editor">
-            <CategoryTableHeader 
+        <div className="admin-page-container admin-category-editor">
+            <AdminPageHeader
+                title="Подкатегории"
+                count={subCategories.length}
                 searchTerm={searchTerm}
-                handleSearch={handleSearch}
-                openAddModal={openAddModal}
-                mainCategories={mainCategories}
-                selectedFilterMainCategory={selectedFilterMainCategory}
-                handleFilterMainCategoryChange={handleFilterMainCategoryChange}
+                onSearch={handleSearch}
+                searchPlaceholder="Поиск подкатегории..."
+                onAdd={openAddModal}
+                addButtonText="Добавить подкатегорию"
                 hasChanges={hasChanges}
                 isSaving={isSaving}
-                handleApplyChanges={handleApplyChanges}
-                cancelChanges={cancelChanges}
-            />
+                onApplyChanges={handleApplyChanges}
+                onCancelChanges={cancelChanges}
+            >
+                <select
+                    value={selectedFilterMainCategory}
+                    onChange={handleFilterMainCategoryChange}
+                    className="admin-form-select"
+                >
+                    <option value="">Все главные категории</option>
+                    {mainCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+            </AdminPageHeader>
 
-            <main className="content-container">
-                <div className="table-wrapper">
-                    <table className="apple-table">
-                        <thead>
-                            <tr>
-                                <th onClick={() => requestSort('name')} className="sortable my_p">
-                                    Название {getSortIndicator('name')}
-                                </th>
-                                <th className="my_p">Картинка</th>
-                                <th onClick={() => requestSort('id')} className="sortable my_p">
-                                    Главная категория {getSortIndicator('id')}
-                                </th>
-                                <th onClick={() => requestSort('categoryIndex')} className="sortable my_p">
-                                    Индекс {getSortIndicator('categoryIndex')}
-                                </th>
-                                <th className="my_p">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredCategories.map(category => ( (category.parentId != 0)?
-                                <CategoryTableRow 
-                                    key={category.id}
-                                    category={category}
-                                    modifiedCategory={modifiedCategories[category.id]}
-                                    getMainCategoryName={getMainCategoryName}
-                                    handleQuickEdit={handleQuickEdit}
-                                    openEditModal={openEditModal}
-                                    handleDelete={handleDelete}
-                                />
-                            :<></>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </main>
+            <AdminTable
+                columns={COLUMNS}
+                data={subCategories}
+                sortConfig={sortConfig}
+                onSort={requestSort}
+                getSortIndicator={getSortIndicator}
+                isLoading={isSaving}
+                emptyMessage="Подкатегории не найдены"
+                renderRow={(category) => (
+                    <CategoryTableRow 
+                        key={category.id}
+                        category={category}
+                        modifiedCategory={modifiedCategories[category.id]}
+                        getMainCategoryName={getMainCategoryName}
+                        handleQuickEdit={handleQuickEdit}
+                        openEditModal={openEditModal}
+                        handleDelete={handleDelete}
+                    />
+                )}
+            />
 
             <CategoryModal 
                 isModalOpen={isModalOpen}

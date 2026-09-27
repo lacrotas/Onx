@@ -1,4 +1,4 @@
-const { Item, MainKategory, Kategory } = require('../models/models');
+const { Item, Category } = require('../models/models');
 const ApiError = require('../error/ApiError');
 const { Op } = require('sequelize');
 const { mediaProcessor } = require('../middleware/MediaProcessor');
@@ -126,11 +126,8 @@ class itemController {
     }
     async getAttributeValuesForCategory(req, res) {
         try {
-            // Правильно извлекаем kategoryId из params
-            const { categoryId } = req.params;
-
-            // Преобразуем в число и проверяем
-            const categoryIdNum = parseInt(kategoryId, 10);
+            const rawCategoryId = req.params.categoryId || req.params.kategoryId || req.params.id;
+            const categoryIdNum = parseInt(rawCategoryId, 10);
             if (isNaN(categoryIdNum)) {
                 return res.status(400).json({
                     error: 'Некорректный ID категории'
@@ -139,8 +136,8 @@ class itemController {
 
             const items = await Item.findAll({
                 where: {
-                    kategoryId: categoryIdNum, // Используем число
-                    isShowed: true // Добавляем фильтр для показанных товаров
+                    categoryId: categoryIdNum,
+                    isShowed: true
                 },
                 attributes: ['id', 'specificationsJSONB']
             });
@@ -189,25 +186,12 @@ class itemController {
         let processedVideo = null;
 
         try {
-            const { mainKategoryId, kategoryId, name, price, description, specificationsJSONB } = req.body;
+            const { mainKategoryId, kategoryId, categoryId, name, price, description, specificationsJSONB } = req.body;
 
             processedImages = req.processedImages || [];
             processedVideo = req.processedVideo || null;
 
-            const mainCategory = await MainKategory.findOne({ where: { id: mainKategoryId } });
-            if (!mainCategory) {
-                throw new Error('Главная категория с указанным ID не найдена');
-            }
-
-            const category = await Kategory.findOne({
-                where: {
-                    id: kategoryId,
-                    mainKategoryId: mainKategoryId
-                }
-            });
-            if (!category) {
-                throw new Error('Категория с указанным ID не найдена или не принадлежит главной категории');
-            }
+            const targetCategoryId = categoryId || kategoryId;
 
             let specifications = specificationsJSONB;
             if (typeof specificationsJSONB === 'string' && specificationsJSONB) {
@@ -220,8 +204,7 @@ class itemController {
             }
 
             const item = await Item.create({
-                mainKategoryId: mainKategoryId,
-                kategoryId: kategoryId,
+                categoryId: targetCategoryId ? parseInt(targetCategoryId, 10) : null,
                 images: processedImages,
                 price: price,
                 name: name,
@@ -299,8 +282,10 @@ class itemController {
             const updateData = {};
 
             // --- ДОБАВЛЕННЫЕ ПОЛЯ КАТЕГОРИЙ ---
-            if (req.body.mainKategoryId !== undefined) updateData.mainKategoryId = req.body.mainKategoryId;
-            if (req.body.kategoryId !== undefined) updateData.kategoryId = req.body.kategoryId;
+            const targetCategoryId = req.body.categoryId !== undefined ? req.body.categoryId : req.body.kategoryId;
+            if (targetCategoryId !== undefined) {
+                updateData.categoryId = targetCategoryId ? parseInt(targetCategoryId, 10) : null;
+            }
             // ----------------------------------
 
             if (req.body.itemGroupId !== undefined) updateData.itemGroupId = req.body.itemGroupId;

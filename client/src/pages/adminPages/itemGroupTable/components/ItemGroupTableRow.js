@@ -34,17 +34,17 @@ const ItemGroupTableRow = ({ group, onEdit, onDelete }) => {
                     )}
                 </div>
             </td>
-            <td className="my_p">
-                <div style={{ fontWeight: 600 }} className="my_p">{group.name}</div>
-                <div className="my_p_small" style={{ opacity: 0.6, fontSize: '12px' }}>
+            <td>
+                <div style={{ fontWeight: 600, fontSize: 'var(--admin-table-title-fs, 17.5px)', color: 'var(--admin-text-main)' }}>{group.name}</div>
+                <div style={{ opacity: 0.7, fontSize: '13.5px', marginTop: '4px' }}>
                     {itemsInfo.map(i => i.name).join(', ')}
                 </div>
             </td>
-            <td className="my_p">{group.itemIds?.length || 0} шт.</td>
+            <td>{group.itemIds?.length || 0} шт.</td>
             <td>
                 <div className="action-buttons">
-                    <button className="edit-btn my_p_small" onClick={() => onEdit(group)}>✏️ Ред.</button>
-                    <button className="delete-btn my_p_small" onClick={() => onDelete(group.id)}>🗑️ Удал.</button>
+                    <button type="button" className="edit-btn" onClick={() => onEdit(group)}>✏️ Ред.</button>
+                    <button type="button" className="delete-btn" onClick={() => onDelete(group.id)}>🗑️ Удал.</button>
                 </div>
             </td>
         </tr>

@@ -53,10 +53,12 @@ export const publicRoutes = [
 ];
 
 export const adminRoutes = [
-
+    {
+        path: AMIN_MAIN_ROUTE + '/:tab',
+        Component: MainAdminPage,
+    },
     {
         path: AMIN_MAIN_ROUTE,
         Component: MainAdminPage,
     },
-
 ]

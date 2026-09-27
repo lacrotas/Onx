@@ -13,26 +13,26 @@ const ItemTableRow = ({
 }) => {
     return (
         <tr className={modifiedItem ? 'modified-row' : ''}>
-            <td className="my_p">{getCategoryName(item.kategoryId)}</td>
+            <td>{getCategoryName(item.categoryId || item.kategoryId)}</td>
             <td>
                 <div className="table-img-box">
                     {item.images && item.images.length > 0 ? (
                         <img src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`} alt="Item" />
                     ) : (
-                        <div className="no-img my_p_small">Нет</div>
+                        <div className="no-img">Нет</div>
                     )}
                 </div>
             </td>
-            <td className="my_p truncate-text" title={item.name}>{item.name}</td>
+            <td className="truncate-text" title={item.name}>{item.name}</td>
             <td>
                 <div className="price-input-wrapper">
                     <input 
                         type="number"
-                        className="quick-price-input my_p"
+                        className="quick-price-input"
                         value={modifiedItem?.price !== undefined ? modifiedItem.price : item.price}
                         onChange={(e) => handleQuickEdit(item.id, 'price', e.target.value)}
                     />
-                    <span className="my_p">₽</span>
+                    <span>₽</span>
                 </div>
             </td>
             <td>
@@ -57,9 +57,9 @@ const ItemTableRow = ({
             </td>
             <td>
                 <div className="action-buttons">
-                    <button type="button" onClick={() => openEditModal(item)} className="edit-btn my_p_small" title="Редактировать">✏️ Ред.</button>
-                    <button type="button" onClick={() => openDuplicateModal(item)} className="copy-btn my_p_small" title="Сделать копию">📋 Копия</button>
-                    <button type="button" onClick={() => handleDelete(item.id)} className="delete-btn my_p_small" title="Удалить">🗑️ Удал.</button>
+                    <button type="button" onClick={() => openEditModal(item)} className="edit-btn" title="Редактировать">✏️ Ред.</button>
+                    <button type="button" onClick={() => openDuplicateModal(item)} className="copy-btn" title="Сделать копию">📋 Копия</button>
+                    <button type="button" onClick={() => handleDelete(item.id)} className="delete-btn" title="Удалить">🗑️ Удал.</button>
                 </div>
             </td>
         </tr>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CustomSelectWIthInput from "../../../../customUI/сustomSelectWithInput/CustomSelectWIthInput";
+import '../../itemTable/components/itemModal/ItemModal.scss';
 
 const ItemGroupModal = ({ isOpen, onClose, formData, setFormData, allItems, onSubmit, editingGroup }) => {
     if (!isOpen) return null;
@@ -45,16 +46,13 @@ const ItemGroupModal = ({ isOpen, onClose, formData, setFormData, allItems, onSu
                         <label className="my_p">Товары в группе:</label>
                         <div className="selected-items-list" style={{ marginBottom: '20px' }}>
                             {formData.selectedItemsData.map(item => (
-                                <div key={item.id} className="selected-item-tag" style={{
-                                    display: 'flex', alignItems: 'center', gap: '10px', 
-                                    padding: '10px', background: '#f5f5f7', borderRadius: '8px', marginBottom: '8px'
-                                }}>
+                                <div key={item.id} className="selected-item-tag">
                                     <img 
                                         src={`${process.env.REACT_APP_API_URL}static/images/${item.images?.[0]}`} 
-                                        alt="" style={{ width: '30px', height: '30px', borderRadius: '4px', objectFit: 'cover' }}
+                                        alt="" 
                                     />
-                                    <span className="my_p" style={{ flex: 1 }}>{item.name}</span>
-                                    <button type="button" onClick={() => removeSelectedItem(item.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
+                                    <span className="item-tag-name">{item.name}</span>
+                                    <button type="button" className="remove-tag-btn" onClick={() => removeSelectedItem(item.id)}>✕</button>
                                 </div>
                             ))}
                         </div>

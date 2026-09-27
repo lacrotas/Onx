@@ -1,114 +1,159 @@
+@import '../../../shared/styles/adminTheme';
+
 .filter-card {
-    background: var(--bg-card, #ffffff);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-    transition: transform 0.2s, border-color 0.2s;
-    border: 1px solid transparent;
+    background: $admin-bg-sidebar;
+    border-radius: $admin-radius-lg;
+    padding: 22px;
+    box-shadow: $admin-shadow-sm;
+    transition: $admin-transition;
+    border: 1px solid $admin-border;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
 
     &:hover {
-        border-color: rgba(0, 113, 227, 0.2);
+        border-color: rgba($admin-primary, 0.4);
         transform: translateY(-2px);
+        box-shadow: $admin-shadow-md;
     }
 
     &.modified {
-        border-color: #34c759;
-        box-shadow: 0 4px 24px rgba(52, 199, 89, 0.1);
+        border-color: $admin-success;
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
     }
 
     .filter-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
+        min-height: 44px;
     }
 
     .filter-name {
-        letter-spacing: -0.5px;
-        color: var(--text-main);
+        letter-spacing: -0.01em;
+        color: $admin-text-main;
+        font-family: var(--admin-font-heading);
+        font-size: var(--admin-fs-h2, 20px);
+        font-weight: 700;
+        margin: 0;
     }
 
     .filter-addition {
-        color: var(--text-sec);
+        color: $admin-text-secondary;
+        font-family: var(--admin-font-main);
+        font-size: var(--admin-fs-small, 14px);
         margin-top: 4px;
     }
 
     .filter-type {
-        color: var(--text-sec);
-        background: #f5f5f7;
+        color: $admin-text-secondary;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid $admin-border;
         padding: 4px 10px;
-        border-radius: 6px;
+        border-radius: $admin-radius-sm;
+        font-family: var(--admin-font-heading);
+        font-size: var(--admin-fs-tiny, 11px);
+        font-weight: 600;
         text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .values-list {
         display: flex;
         flex-wrap: wrap;
+        align-content: flex-start;
+        align-items: center;
         gap: 8px;
         margin-bottom: 20px;
         flex: 1;
     }
 
     .value-tag {
-        background: #f2f2f7;
-        padding: 6px 14px;
-        border-radius: 99px;
-        display: flex;
+        height: var(--admin-tag-height, 36px);
+        box-sizing: border-box;
+        background: $admin-bg-input;
+        border: 1px solid $admin-border;
+        padding: 0 14px;
+        border-radius: 999px;
+        display: inline-flex;
         align-items: center;
         gap: 8px;
-        color: var(--text-main);
+        color: $admin-text-main;
+        font-family: var(--admin-font-main);
+        font-size: var(--admin-fs-small, 14px);
+        line-height: 1;
+        flex-shrink: 0;
+        transition: $admin-transition;
+        user-select: none;
+
+        &:hover {
+            border-color: $admin-border-hover;
+        }
 
         .remove {
-            color: var(--text-sec);
+            color: $admin-text-muted;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 18px;
+            height: 18px;
+            font-size: 15px;
+            line-height: 1;
             border-radius: 50%;
             transition: color 0.2s;
 
             &:hover { 
-                color: #ff3b30; 
+                color: $admin-danger; 
             }
         }
     }
 
     .add-value-input {
-        border: 1px dashed #d2d2d7;
+        height: var(--admin-tag-height, 36px);
+        box-sizing: border-box;
+        border: 1px dashed $admin-border-hover;
         background: transparent;
-        padding: 6px 14px;
-        border-radius: 99px;
+        padding: 0 14px;
+        border-radius: 999px;
         outline: none;
-        width: 140px;
-        transition: all 0.2s;
-        color: var(--text-main);
+        width: 150px;
+        transition: $admin-transition;
+        color: $admin-text-main;
+        font-family: var(--admin-font-main);
+        font-size: var(--admin-fs-small, 14px);
+        line-height: 1;
+        flex-shrink: 0;
 
         &::placeholder {
-            color: var(--text-sec);
+            color: $admin-text-muted;
         }
 
         &:focus {
-            border-color: var(--accent);
+            border-color: $admin-primary;
             border-style: solid;
-            width: 180px;
-            background: #fff;
+            width: 190px;
+            background: $admin-bg-input;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
         }
     }
 
-    /* СТИЛИ ДЛЯ ЛОКАЛЬНЫХ КНОПОК СОХРАНЕНИЯ */
+    /* Локальные действия при изменении */
     .local-actions {
-        background: rgba(52, 199, 89, 0.05);
-        border-radius: 12px;
-        padding: 12px 16px;
-        margin-bottom: 20px;
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        border-radius: $admin-radius-md;
+        padding: 10px 14px;
+        margin-bottom: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
 
         .unsaved-badge {
-            color: #28a745;
+            color: $admin-success;
+            font-size: 12.5px;
             font-weight: 600;
         }
 
@@ -117,11 +162,13 @@
             gap: 8px;
 
             button {
-                padding: 6px 16px;
-                border-radius: 99px;
+                padding: 5px 14px;
+                border-radius: 999px;
                 border: none;
                 cursor: pointer;
-                transition: all 0.2s;
+                font-size: 12px;
+                font-weight: 500;
+                transition: $admin-transition;
 
                 &:disabled {
                     opacity: 0.5;
@@ -130,17 +177,18 @@
             }
 
             .btn-local-cancel {
-                background: #e5e5ea;
-                color: #1d1d1f;
-                &:hover:not(:disabled) { background: #d1d1d6; }
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid $admin-border;
+                color: $admin-text-main;
+                &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.15); }
             }
 
             .btn-local-apply {
-                background: #34c759;
+                background: $admin-success;
                 color: #fff;
-                box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+                box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
                 &:hover:not(:disabled) { 
-                    background: #28a745; 
+                    background: darken(#10b981, 5%); 
                     transform: translateY(-1px);
                 }
             }
@@ -148,15 +196,18 @@
     }
 
     .card-footer {
-        border-top: 1px solid #f2f2f7;
-        padding-top: 15px;
+        margin-top: auto;
+        border-top: 1px solid $admin-border;
+        padding-top: 14px;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
     .info-text {
-        color: var(--text-sec);
+        color: $admin-text-muted;
+        font-family: var(--admin-font-main);
+        font-size: var(--admin-fs-small, 13px);
     }
 
     .card-settings {
@@ -165,21 +216,26 @@
     }
 
     .btn-action {
-        background: #f5f5f7;
-        border: none;
-        border-radius: 8px;
-        color: var(--text-sec);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid $admin-border;
+        border-radius: $admin-radius-sm;
+        color: $admin-text-secondary;
         cursor: pointer;
-        padding: 6px 10px;
-        transition: all 0.2s;
+        padding: 6px 12px;
+        font-size: var(--admin-fs-small, 13px);
+        font-family: var(--admin-font-main);
+        transition: $admin-transition;
 
         &:hover { 
-            background: #e5e5ea;
-            color: var(--accent); 
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.3);
+            color: $admin-primary; 
         }
 
         &.delete:hover { 
-            background: rgba(255, 59, 48, 0.1);
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: $admin-danger;
         }
     }
 }

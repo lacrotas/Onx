@@ -1,0 +1,296 @@
+@import '../styles/adminTheme';
+
+.admin-table-container {
+    position: relative;
+    background: $admin-bg-sidebar;
+    border: 1px solid $admin-border;
+    border-radius: $admin-radius-lg;
+    overflow: hidden;
+    box-shadow: $admin-shadow-sm;
+    margin: 24px 32px;
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        @include scrollbar-custom;
+    }
+
+    .admin-modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+
+        thead {
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid $admin-border;
+
+            th {
+                padding: var(--admin-table-th-padding, 18px 22px);
+                font-size: var(--admin-table-th-fs, 13.5px);
+                font-family: var(--admin-font-heading);
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: $admin-text-secondary;
+                user-select: none;
+                white-space: nowrap;
+
+                &.sortable-th {
+                    cursor: pointer;
+                    transition: $admin-transition;
+
+                    &:hover {
+                        color: $admin-text-main;
+                        background: rgba(255, 255, 255, 0.04);
+                    }
+                }
+
+                .th-content {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+
+                    .sort-arrow {
+                        color: $admin-primary;
+                        font-size: 11px;
+                    }
+                }
+
+                &.text-center { text-align: center; }
+                &.text-right { text-align: right; }
+            }
+        }
+
+        tbody {
+            tr {
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                transition: background-color 0.15s ease;
+
+                &:last-child {
+                    border-bottom: none;
+                }
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.025);
+                }
+
+                &.modified-row {
+                    background: rgba($admin-warning, 0.08);
+                    position: relative;
+
+                    td:first-child::before {
+                        content: '';
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        bottom: 0;
+                        width: 3px;
+                        background: $admin-warning;
+                    }
+                }
+
+                td {
+                    padding: var(--admin-table-td-padding, 18px 22px);
+                    font-size: var(--admin-table-td-fs, 16.5px);
+                    font-family: var(--admin-font-main);
+                    color: $admin-text-main;
+                    vertical-align: middle;
+                    line-height: 1.45;
+
+                    &.text-center { text-align: center; }
+                    &.text-right { text-align: right; }
+
+                    &.truncate-text {
+                        max-width: 280px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        font-size: var(--admin-table-title-fs, 17.5px);
+                        font-weight: 600;
+                    }
+
+                    // Гарантируем масштабирование даже если на элементах висят старые классы клиента
+                    &.my_p,
+                    .my_p {
+                        font-size: var(--admin-table-td-fs, 16.5px);
+                        line-height: 1.45;
+                    }
+
+                    .my_p_small {
+                        font-size: var(--admin-table-btn-fs, 14.5px);
+                    }
+                }
+            }
+        }
+    }
+
+    // Универсальные миниатюры фото в таблицах
+    .table-img-box {
+        width: var(--admin-table-img-size, 58px);
+        height: var(--admin-table-img-size, 58px);
+        border-radius: $admin-radius-md;
+        overflow: hidden;
+        background: $admin-bg-input;
+        border: 1px solid $admin-border;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .no-img {
+            font-size: 13px;
+            font-weight: 500;
+            color: $admin-text-muted;
+        }
+    }
+
+    // Универсальные кнопки действий с текстом (Ред. / Копия / Удал.)
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        align-items: center;
+
+        button {
+            height: var(--admin-table-btn-h, 40px);
+            padding: 0 14px;
+            border-radius: $admin-radius-md;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-size: var(--admin-table-btn-fs, 14.5px);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: $admin-transition;
+            white-space: nowrap;
+
+            &.edit-btn {
+                background: rgba(56, 189, 248, 0.12);
+                color: #38bdf8;
+                border-color: rgba(56, 189, 248, 0.25);
+
+                &:hover {
+                    background: rgba(56, 189, 248, 0.22);
+                    border-color: rgba(56, 189, 248, 0.45);
+                }
+            }
+
+            &.delete-btn {
+                background: $admin-danger-bg;
+                color: $admin-danger;
+                border-color: rgba(239, 68, 68, 0.25);
+
+                &:hover {
+                    background: rgba(239, 68, 68, 0.22);
+                    border-color: rgba(239, 68, 68, 0.45);
+                }
+            }
+
+            &.copy-btn {
+                background: rgba(245, 158, 11, 0.12);
+                color: #fbbf24;
+                border-color: rgba(245, 158, 11, 0.25);
+
+                &:hover {
+                    background: rgba(245, 158, 11, 0.22);
+                    border-color: rgba(245, 158, 11, 0.45);
+                }
+            }
+        }
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 56px 20px;
+        color: $admin-text-muted;
+
+        .empty-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+
+        .empty-text {
+            margin: 0;
+            font-size: 15px;
+        }
+    }
+
+    .table-loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba($admin-bg, 0.65);
+        backdrop-filter: blur(4px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: $admin-text-secondary;
+        font-size: 15px;
+        z-index: 10;
+
+        .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba($admin-primary, 0.2);
+            border-top-color: $admin-primary;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+    }
+}
+
+// Common action buttons in rows
+.action-buttons-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: $admin-radius-md;
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.05);
+        color: $admin-text-secondary;
+        font-size: 16px;
+        cursor: pointer;
+        transition: $admin-transition;
+
+        &:hover {
+            color: $admin-text-main;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        &.edit:hover {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.14);
+            border-color: rgba(56, 189, 248, 0.35);
+        }
+
+        &.delete:hover {
+            color: $admin-danger;
+            background: $admin-danger-bg;
+            border-color: rgba(239, 68, 68, 0.35);
+        }
+    }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

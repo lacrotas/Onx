@@ -11,24 +11,24 @@ const CategoryTableRow = ({
 }) => {
     return (
         <tr className={modifiedCategory ? 'modified-row' : ''}>
-            <td className="my_p truncate-text" title={category.name}>{category.name}</td>
+            <td className="truncate-text" title={category.name}>{category.name}</td>
             <td>
                 <div className="table-img-box">
                     {category.image ? (
                         <img src={`${process.env.REACT_APP_API_URL}static/images/${category.image}`} alt="Category" />
                     ) : (
-                        <div className="no-img my_p_small">Нет</div>
+                        <div className="no-img">Нет</div>
                     )}
                 </div>
             </td>
-            <td className="my_p">{getMainCategoryName(category.parentId)}</td>
+            <td>{getMainCategoryName(category.parentId)}</td>
             
-            {/* НОВОЕ: Поле для быстрого редактирования индекса */}
+            {/* Поле для быстрого редактирования индекса */}
             <td>
                 <div className="index-input-wrapper">
                     <input 
                         type="number"
-                        className="quick-index-input my_p"
+                        className="quick-index-input"
                         value={modifiedCategory?.kategoryIndex !== undefined ? modifiedCategory.kategoryIndex : (category.kategoryIndex || '')}
                         onChange={(e) => handleQuickEdit(category.id, 'kategoryIndex', e.target.value)}
                         placeholder="0"
@@ -41,7 +41,7 @@ const CategoryTableRow = ({
                     <button 
                         type="button" 
                         onClick={() => openEditModal(category)} 
-                        className="edit-btn my_p_small" 
+                        className="edit-btn" 
                         title="Редактировать"
                     >
                         ✏️ Ред.
@@ -49,7 +49,7 @@ const CategoryTableRow = ({
                     <button 
                         type="button" 
                         onClick={() => handleDelete(category.id)} 
-                        className="delete-btn my_p_small" 
+                        className="delete-btn" 
                         title="Удалить"
                     >
                         🗑️ Удал.

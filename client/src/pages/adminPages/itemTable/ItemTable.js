@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { fetchAllMainCategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
 import { fetchAllItem, postItem, deleteItemById, updateItemById } from '../../../http/itemApi';
 import { fetchAllFiltersByCategoryId, updateFilter } from '../../../http/filterApi';
-import ItemTableHeader from './components/itemTableHeader/ItemTableHeader';
+import AdminPageHeader from '../shared/components/AdminPageHeader';
+import { AdminTable } from '../shared/components/AdminTable';
 import ItemTableRow from './components/itemTableRow/ItemTableRow';
 import ItemModal from './components/itemModal/ItemModal';
 import Loader from '../../../components/loader/Loader';
@@ -53,7 +54,8 @@ const ItemTable = () => {
     useEffect(() => {
         let result = items.filter(item => {
             const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesCategory = selectedFilterCategory === '' || item.kategoryId === parseInt(selectedFilterCategory);
+            const itemCatId = item.categoryId || item.kategoryId;
+            const matchesCategory = selectedFilterCategory === '' || String(itemCatId) === String(selectedFilterCategory);
             return matchesSearch && matchesCategory;
         });
 
@@ -72,9 +74,9 @@ const ItemTable = () => {
                 if (sortConfig.key === 'mainKategoryId') {
                     aValue = getMainCategoryName(a.mainKategoryId);
                     bValue = getMainCategoryName(b.mainKategoryId);
-                } else if (sortConfig.key === 'kategoryId') {
-                    aValue = getCategoryName(a.kategoryId);
-                    bValue = getCategoryName(b.kategoryId);
+                } else if (sortConfig.key === 'kategoryId' || sortConfig.key === 'categoryId') {
+                    aValue = getCategoryName(a.categoryId || a.kategoryId);
+                    bValue = getCategoryName(b.categoryId || b.kategoryId);
                 } else if (sortConfig.key === 'price') {
                     aValue = parseFloat(a.price) || 0;
                     bValue = parseFloat(b.price) || 0;
@@ -196,13 +198,15 @@ const ItemTable = () => {
         setSelectedFilterCategory(e.target.value);
     };
     const getMainCategoryName = (mainKategoryId) => {
-        const mainCat = mainCategories.find(cat => cat.id === mainKategoryId);
-        return mainCat ? mainCat.name : 'Неизвестно';
+        if (!mainKategoryId && mainKategoryId !== 0) return 'Неизвестно';
+        const mainCat = mainCategories.find(cat => String(cat.id) === String(mainKategoryId));
+        return mainCat ? (mainCat.name || '').trim() : 'Неизвестно';
     };
 
     const getCategoryName = (kategoryId) => {
-        const category = allCategories.find(cat => cat.id === kategoryId);
-        return category ? category.name : 'Неизвестно';
+        if (!kategoryId && kategoryId !== 0) return 'Неизвестно';
+        const category = allCategories.find(cat => String(cat.id) === String(kategoryId));
+        return category ? (category.name || '').trim() : 'Неизвестно';
     };
 
     // обновление данных без отправки на сервак
@@ -295,10 +299,15 @@ const ItemTable = () => {
         const localChanges = modifiedItems[item.id] || {};
         const itemSpecifications = item.specificationsJSONB || {};
 
+        const currentCategoryId = item.categoryId || item.kategoryId || '';
+        const currentCategory = allCategories.find(c => String(c.id) === String(currentCategoryId));
+        const currentMainCategoryId = item.mainKategoryId || currentCategory?.parentId || '';
+
         const initialFormData = {
             name: item.name || '',
-            mainKategoryId: item.mainKategoryId || '',
-            kategoryId: item.kategoryId || '',
+            mainKategoryId: currentMainCategoryId,
+            kategoryId: currentCategoryId,
+            categoryId: currentCategoryId,
             price: localChanges.price !== undefined ? localChanges.price : (item.price || ''),
             description: item.description || '',
             video: null,
@@ -312,12 +321,12 @@ const ItemTable = () => {
         setFormData(initialFormData);
         setIsModalOpen(true);
 
-        if (item.mainKategoryId) {
-            loadCategoriesByMainCategory(item.mainKategoryId);
+        if (currentMainCategoryId) {
+            loadCategoriesByMainCategory(currentMainCategoryId);
         }
 
-        if (item.kategoryId) {
-            loadFiltersForCategory(item.kategoryId, itemSpecifications);
+        if (currentCategoryId) {
+            loadFiltersForCategory(currentCategoryId, itemSpecifications);
         }
     };
 
@@ -330,11 +339,15 @@ const ItemTable = () => {
 
         const itemVideo = item.video || '';
         const itemSpecifications = item.specificationsJSONB || {};
+        const currentCategoryId = item.categoryId || item.kategoryId || '';
+        const currentCategory = allCategories.find(c => String(c.id) === String(currentCategoryId));
+        const currentMainCategoryId = item.mainKategoryId || currentCategory?.parentId || '';
 
         const initialFormData = {
             name: item.name + ' (Копия)',
-            mainKategoryId: item.mainKategoryId || '',
-            kategoryId: item.kategoryId || '',
+            mainKategoryId: currentMainCategoryId,
+            kategoryId: currentCategoryId,
+            categoryId: currentCategoryId,
             price: item.price || '',
             description: item.description || '',
             video: null,
@@ -348,11 +361,11 @@ const ItemTable = () => {
         setFormData(initialFormData);
         setIsModalOpen(true);
 
-        if (item.mainKategoryId) {
-            loadCategoriesByMainCategory(item.mainKategoryId);
+        if (currentMainCategoryId) {
+            loadCategoriesByMainCategory(currentMainCategoryId);
         }
-        if (item.kategoryId) {
-            loadFiltersForCategory(item.kategoryId, itemSpecifications);
+        if (currentCategoryId) {
+            loadFiltersForCategory(currentCategoryId, itemSpecifications);
         }
     };
 
@@ -490,8 +503,10 @@ const ItemTable = () => {
     };
 
     const fillFormData = (myFormData) => {
+        const catId = formData.kategoryId || formData.categoryId || '';
         myFormData.append("mainKategoryId", formData.mainKategoryId);
-        myFormData.append("kategoryId", formData.kategoryId);
+        myFormData.append("kategoryId", catId);
+        myFormData.append("categoryId", catId);
         myFormData.append("name", formData.name);
 
         formData.images.forEach(imgObj => {
@@ -614,9 +629,10 @@ const ItemTable = () => {
                 const itemToDelete = items.find(item => item.id === id);
                 await deleteItemById(id);
 
-                if (itemToDelete && itemToDelete.specificationsJSONB) {
-                    const categoryItems = items.filter(item => item.id !== id && item.kategoryId === itemToDelete.kategoryId);
-                    const allFilters = await fetchAllFiltersByCategoryId(itemToDelete.kategoryId);
+                const itemCatId = itemToDelete ? (itemToDelete.categoryId || itemToDelete.kategoryId) : null;
+                if (itemToDelete && itemToDelete.specificationsJSONB && itemCatId) {
+                    const categoryItems = items.filter(item => item.id !== id && (item.categoryId === itemCatId || item.kategoryId === itemCatId));
+                    const allFilters = await fetchAllFiltersByCategoryId(itemCatId);
 
                     for (const filter of allFilters) {
                         const allValues = new Set();
@@ -645,59 +661,65 @@ const ItemTable = () => {
         }
     };
 
+    const COLUMNS = [
+        { label: 'Категория', sortKey: 'categoryId' },
+        { label: 'Фото', width: '100px' },
+        { label: 'Название', sortKey: 'name' },
+        { label: 'Цена', sortKey: 'price', width: '145px' },
+        { label: 'Наличие', width: '110px' },
+        { label: 'Показан', width: '110px' },
+        { label: 'Действия', align: 'right', width: '250px' }
+    ];
+
     return (
-        <div className="admin-item-editor">
-            <ItemTableHeader
-                selectedFilterCategory={selectedFilterCategory}
-                handleFilterCategoryChange={handleFilterCategoryChange}
-                allCategories={allCategories}
+        <div className="admin-page-container admin-item-editor">
+            <AdminPageHeader
+                title="Товары каталога"
+                count={filteredItems.length}
                 searchTerm={searchTerm}
-                handleSearch={handleSearch}
-                openAddModal={openAddModal}
+                onSearch={handleSearch}
+                searchPlaceholder="Поиск товара по названию..."
+                onAdd={openAddModal}
+                addButtonText="Добавить товар"
                 hasChanges={hasChanges}
                 isSaving={isSaving}
-                handleApplyChanges={handleApplyChanges}
-                cancelChanges={cancelChanges}
-            />
+                onApplyChanges={handleApplyChanges}
+                onCancelChanges={cancelChanges}
+            >
+                <select
+                    value={selectedFilterCategory}
+                    onChange={handleFilterCategoryChange}
+                    className="admin-form-select"
+                >
+                    <option value="">Все категории</option>
+                    {allCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+            </AdminPageHeader>
 
-            <main className="content-container">
-                <div className="table-wrapper">
-                    <table className="apple-table">
-                        <thead>
-                            <tr>
-                                <th onClick={() => requestSort('kategoryId')} className="sortable my_p">
-                                    Категория {getSortIndicator('kategoryId')}
-                                </th>
-                                <th className="my_p">Фото</th>
-                                <th onClick={() => requestSort('name')} className="sortable my_p">
-                                    Название {getSortIndicator('name')}
-                                </th>
-                                <th onClick={() => requestSort('price')} className="sortable my_p">
-                                    Цена {getSortIndicator('price')}
-                                </th>
-                                <th className="my_p">Наличие</th>
-                                <th className="my_p">Показан</th>
-                                <th className="my_p">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredItems.map(item => (
-                                <ItemTableRow
-                                    key={item.id}
-                                    item={item}
-                                    modifiedItem={modifiedItems[item.id]}
-                                    getMainCategoryName={getMainCategoryName}
-                                    getCategoryName={getCategoryName}
-                                    handleQuickEdit={handleQuickEdit}
-                                    openEditModal={openEditModal}
-                                    openDuplicateModal={openDuplicateModal}
-                                    handleDelete={handleDelete}
-                                />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </main>
+            <AdminTable
+                columns={COLUMNS}
+                data={filteredItems}
+                sortConfig={sortConfig}
+                onSort={requestSort}
+                getSortIndicator={getSortIndicator}
+                isLoading={isSaving}
+                emptyMessage="Товары не найдены"
+                renderRow={(item) => (
+                    <ItemTableRow
+                        key={item.id}
+                        item={item}
+                        modifiedItem={modifiedItems[item.id]}
+                        getMainCategoryName={getMainCategoryName}
+                        getCategoryName={getCategoryName}
+                        handleQuickEdit={handleQuickEdit}
+                        openEditModal={openEditModal}
+                        openDuplicateModal={openDuplicateModal}
+                        handleDelete={handleDelete}
+                    />
+                )}
+            />
 
             <ItemModal
                 isModalOpen={isModalOpen}

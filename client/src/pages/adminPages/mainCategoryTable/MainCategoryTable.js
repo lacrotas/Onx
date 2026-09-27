@@ -19,6 +19,7 @@ import {
   deleteCategoryById
 } from '../../../http/KategoryApi';
 import SortableCard from './sortableCard/SortableCard';
+import AdminPageHeader from '../shared/components/AdminPageHeader';
 import "./MainCategoryTable.scss";
 
 const MainCategoryTable = () => {
@@ -165,26 +166,17 @@ const MainCategoryTable = () => {
   };
 
   return (
-    <div className="admin-category-editor">
-      <header className="admin-nav">
-        <div className="nav-container">
-          <div className="logo my_h2">Главные категории</div>
-          <div className="nav-buttons">
-            <button type="button" className="refresh-btn my_p" onClick={() => toggleModal()}>+ Добавить</button>
-            {hasChanges && (
-              <button
-                type="button"
-                className={`apply-btn my_p ${isSaving ? 'loading' : ''}`}
-                onClick={handleApplyChanges}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Сохранение...' : 'Применить изменения'}
-              </button>
-            )}
-            <button type="button" className="refresh-btn my_p" onClick={loadCategories}>Сбросить</button>
-          </div>
-        </div>
-      </header>
+    <div className="admin-page-container admin-category-editor">
+      <AdminPageHeader
+        title="Главные категории"
+        count={categories.length}
+        onAdd={() => toggleModal()}
+        addButtonText="Добавить категорию"
+        hasChanges={hasChanges}
+        isSaving={isSaving}
+        onApplyChanges={handleApplyChanges}
+        onCancelChanges={loadCategories}
+      />
 
       <main className="content-container">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

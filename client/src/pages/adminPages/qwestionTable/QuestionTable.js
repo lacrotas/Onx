@@ -1,68 +1,74 @@
-// QuestionTable.jsx
 import React, { useState, useEffect } from 'react';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { fetchAllQwestion, postQwestion, updateQwestion, deleteQwestion } from '../../../http/qwestionApi';
-import "./QuestionTable.scss";
+import { useAdminTable } from '../shared/hooks/useAdminTable';
+import AdminPageHeader from '../shared/components/AdminPageHeader';
+import { AdminTable } from '../shared/components/AdminTable';
+import { AdminModal } from '../shared/components/AdminModal';
 
-const QuestionTable = () => {
+const COLUMNS = [
+    { label: 'ID', sortKey: 'id', width: '70px' },
+    { label: 'Вопрос', sortKey: 'qwestion', width: '35%' },
+    { label: 'Ответ / Описание' },
+    { label: 'Действия', align: 'right', width: '130px' }
+];
+
+export default function QuestionTable() {
     const [questions, setQuestions] = useState([]);
-    const [filteredQuestions, setFilteredQuestions] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingQuestion, setEditingQuestion] = useState(null);
     const [formData, setFormData] = useState({
         qwestion: '',
         description: ''
     });
 
-    // Load questions on component mount
+    const {
+        searchTerm,
+        handleSearch,
+        sortConfig,
+        requestSort,
+        getSortIndicator,
+        filteredItems,
+        isModalOpen,
+        editingItem,
+        openAddModal,
+        openEditModal,
+        closeModal,
+        isLoading,
+        setIsLoading,
+        isSaving,
+        setIsSaving
+    } = useAdminTable({
+        items: questions,
+        searchFields: ['qwestion', 'description'],
+        initialSort: { key: 'id', direction: 'ascending' }
+    });
+
     useEffect(() => {
         loadQuestions();
     }, []);
 
-    // Filter questions based on search term
-    useEffect(() => {
-        const filtered = questions.filter(question =>
-            question.qwestion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            question.description.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setFilteredQuestions(filtered);
-    }, [searchTerm, questions]);
-
     const loadQuestions = async () => {
+        setIsLoading(true);
         try {
             const data = await fetchAllQwestion();
-            setQuestions(data);
-            setFilteredQuestions(data);
+            setQuestions(Array.isArray(data) ? data : []);
         } catch (error) {
-            console.error('Error loading questions:', error);
+            console.error('Ошибка загрузки вопросов:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleSearch = (e) => {
-        setSearchTerm(e.target.value);
+    const handleOpenAdd = () => {
+        setFormData({ qwestion: '', description: '' });
+        openAddModal();
     };
 
-    const openAddModal = () => {
-        setEditingQuestion(null);
+    const handleOpenEdit = (q) => {
         setFormData({
-            qwestion: '',
-            description: ''
+            qwestion: q.qwestion || '',
+            description: q.description || ''
         });
-        setIsModalOpen(true);
-    };
-
-    const openEditModal = (question) => {
-        setEditingQuestion(question);
-        setFormData({
-            qwestion: question.qwestion,
-            description: question.description
-        });
-        setIsModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setEditingQuestion(null);
+        openEditModal(q);
     };
 
     const handleInputChange = (e) => {
@@ -72,135 +78,128 @@ const QuestionTable = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const myFormData = new FormData();
+        setIsSaving(true);
         try {
-            myFormData.append("qwestion", formData.qwestion);
-            myFormData.append("description", formData.description);
-            
-            if (editingQuestion) {
-                await updateQwestion(editingQuestion.id, myFormData);
+            const fd = new FormData();
+            fd.append("qwestion", formData.qwestion || '');
+            fd.append("description", formData.description || '');
+
+            if (editingItem) {
+                await updateQwestion(editingItem.id, fd);
             } else {
-                await postQwestion(myFormData);
+                await postQwestion(fd);
             }
-            loadQuestions(); // Обновляем список после сохранения
+
+            await loadQuestions();
             closeModal();
         } catch (error) {
-            console.error('Error saving question:', error);
+            console.error('Ошибка сохранения вопроса:', error);
+            alert('Ошибка при сохранении');
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this question?')) {
-            deleteQwestion(id).then(() => {
-                loadQuestions(); // Обновляем список после удаления
-            }).catch(error => {
-                console.error('Error deleting question:', error);
-            });
+    const handleDelete = async (id) => {
+        if (window.confirm('Вы уверены, что хотите удалить этот вопрос?')) {
+            try {
+                await deleteQwestion(id);
+                await loadQuestions();
+            } catch (error) {
+                console.error('Ошибка удаления вопроса:', error);
+                alert('Ошибка при удалении');
+            }
         }
     };
 
     return (
-        <div className="adminQuestionTable">
-            <div className="admin-header">
-                <h1>Вопросы</h1>
-                <div className="search-container">
+        <div className="admin-page-container">
+            <AdminPageHeader
+                title="Частые вопросы (FAQ)"
+                count={questions.length}
+                searchTerm={searchTerm}
+                onSearch={handleSearch}
+                searchPlaceholder="Поиск вопроса..."
+                onAdd={handleOpenAdd}
+                addButtonText="Добавить вопрос"
+            />
+
+            <AdminTable
+                columns={COLUMNS}
+                data={filteredItems}
+                sortConfig={sortConfig}
+                onSort={requestSort}
+                getSortIndicator={getSortIndicator}
+                isLoading={isLoading}
+                emptyMessage="Вопросы не найдены"
+                renderRow={(q) => (
+                    <tr key={q.id}>
+                        <td style={{ color: '#64748b', fontWeight: 600 }}>#{q.id}</td>
+                        <td style={{ fontWeight: 600 }}>{q.qwestion}</td>
+                        <td style={{ color: '#94a3b8', lineHeight: 1.5 }}>{q.description || '—'}</td>
+                        <td className="text-right">
+                            <div className="action-buttons-group">
+                                <button
+                                    type="button"
+                                    className="btn-action edit"
+                                    onClick={() => handleOpenEdit(q)}
+                                    title="Редактировать"
+                                >
+                                    <FiEdit2 />
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-action delete"
+                                    onClick={() => handleDelete(q.id)}
+                                    title="Удалить"
+                                >
+                                    <FiTrash2 />
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                )}
+            />
+
+            <AdminModal
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                title={editingItem ? 'Редактирование вопроса' : 'Новый вопрос'}
+                subtitle="Вопросы и ответы отображаются на сайте для покупателей"
+                onSubmit={handleSubmit}
+                isSubmitting={isSaving}
+                submitText={editingItem ? 'Сохранить изменения' : 'Создать вопрос'}
+            >
+                <div className="admin-form-group">
+                    <label className="admin-form-label">
+                        Вопрос <span className="required">*</span>
+                    </label>
                     <input
                         type="text"
-                        placeholder="Найти вопрос..."
-                        value={searchTerm}
-                        onChange={handleSearch}
-                        className="search-input"
+                        name="qwestion"
+                        value={formData.qwestion}
+                        onChange={handleInputChange}
+                        placeholder="Например: Как оформить доставку в другой город?"
+                        required
+                        className="admin-form-input"
                     />
                 </div>
-                <button onClick={openAddModal} className="add-button">
-                    Добавить вопрос
-                </button>
-            </div>
 
-            <div className="table-container">
-                <table className="categories-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Вопрос</th>
-                            <th>Описание</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredQuestions.map(question => (
-                            <tr key={question.id}>
-                                <td>{question.id}</td>
-                                <td>{question.qwestion}</td>
-                                <td>{question.description}</td>
-                                <td className="action-buttons">
-                                    <button
-                                        onClick={() => openEditModal(question)}
-                                        className="edit-button"
-                                    >
-                                        Обновить
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(question.id)}
-                                        className="delete-button"
-                                    >
-                                        Удалить
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2>{editingQuestion ? 'Обновить' : 'Добавить'}</h2>
-                            <button className="close-button" onClick={closeModal}>×</button>
-                        </div>
-                        
-                        <form onSubmit={handleSubmit} className="modal-form">
-                            <div className="form-group">
-                                <label htmlFor="qwestion">Вопрос:</label>
-                                <input
-                                    type="text"
-                                    id="qwestion"
-                                    name="qwestion"
-                                    value={formData.qwestion}
-                                    onChange={handleInputChange}
-                                    required
-                                    className="form-input"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="description">Описание:</label>
-                                <textarea
-                                    id="description"
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleInputChange}
-                                    className="form-textarea"
-                                    rows="4"
-                                />
-                            </div>
-
-                            <div className="modal-buttons">
-                                <button type="button" onClick={closeModal} className="cancel-button">
-                                    Отмена
-                                </button>
-                                <button type="submit" className="save-button">
-                                    {editingQuestion ? 'Обновить' : 'Добавить'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                <div className="admin-form-group">
+                    <label className="admin-form-label">
+                        Ответ / Описание <span className="required">*</span>
+                    </label>
+                    <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        placeholder="Подробный ответ на вопрос"
+                        required
+                        className="admin-form-textarea"
+                        style={{ minHeight: '120px' }}
+                    />
                 </div>
-            )}
+            </AdminModal>
         </div>
     );
-};
-
-export default QuestionTable;
+}

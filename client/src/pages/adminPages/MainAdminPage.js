@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import AdminHeader from "../adminPages/adminHeader/AdminHeader";
+import React, { useState, useEffect } from 'react';
+import { useParams, useHistory } from 'react-router-dom';
+import { AdminSidebar } from "./shared/components/AdminSidebar";
+import AdminSummary from "./summary/AdminSummary";
 import "./MainAdminPage.scss";
 import MainCategoryTable from "./mainCategoryTable/MainCategoryTable";
 import CategoryTable from "./сategoryTable/CategoryTable";
@@ -12,39 +14,56 @@ import ReviewTable from './reviewTable/ReviewTable';
 import OrderTable from './orderTable/OrderTable';
 
 function MainAdminPage() {
-    // Инициализируем состояния с значениями из localStorage
-    const [isHeaderVisible, setIsHeaderVisible] = useState(() => {
-        const saved = localStorage.getItem('adminHeaderVisible');
-        return saved !== null ? JSON.parse(saved) : true;
+    const { tab } = useParams();
+    const history = useHistory();
+
+    // Состояние сворачивания бокового меню
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        const saved = localStorage.getItem('adminSidebarCollapsed');
+        return saved !== null ? JSON.parse(saved) : false;
     });
 
+    // Определение активного компонента: приоритет у URL параметра, затем localStorage, затем 'summary'
     const [activeComponent, setActiveComponent] = useState(() => {
+        if (tab) return tab;
         const saved = localStorage.getItem('adminActiveComponent');
-        return saved || 'products';
+        return saved || 'summary';
     });
 
-    // Сохранение состояния при изменении
+    // Синхронизация при изменении URL параметра
     useEffect(() => {
-        localStorage.setItem('adminActiveComponent', activeComponent);
-    }, [activeComponent]);
+        if (tab && tab !== activeComponent) {
+            setActiveComponent(tab);
+            localStorage.setItem('adminActiveComponent', tab);
+        } else if (!tab) {
+            // Если зашли просто на /admin — перенаправляем на сохраненный таб или summary
+            const target = localStorage.getItem('adminActiveComponent') || 'summary';
+            history.replace(`/admin/${target}`);
+        }
+    }, [tab]);
 
+    // Сохранение состояния сворачивания сайдбара
     useEffect(() => {
-        localStorage.setItem('adminHeaderVisible', JSON.stringify(isHeaderVisible));
-    }, [isHeaderVisible]);
+        localStorage.setItem('adminSidebarCollapsed', JSON.stringify(isSidebarCollapsed));
+    }, [isSidebarCollapsed]);
 
-    const handleHeaderToggle = (visible) => {
-        console.log('Header toggle to:', visible);
-        setIsHeaderVisible(visible);
+    const handleToggleCollapse = () => {
+        setIsSidebarCollapsed(prev => !prev);
     };
 
     const handleMenuClick = (componentId) => {
-        console.log('Setting active component:', componentId);
         setActiveComponent(componentId);
+        localStorage.setItem('adminActiveComponent', componentId);
     };
 
-    // Функция для рендеринга активного компонента
+    // Рендер активной вкладки
     const renderActiveComponent = () => {
         switch (activeComponent) {
+            case 'summary':
+                return <AdminSummary onNavigate={(t) => {
+                    handleMenuClick(t);
+                    history.push(`/admin/${t}`);
+                }} />;
             case 'products':
                 return <ItemTable />;
             case 'mainCategories':
@@ -56,47 +75,35 @@ function MainAdminPage() {
             case 'itemGroup':
                 return <ItemGroupTable />;
             case 'qwestion':
+            case 'questions':
                 return <QuestionTable />;
             case 'sliders':
                 return <SliderTable />;
-            case 'summary':
-                return <div className="placeholder-component">
-                    <h2>Сводка</h2>
-                    <p>Здесь будет общая статистика и аналитика магазина</p>
-                </div>;
             case 'orders':
-                return <OrderTable />
-            // case 'inProcess':
-            //     return <div className="placeholder-component">
-            //         <h2>Заказы в процессе</h2>
-            //         <p>Список заказов в процессе выполнения</p>
-            //     </div>;
-            // case 'finished':
-            //     return <div className="placeholder-component">
-            //         <h2>Завершенные заказы</h2>
-            //         <p>Список завершенных заказов</p>
-            //     </div>;
+                return <OrderTable />;
             case 'reviews':
-                return <ReviewTable />
+                return <ReviewTable />;
             default:
-                return <ItemTable />;
+                return <AdminSummary onNavigate={(t) => {
+                    handleMenuClick(t);
+                    history.push(`/admin/${t}`);
+                }} />;
         }
     };
 
     return (
-        <div className={`mainAdminPage ${isHeaderVisible ? 'header-active' : 'header-hidden'}`}>
-            <AdminHeader
-                isAdminHeader={true}
-                isVisible={isHeaderVisible}
-                onToggle={handleHeaderToggle}
-                onMenuClick={handleMenuClick}
+        <div className="admin-root-layout">
+            <AdminSidebar
                 activeComponent={activeComponent}
+                onMenuClick={handleMenuClick}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={handleToggleCollapse}
             />
-            <div className="main-content">
+            <main className="admin-main-viewport">
                 {renderActiveComponent()}
-            </div>
+            </main>
         </div>
-    )
+    );
 }
 
 export default MainAdminPage;

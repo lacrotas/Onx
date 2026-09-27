@@ -1,25 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { fetchAllItemGroup, postItemGroup, updateItemGroup, deleteItemGroup } from '../../../http/itemGroupApi';
-import { fetchAllItem, updateItemById } from '../../../http/itemApi'; // Импортируем метод обновления товара
-import ItemGroupTableHeader from './components/ItemGroupTableHeader';
+import { fetchAllItem, updateItemById } from '../../../http/itemApi';
+import { useAdminTable } from '../shared/hooks/useAdminTable';
+import AdminPageHeader from '../shared/components/AdminPageHeader';
+import { AdminTable } from '../shared/components/AdminTable';
 import ItemGroupTableRow from './components/ItemGroupTableRow';
 import ItemGroupModal from './components/ItemGroupModal';
 import Loader from '../../../components/loader/Loader';
 import "./ItemGroupTable.scss";
 
+const COLUMNS = [
+    { label: 'Превью', width: '120px' },
+    { label: 'Название группы', sortKey: 'name' },
+    { label: 'Кол-во товаров в группе', width: '220px' },
+    { label: 'Действия', align: 'right', width: '190px' }
+];
+
 const ItemGroupTable = () => {
     const [groups, setGroups] = useState([]);
     const [allItems, setAllItems] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingGroup, setEditingGroup] = useState(null);
 
     const [formData, setFormData] = useState({
         name: '',
         itemIds: [],
-        selectedItemsData: [] // Для отображения выбранных товаров в модалке
+        selectedItemsData: []
+    });
+
+    const {
+        searchTerm,
+        handleSearch,
+        sortConfig,
+        requestSort,
+        getSortIndicator,
+        filteredItems,
+        isModalOpen,
+        editingItem,
+        openAddModal,
+        openEditModal,
+        closeModal,
+        isLoading,
+        setIsLoading,
+        isSaving,
+        setIsSaving
+    } = useAdminTable({
+        items: groups,
+        searchFields: ['name'],
+        initialSort: { key: 'name', direction: 'ascending' }
     });
 
     useEffect(() => {
@@ -27,46 +53,46 @@ const ItemGroupTable = () => {
     }, []);
 
     const loadData = async () => {
+        setIsLoading(true);
         try {
             const [groupsData, itemsData] = await Promise.all([
                 fetchAllItemGroup(),
                 fetchAllItem()
             ]);
-            setGroups(groupsData);
-            setAllItems(itemsData);
+            setGroups(Array.isArray(groupsData) ? groupsData : []);
+            setAllItems(Array.isArray(itemsData) ? itemsData : []);
         } catch (error) {
             console.error('Ошибка загрузки данных:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const openAddModal = () => {
-        setEditingGroup(null);
+    const handleOpenAdd = () => {
         setFormData({ name: '', itemIds: [], selectedItemsData: [] });
-        setIsModalOpen(true);
+        openAddModal();
     };
 
-    const openEditModal = (group) => {
-        setEditingGroup(group);
+    const handleOpenEdit = (group) => {
         const selected = allItems.filter(item => group.itemIds.includes(item.id));
         setFormData({
             name: group.name,
             itemIds: group.itemIds,
             selectedItemsData: selected
         });
-        setIsModalOpen(true);
+        openEditModal(group);
     };
 
     const handleDelete = async (id) => {
         if (window.confirm('Удалить группу?')) {
             setIsSaving(true);
             try {
-                // Перед удалением группы желательно отвязать товары на фронте или это сделает бэкенд каскадно
                 await deleteItemGroup(id);
                 await loadData();
-            } catch (e) { 
-                alert("Ошибка при удалении"); 
-            } finally { 
-                setIsSaving(false); 
+            } catch {
+                alert("Ошибка при удалении");
+            } finally {
+                setIsSaving(false);
             }
         }
     };
@@ -92,38 +118,21 @@ const ItemGroupTable = () => {
             };
 
             let savedGroup;
-            if (editingGroup) {
-                // 1. Обновляем саму группу
-                savedGroup = await updateItemGroup(editingGroup.id, payload);
-                
-                // 2. Логика обновления связей в товарах:
-                // Находим товары, которые были в группе, но теперь удалены из неё
-                const itemsToRemove = editingGroup.itemIds.filter(id => !formData.itemIds.includes(id));
-                
+            if (editingItem) {
+                savedGroup = await updateItemGroup(editingItem.id, payload);
+                const itemsToRemove = editingItem.itemIds.filter(id => !formData.itemIds.includes(id));
                 const updatePromises = [
-                    // Привязываем новые/текущие товары к группе
-                    ...formData.itemIds.map(itemId => 
-                        updateItemById(itemId, { itemGroupId: editingGroup.id })
-                    ),
-                    // Отвязываем удаленные товары (ставим null)
-                    ...itemsToRemove.map(itemId => 
-                        updateItemById(itemId, { itemGroupId: null })
-                    )
+                    ...formData.itemIds.map(itemId => updateItemById(itemId, { itemGroupId: editingItem.id })),
+                    ...itemsToRemove.map(itemId => updateItemById(itemId, { itemGroupId: null }))
                 ];
                 await Promise.all(updatePromises);
-
             } else {
-                // 1. Создаем новую группу
                 savedGroup = await postItemGroup(payload);
-                
-                // 2. Привязываем выбранные товары к ID созданной группы
-                const updatePromises = formData.itemIds.map(itemId => 
-                    updateItemById(itemId, { itemGroupId: savedGroup.id })
-                );
+                const updatePromises = formData.itemIds.map(itemId => updateItemById(itemId, { itemGroupId: savedGroup.id }));
                 await Promise.all(updatePromises);
             }
 
-            setIsModalOpen(false);
+            closeModal();
             await loadData();
         } catch (e) {
             console.error(e);
@@ -133,51 +142,44 @@ const ItemGroupTable = () => {
         }
     };
 
-    const filteredGroups = groups.filter(g =>
-        g.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
-        <div className="admin-item-editor">
-            <ItemGroupTableHeader
+        <div className="admin-page-container">
+            <AdminPageHeader
+                title="Группы товаров"
+                count={groups.length}
                 searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                openAddModal={openAddModal}
+                onSearch={handleSearch}
+                searchPlaceholder="Поиск группы..."
+                onAdd={handleOpenAdd}
+                addButtonText="Добавить группу"
             />
 
-            <main className="content-container">
-                <div className="table-wrapper">
-                    <table className="apple-table">
-                        <thead>
-                            <tr>
-                                <th className="my_p">Фото (превью)</th>
-                                <th className="my_p">Название группы</th>
-                                <th className="my_p">Кол-во товаров</th>
-                                <th className="my_p">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredGroups.map(group => (
-                                <ItemGroupTableRow
-                                    key={group.id}
-                                    group={group}
-                                    onEdit={openEditModal}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </main>
+            <AdminTable
+                columns={COLUMNS}
+                data={filteredItems}
+                sortConfig={sortConfig}
+                onSort={requestSort}
+                getSortIndicator={getSortIndicator}
+                isLoading={isLoading}
+                emptyMessage="Группы товаров не найдены"
+                renderRow={(group) => (
+                    <ItemGroupTableRow
+                        key={group.id}
+                        group={group}
+                        onEdit={handleOpenEdit}
+                        onDelete={handleDelete}
+                    />
+                )}
+            />
 
             <ItemGroupModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={closeModal}
                 formData={formData}
                 setFormData={setFormData}
                 allItems={allItems}
                 onSubmit={handleSubmit}
-                editingGroup={editingGroup}
+                editingGroup={editingItem}
             />
 
             <Loader isVisible={isSaving} text="Синхронизация..." />
