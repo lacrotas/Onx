@@ -43,12 +43,12 @@ const FilterSidebar = ({
 
     return (
         <aside className={`sidebar ${mobileFilters ? 'open' : ''}`}>
-            <div className="sidebar-header">
+            {/* <div className="sidebar-header">
                 <div className="sidebar-title">Фильтры</div>
                 <div onClick={() => setMobileFilters(false)} className="filters-list_close">
                     <FiX size={20} />
                 </div>
-            </div>
+            </div> */}
 
             {[...filters]
                 .sort((a, b) => (a.filterIndex || 0) - (b.filterIndex || 0))

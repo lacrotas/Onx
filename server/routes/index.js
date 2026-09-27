@@ -14,6 +14,7 @@ router.use('/busketRouter', busketRouter)
 const CategoryRouter = require('./categoryRouter');
 
 router.use('/categoryRouter', CategoryRouter);
+router.use('/kategoryRouter', CategoryRouter);
 
 /* item routers */
 const attributeRouter = require('./attributeRouter');

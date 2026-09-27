@@ -129,10 +129,11 @@ export const fetchMainKategoryById = async (param) => {
 
 export const fetchAllKategoryByMainKategoryId = async (param) => {
     try {
-        // Убедитесь, что путь в роутере сервера настроен на принятие :param
-        const { data } = await $host.get('api/kategoryRouter/getAllKategory/' + param);
-        return data;
-    } catch {
+        if (!param) return [];
+        const { data } = await $host.get('api/categoryRouter/getParentCategoryByParam/' + param);
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error("Ошибка получения подкатегорий для parentId:", param, e);
         return [];
     }
 }

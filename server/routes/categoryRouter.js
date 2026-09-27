@@ -10,6 +10,7 @@ router.get('/getAllMainCategory', CategoryController.getAllMainCategory);
 
 // get by param
 router.get('/getParentCategoryByParam/:id', CategoryController.getAllCategoryByParentId);
+router.get('/getAllKategory/:id', CategoryController.getAllCategoryByParentId);
 router.get('/getCategoryByParam/:param', CategoryController.getCategoryById);
 
 // methots

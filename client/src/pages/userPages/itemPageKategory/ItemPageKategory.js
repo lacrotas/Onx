@@ -9,6 +9,7 @@ import Footer from '../../../components/footer/Footer';
 import { ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
 import { FaSort } from "react-icons/fa";
 import { LiaFilterSolid } from "react-icons/lia";
+import { FiPackage } from "react-icons/fi";
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
 import ItemCard from './itemCard/ItemCard';
 import FilterSidebar from './filterSidebar/FilterSidebar';
@@ -72,11 +73,11 @@ const ItemPageKategory = () => {
                     const mainCategoryData = await fetchCategoryByParam(mainAllias);
                     setCategory(categoryData);
                     setMainCategory(mainCategoryData);
-                    if(mainCategoryData){
+                    if (mainCategoryData) {
                         const allCategoryData = await fetchCategoryByParentId(mainCategoryData.id);
                         setAllCategory(allCategoryData);
                     }
-                    
+
                     if (categoryData) {
                         setItemsLoading(true);
                         try {
@@ -212,7 +213,7 @@ const ItemPageKategory = () => {
                 ></div>
 
                 {mainCategory && category && (
-                    <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategory.name, path: '/'+ mainAllias }, { title: category.name }]} />
+                    <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: mainCategory.name, path: '/' + mainAllias }, { title: category.name }]} />
                 )}
 
                 <div className="controls-area">
@@ -220,7 +221,7 @@ const ItemPageKategory = () => {
                         <NavLink
                             key={cat.id}
                             to={{
-                                pathname: cat.alias,
+                                pathname: `/${mainAllias}/${cat.alias}`,
                                 state: { path: { name: cat.name } }
                             }} >
                             <div className={`filter-pill my_p ${cat.id === category?.id ? "active" : ""}`}>{cat.name}</div>
@@ -228,7 +229,7 @@ const ItemPageKategory = () => {
                     ))}
                 </div>
 
-                <div className="main-container">
+                <div className={`main-container ${items.length === 0 ? 'no-sidebar' : ''}`}>
                     {items.length > 0 && (
                         <FilterSidebar
                             mobileFilters={mobileFilters}
@@ -249,60 +250,86 @@ const ItemPageKategory = () => {
 
                             <div className="header-actions">
                                 {items.length > 0 && (
-                                    <button className="mobile-filter-btn" onClick={() => setMobileFilters(!mobileFilters)}>
-                                        <LiaFilterSolid size={20} />
-                                        <span>Фильтры</span>
-                                    </button>
-                                )}
+                                    <>
+                                        <button className="mobile-filter-btn" onClick={() => setMobileFilters(!mobileFilters)}>
+                                            <LiaFilterSolid size={20} />
+                                            <span>Фильтры</span>
+                                        </button>
 
-                                <div className="sorting-section" ref={sortRef}>
-                                    <div className="sort-toggle" onClick={() => setIsSortOpen((prev) => !prev)}>
-                                        <FaSort className="icon" />
-                                        <span className="my_p">
-                                            {sortOption === 'default' ? 'По умолчанию' :
-                                                sortOption === 'price-asc' ? 'Сначала дешевле' :
-                                                    sortOption === 'price-desc' ? 'Сначала дороже' : 'По оценке'}
-                                        </span>
-                                    </div>
+                                        <div className="sorting-section" ref={sortRef}>
+                                            <div className="sort-toggle" onClick={() => setIsSortOpen((prev) => !prev)}>
+                                                <FaSort className="icon" />
+                                                <span className="my_p">
+                                                    {sortOption === 'default' ? 'По умолчанию' :
+                                                        sortOption === 'price-asc' ? 'Сначала дешевле' :
+                                                            sortOption === 'price-desc' ? 'Сначала дороже' : 'По оценке'}
+                                                </span>
+                                            </div>
 
-                                    {isSortOpen && (
-                                        <div className="sorting-options">
-                                            <button className={`my_p ${sortOption === 'default' ? 'active' : ''}`} onClick={() => { setSortOption('default'); setIsSortOpen(false); }}>По умолчанию</button>
-                                            <button className={`my_p ${sortOption === 'price-asc' ? 'active' : ''}`} onClick={() => { setSortOption('price-asc'); setIsSortOpen(false); }}>Сначала дешевле</button>
-                                            <button className={`my_p ${sortOption === 'price-desc' ? 'active' : ''}`} onClick={() => { setSortOption('price-desc'); setIsSortOpen(false); }}>Сначала дороже</button>
-                                            <button className={`my_p ${sortOption === 'rating' ? 'active' : ''}`} onClick={() => { setSortOption('rating'); setIsSortOpen(false); }}>По оценке</button>
+                                            {isSortOpen && (
+                                                <div className="sorting-options">
+                                                    <button className={`my_p ${sortOption === 'default' ? 'active' : ''}`} onClick={() => { setSortOption('default'); setIsSortOpen(false); }}>По умолчанию</button>
+                                                    <button className={`my_p ${sortOption === 'price-asc' ? 'active' : ''}`} onClick={() => { setSortOption('price-asc'); setIsSortOpen(false); }}>Сначала дешевле</button>
+                                                    <button className={`my_p ${sortOption === 'price-desc' ? 'active' : ''}`} onClick={() => { setSortOption('price-desc'); setIsSortOpen(false); }}>Сначала дороже</button>
+                                                    <button className={`my_p ${sortOption === 'rating' ? 'active' : ''}`} onClick={() => { setSortOption('rating'); setIsSortOpen(false); }}>По оценке</button>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
                         {itemsLoading ? (
                             <div className="loading my_p">Загрузка товаров...</div>
+                        ) : items.length === 0 ? (
+                            <div className="category-empty-state">
+                                <div className="empty-state-icon">
+                                    <FiPackage size={44} />
+                                </div>
+                                <h3 className="empty-state-title">В этой категории пока нет товаров</h3>
+                                <p className="empty-state-desc">
+                                    Мы уже работаем над наполнением этого раздела. Выберите другую категорию или вернитесь на главную страницу.
+                                </p>
+                                <div className="empty-state-actions">
+                                    <NavLink to="/" className="btn-empty-action">
+                                        На главную
+                                    </NavLink>
+
+                                </div>
+                            </div>
+                        ) : filteredAndSortedItems.length === 0 ? (
+                            <div className="category-empty-state">
+                                <div className="empty-state-icon">
+                                    <LiaFilterSolid size={44} />
+                                </div>
+                                <h3 className="empty-state-title">По выбранным фильтрам ничего не найдено</h3>
+                                <p className="empty-state-desc">
+                                    Попробуйте изменить параметры фильтрации или сбросить активные фильтры.
+                                </p>
+                                <div className="empty-state-actions">
+                                    <button className="btn-empty-action" onClick={() => setSelectedFilters({})}>
+                                        Сбросить фильтры
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
-                            <>
-                                {filteredAndSortedItems.length === 0 ? (
-                                    <div className="no-items my_p">Товары не найдены</div>
-                                ) : (
-                                    <div className="product-grid">
-                                        {filteredAndSortedItems.map(item => (
-                                            /* Оборачиваем каждую карточку в AddToCart */
-                                            <AddToCart key={item.id} item={item}>
-                                                {({ isInCart, handleAddToCart }) => (
-                                                    <ItemCard
-                                                        item={item}
-                                                        isInCart={isInCart}
-                                                        onAddToCart={handleAddToCart}
-                                                        renderStars={renderStars}
-                                                        mainAlias={mainAllias}
-                                                        alias={allias}
-                                                    />
-                                                )}
-                                            </AddToCart>
-                                        ))}
-                                    </div>
-                                )}
-                            </>
+                            <div className="product-grid">
+                                {filteredAndSortedItems.map(item => (
+                                    <AddToCart key={item.id} item={item}>
+                                        {({ isInCart, handleAddToCart }) => (
+                                            <ItemCard
+                                                item={item}
+                                                isInCart={isInCart}
+                                                onAddToCart={handleAddToCart}
+                                                renderStars={renderStars}
+                                                mainAlias={mainAllias}
+                                                alias={allias}
+                                            />
+                                        )}
+                                    </AddToCart>
+                                ))}
+                            </div>
                         )}
                     </main>
                 </div>
