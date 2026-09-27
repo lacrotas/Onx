@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async'; // Импортируем Helmet
 import { fetchItemId } from '../../../http/itemApi';
 import { fetchCategoryByParam } from '../../../http/KategoryApi';
 import { fetchItemGroupById } from '../../../http/itemGroupApi'; 
@@ -13,7 +14,13 @@ import { IoIosArrowDown } from "react-icons/io";
 import ItemReviews from './itemReviews/ItemReviews';
 import ItemGallery from './ItemGallery/ItemGallery';
 import ItemVariantsSlider from './ItemVariantsSlider/ItemVariantsSlider';
-import AddToCart from '../../../customUI/addToCartButton/AddToCartButton'; // Импортируем созданный компонент
+import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
+
+// Вспомогательная функция для удаления HTML-тегов из описания для meta-тегов
+const stripHtml = (html) => {
+    if (!html) return '';
+    return html.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim();
+};
 
 const CurrentItemPage = () => {
     const { allias, mainAllias, itemAllias } = useParams();
@@ -70,8 +77,100 @@ const CurrentItemPage = () => {
     if (loading) return <div className="apple-loader my_h3">Загрузка...</div>;
     if (error || !item) return <div className="apple-error my_h3">Товар не найден</div>;
 
+    // Функция парсинга PostgreSQL массива в обычный массив JS
+    const parsePostgresArray = (pgArrayStr) => {
+        if (!pgArrayStr) return [];
+        if (Array.isArray(pgArrayStr)) return pgArrayStr; // Если pg driver уже превратил в массив
+        if (typeof pgArrayStr === 'string') {
+            // Удаляем скобки { и } и разбиваем по запятой
+            return pgArrayStr.replace(/^\{|\}$/g, '').split(',').map(img => img.trim());
+        }
+        return [];
+    };
+    // --- SEO ДАННЫЕ ---
+    const pageTitle = `Купить ${item.name} по цене ${item.price} BYN в Минске | ${kategory?.name || 'ONX'}`;
+    const plainDescription = stripHtml(item.description).slice(0, 160) || `Закажите ${item.name} по низкой цене ${item.price} BYN с доставкой по всей Беларуси.`;
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const imagesList = parsePostgresArray(item?.images);
+    const firstImageFilename = imagesList[0] || '';
+    const mainImageUrl = firstImageFilename 
+    ? `${process.env.REACT_APP_API_URL}/static/images/${firstImageFilename}` 
+    : `${process.env.REACT_APP_API_URL}logo192.png`;
+    // const mainImageUrl = item.images ? `${process.env.REACT_APP_API_URL}/${item.image}` : '';
+
+    // Schema.org: Разметка товара (Product)
+    const productSchema = {
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": item.name,
+        "image": mainImageUrl ? [mainImageUrl] : [],
+        "description": stripHtml(item.description).slice(0, 300),
+        "offers": {
+            "@type": "Offer",
+            "url": currentUrl,
+            "priceCurrency": "BYN",
+            "price": item.price,
+            "priceValidUntil": "2026-12-31",
+            "itemCondition": "https://schema.org/NewCondition",
+            "availability": item.isExist ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+        }
+    };
+
+    // Schema.org: Хлебные крошки (BreadcrumbList)
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Главная",
+                "item": typeof window !== 'undefined' ? window.location.origin : ''
+            },
+            mainKategory && {
+                "@type": "ListItem",
+                "position": 2,
+                "name": mainKategory.name,
+                "item": `${typeof window !== 'undefined' ? window.location.origin : ''}/${mainKategory.alias}`
+            },
+            kategory && {
+                "@type": "ListItem",
+                "position": 3,
+                "name": kategory.name,
+                "item": `${typeof window !== 'undefined' ? window.location.origin : ''}/${mainKategory?.alias}/${kategory.alias}`
+            },
+            {
+                "@type": "ListItem",
+                "position": 4,
+                "name": item.name
+            }
+        ].filter(Boolean)
+    };
+
     return (
         <div className="apple-theme-page">
+            {/* --- SEO БЛОК HELMET --- */}
+            <Helmet>
+                <title>{pageTitle}</title>
+                <meta name="description" content={plainDescription} />
+                <link rel="canonical" href={currentUrl} />
+
+                {/* Open Graph (для Telegram, Viber, соцсетей) */}
+                <meta property="og:type" content="product" />
+                <meta property="og:title" content={pageTitle} />
+                <meta property="og:description" content={plainDescription} />
+                <meta property="og:url" content={currentUrl} />
+                <meta property="og:image" content={mainImageUrl} />
+
+                {/* Микроразметка Schema.org */}
+                <script type="application/ld+json">
+                    {JSON.stringify(productSchema)}
+                </script>
+                <script type="application/ld+json">
+                    {JSON.stringify(breadcrumbSchema)}
+                </script>
+            </Helmet>
+
             <Header />
             <div className="apple-main-container">
                 <div className="apple-breadcrumbs">

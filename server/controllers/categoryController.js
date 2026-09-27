@@ -43,24 +43,44 @@ class CategoryController {
         let fileName = null;
 
         try {
-            const { name,  seo_title, alias, parentId, seo_desc } = req.body;
+            const { name, seo_title, alias, parentId, mainKategoryId, seo_desc, categoryIndex } = req.body;
 
             fileName = req.processedImage || null;
+
+            // Безопасный парсинг parentId с поддержкой parentId и mainKategoryId
+            const rawParent = parentId !== undefined && parentId !== 'undefined' ? parentId : mainKategoryId;
+            let parsedParentId = 0;
+            if (rawParent !== undefined && rawParent !== null && rawParent !== '' && rawParent !== 'null' && rawParent !== 'undefined') {
+                const parsed = parseInt(rawParent, 10);
+                if (!isNaN(parsed)) {
+                    parsedParentId = parsed;
+                }
+            }
+
+            let parsedCategoryIndex = 0;
+            if (categoryIndex !== undefined && categoryIndex !== null && categoryIndex !== '' && categoryIndex !== 'null' && categoryIndex !== 'undefined') {
+                const parsed = parseInt(categoryIndex, 10);
+                if (!isNaN(parsed)) {
+                    parsedCategoryIndex = parsed;
+                }
+            }
 
             const curentCategory = await Category.create({
                 name,
                 image: fileName,
                 gridItemIndex: 1,
                 gridSpace: 1,
-                seo_title: seo_title,
-                seo_desc: seo_desc,
-                alias: alias,
-                parentId: parentId
+                seo_title: seo_title || '',
+                seo_desc: seo_desc || '',
+                alias: alias || '',
+                parentId: parsedParentId,
+                categoryIndex: parsedCategoryIndex
             });
 
             return res.json(curentCategory);
 
         } catch (e) {
+            console.error('Ошибка в addCategory:', e);
             // Если произошла ошибка при создании категории - удаляем загруженное изображение
             if (fileName) {
                 try {
@@ -100,7 +120,7 @@ class CategoryController {
 
         try {
             const { id } = req.params;
-            const { name, gridSpace, gridItemIndex, seo_title, alias, parentId, seo_desc } = req.body;
+            const { name, gridSpace, gridItemIndex, seo_title, alias, parentId, mainKategoryId, seo_desc, categoryIndex } = req.body;
 
             const curentCategory = await Category.findOne({ where: { id } });
             if (!curentCategory) {
@@ -110,18 +130,35 @@ class CategoryController {
             oldFileName = curentCategory.image;
             newFileName = req.processedImage || oldFileName;
 
+            const updateData = {
+                image: newFileName
+            };
+
+            if (name !== undefined) updateData.name = name;
+            if (gridItemIndex !== undefined) updateData.gridItemIndex = gridItemIndex;
+            if (gridSpace !== undefined) updateData.gridSpace = gridSpace;
+            if (seo_title !== undefined) updateData.seo_title = seo_title;
+            if (seo_desc !== undefined) updateData.seo_desc = seo_desc;
+            if (alias !== undefined) updateData.alias = alias;
+
+            const rawParent = parentId !== undefined && parentId !== 'undefined' ? parentId : mainKategoryId;
+            if (rawParent !== undefined && rawParent !== null && rawParent !== '' && rawParent !== 'null' && rawParent !== 'undefined') {
+                const parsed = parseInt(rawParent, 10);
+                if (!isNaN(parsed)) {
+                    updateData.parentId = parsed;
+                }
+            }
+
+            if (categoryIndex !== undefined && categoryIndex !== null && categoryIndex !== '' && categoryIndex !== 'null' && categoryIndex !== 'undefined') {
+                const parsed = parseInt(categoryIndex, 10);
+                if (!isNaN(parsed)) {
+                    updateData.categoryIndex = parsed;
+                }
+            }
+
             // Обновляем категорию БЕЗ предварительного удаления старого изображения
             const [updatedRowsCount, updatedRows] = await Category.update(
-                {
-                    name: name,
-                    image: newFileName,
-                    gridItemIndex: gridItemIndex,
-                    gridSpace: gridSpace,
-                    seo_title: seo_title,
-                    seo_desc: seo_desc,
-                    alias: alias,
-                    parentId: parentId
-                },
+                updateData,
                 {
                     returning: true,
                     where: { id }

@@ -39,8 +39,8 @@ const CategoryModal = ({
                         <div className="form-group">
                             <label className="my_p">Главная категория:</label>
                             <select
-                                name="mainKategoryId"
-                                value={formData.id}
+                                name="parentId"
+                                value={formData.parentId ?? formData.mainKategoryId ?? ''}
                                 onChange={handleInputChange}
                                 className="form-select my_p"
                                 required

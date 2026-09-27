@@ -22,6 +22,7 @@ const CategoryTable = () => {
         name: '',
         imageFile: null,
         imageUrl: '',
+        parentId: '',
         mainKategoryId: '',
         categoryIndex: '',
         seo_desc: '',
@@ -42,7 +43,8 @@ const CategoryTable = () => {
     useEffect(() => {
         let result = categories.filter(category => {
             const matchesSearch = category.name.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesMainCategory = selectedFilterMainCategory === '' || category.mainKategoryId === parseInt(selectedFilterMainCategory);
+            const catParent = category.parentId !== undefined ? category.parentId : category.mainKategoryId;
+            const matchesMainCategory = selectedFilterMainCategory === '' || catParent === parseInt(selectedFilterMainCategory);
             
             return matchesSearch && matchesMainCategory;
         });
@@ -101,7 +103,11 @@ const CategoryTable = () => {
             const safeData = Array.isArray(data) ? data : [];
             setMainCategories(safeData);
             if (safeData.length > 0 && !editingCategory) {
-                setFormData(prev => ({ ...prev, mainKategoryId: safeData[0].id }));
+                setFormData(prev => ({ 
+                    ...prev, 
+                    parentId: safeData[0].id,
+                    mainKategoryId: safeData[0].id 
+                }));
             }
         } catch (error) {
             console.error('Error loading main categories:', error);
@@ -182,6 +188,7 @@ const CategoryTable = () => {
 
     const openAddModal = () => {
         setEditingCategory(null);
+        const defaultParent = mainCategories.length > 0 ? mainCategories[0].id : '';
         setFormData({
             name: '',
             imageFile: null,
@@ -189,7 +196,8 @@ const CategoryTable = () => {
             alias: '',
             seo_desc: '',
             imageUrl: '',
-            mainKategoryId: mainCategories.length > 0 ? mainCategories[0].id : '',
+            parentId: defaultParent,
+            mainKategoryId: defaultParent,
             categoryIndex: ''
         });
         setIsModalOpen(true);
@@ -197,15 +205,17 @@ const CategoryTable = () => {
 
     const openEditModal = (category) => {
         setEditingCategory(category);
+        const currentParent = category.parentId !== undefined ? category.parentId : (category.mainKategoryId || '');
         setFormData({
-            name: category.name,
+            name: category.name || '',
             imageFile: null,
-            seo_title: category.seo_title,
-            alias: category.alias,
-            seo_desc: category.seo_desc,
-            imageUrl: `${process.env.REACT_APP_API_URL}static/images/${category.image}`,
-            mainKategoryId: category.mainKategoryId,
-            categoryIndex: category.categoryIndex
+            seo_title: category.seo_title || '',
+            alias: category.alias || '',
+            seo_desc: category.seo_desc || '',
+            imageUrl: category.image ? `${process.env.REACT_APP_API_URL}static/images/${category.image}` : '',
+            parentId: currentParent,
+            mainKategoryId: currentParent,
+            categoryIndex: category.categoryIndex || ''
         });
         setIsModalOpen(true);
     };
@@ -223,7 +233,12 @@ const CategoryTable = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ 
+            ...prev, 
+            [name]: value,
+            ...(name === 'parentId' ? { mainKategoryId: value } : {}),
+            ...(name === 'mainKategoryId' ? { parentId: value } : {})
+        }));
     };
 
     const handleFileChange = (e) => {
@@ -250,17 +265,24 @@ const CategoryTable = () => {
         setIsSaving(true);
         try {
             const myFormData = new FormData();
-            myFormData.append("seo_title", formData.seo_title);
-            myFormData.append("alias", formData.alias);
-            myFormData.append("seo_desc", formData.seo_desc);
-            myFormData.append("name", formData.name);
-            myFormData.append("image", formData.imageFile);
-            myFormData.append("categoryIndex", formData.categoryIndex);
+            myFormData.append("seo_title", formData.seo_title || '');
+            myFormData.append("alias", formData.alias || '');
+            myFormData.append("seo_desc", formData.seo_desc || '');
+            myFormData.append("name", formData.name || '');
+            if (formData.imageFile) {
+                myFormData.append("image", formData.imageFile);
+            }
+            if (formData.categoryIndex !== undefined && formData.categoryIndex !== '') {
+                myFormData.append("categoryIndex", formData.categoryIndex);
+            }
+
+            const pId = formData.parentId || formData.mainKategoryId || 0;
+            myFormData.append("parentId", pId);
+            myFormData.append("mainKategoryId", pId);
             
             if (editingCategory) {
                 await updateCategory(editingCategory.id, myFormData);
             } else {
-                myFormData.append("parentId", formData.parentId);
                 await postCategory(myFormData);
             }
             closeModal();
@@ -278,17 +300,24 @@ const CategoryTable = () => {
         setIsSaving(true);
         try {
             const myFormData = new FormData();
-            myFormData.append("seo_title", formData.seo_title);
-            myFormData.append("seo_desc", formData.seo_desc);
-            myFormData.append("alias", formData.alias);
-            myFormData.append("name", formData.name);
-            myFormData.append("image", formData.imageFile);
-            myFormData.append("categoryIndex", formData.categoryIndex);
+            myFormData.append("seo_title", formData.seo_title || '');
+            myFormData.append("seo_desc", formData.seo_desc || '');
+            myFormData.append("alias", formData.alias || '');
+            myFormData.append("name", formData.name || '');
+            if (formData.imageFile) {
+                myFormData.append("image", formData.imageFile);
+            }
+            if (formData.categoryIndex !== undefined && formData.categoryIndex !== '') {
+                myFormData.append("categoryIndex", formData.categoryIndex);
+            }
+
+            const pId = formData.parentId || formData.mainKategoryId || 0;
+            myFormData.append("parentId", pId);
+            myFormData.append("mainKategoryId", pId);
 
             if (editingCategory) {
                 await updateCategory(editingCategory.id, myFormData);
             } else {
-                myFormData.append("mainKategoryId", formData.mainKategoryId);
                 await postCategory(myFormData);
             }
             await loadCategories();

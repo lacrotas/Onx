@@ -56,6 +56,7 @@ const ItemPageMainKategory = () => {
                                             alt={category.name}
                                             className="card-img"
                                             onError={(e) => {
+                                                e.target.onerror = null; // Отключаем повторный вызов при ошибке заглушки
                                                 e.target.src = '/placeholder-category.jpg';
                                             }}
                                         />
