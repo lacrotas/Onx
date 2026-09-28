@@ -14,6 +14,7 @@ import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
 import ItemCard from './itemCard/ItemCard';
 import FilterSidebar from './filterSidebar/FilterSidebar';
 import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
+import { ProductPageSkeleton, ItemCardSkeleton } from '../../../components/skeletons';
 
 const ItemPageKategory = () => {
     const { allias, mainAllias } = useParams();
@@ -201,8 +202,16 @@ const ItemPageKategory = () => {
         return stars;
     };
 
-    if (loading) return <><Header isAdminHeader={false} /><div className="loading">Загрузка данных...</div><Footer /></>;
-    if (error) return <Header isAdminHeader={false} /> && <div className="error">{error}</div> && <Footer />;
+    if (loading) {
+        return (
+            <>
+                <Header isAdminHeader={false} />
+                <ProductPageSkeleton count={6} />
+                <Footer />
+            </>
+        );
+    }
+    if (error) return <><Header isAdminHeader={false} /><div className="error">{error}</div><Footer /></>;
     return (
         <>
             <Header isAdminHeader={false} />
@@ -281,7 +290,11 @@ const ItemPageKategory = () => {
                         </div>
 
                         {itemsLoading ? (
-                            <div className="loading my_p">Загрузка товаров...</div>
+                            <div className="product-grid">
+                                {Array.from({ length: 6 }).map((_, idx) => (
+                                    <ItemCardSkeleton key={idx} />
+                                ))}
+                            </div>
                         ) : items.length === 0 ? (
                             <div className="category-empty-state">
                                 <div className="empty-state-icon">

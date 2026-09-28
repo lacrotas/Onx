@@ -40,6 +40,9 @@ app.use((req, res, next) => {
 new ImageDeletionService();
 
 app.use(express.json());
+//на локалке
+app.use('/static', express.static(path.resolve(__dirname, 'static')));
+// на проде
 app.use('/api/static', express.static(path.resolve(__dirname, 'static')));
 app.use(fileUpload({
     limits: { fileSize: 50 * 1024 * 1024 },

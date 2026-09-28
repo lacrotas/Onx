@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
 const { User, Busket } = require('../models/models');
 const ApiError = require("../error/ApiError");
@@ -15,7 +16,14 @@ const generateJwt = (id, login, role) => {
 class UserController {
     async login(req, res, next) {
         const { mail, password } = req.body
-        const user = await User.findOne({ where: { mail } });
+        const user = await User.findOne({
+            where: {
+                [Op.or]: [
+                    { mail },
+                    { login: mail }
+                ]
+            }
+        });
         if (!user) {
             return next(ApiError.badRequest('Пользователь не найден'));
         }

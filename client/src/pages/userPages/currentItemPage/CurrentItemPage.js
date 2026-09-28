@@ -15,6 +15,7 @@ import ItemReviews from './itemReviews/ItemReviews';
 import ItemGallery from './ItemGallery/ItemGallery';
 import ItemVariantsSlider from './ItemVariantsSlider/ItemVariantsSlider';
 import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
+import { ProductDetailSkeleton } from '../../../components/skeletons';
 
 // Вспомогательная функция для удаления HTML-тегов из описания для meta-тегов
 const stripHtml = (html) => {
@@ -74,8 +75,16 @@ const CurrentItemPage = () => {
         }
     };
 
-    if (loading) return <div className="apple-loader my_h3">Загрузка...</div>;
-    if (error || !item) return <div className="apple-error my_h3">Товар не найден</div>;
+    if (loading) {
+        return (
+            <div className="apple-theme-page">
+                <Header isAdminHeader={false} />
+                <ProductDetailSkeleton />
+                <Footer />
+            </div>
+        );
+    }
+    if (error || !item) return <><Header isAdminHeader={false} /><div className="apple-error my_h3">Товар не найден</div><Footer /></>;
 
     // Функция парсинга PostgreSQL массива в обычный массив JS
     const parsePostgresArray = (pgArrayStr) => {
@@ -94,7 +103,7 @@ const CurrentItemPage = () => {
     const imagesList = parsePostgresArray(item?.images);
     const firstImageFilename = imagesList[0] || '';
     const mainImageUrl = firstImageFilename 
-    ? `${process.env.REACT_APP_API_URL}/static/images/${firstImageFilename}` 
+    ? `${process.env.REACT_APP_API_URL}static/images/${firstImageFilename}` 
     : `${process.env.REACT_APP_API_URL}logo192.png`;
     // const mainImageUrl = item.images ? `${process.env.REACT_APP_API_URL}/${item.image}` : '';
 

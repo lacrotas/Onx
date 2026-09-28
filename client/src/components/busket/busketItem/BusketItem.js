@@ -32,11 +32,14 @@ function BusketItem({ removeItem, item, setFinalSum, index, initialQuantity = 1 
         });
     }
 
+    const imageFilename = item.images && item.images.length > 0 ? item.images[0] : item.image;
+    const imageSrc = imageFilename ? `${process.env.REACT_APP_API_URL}static/images/${imageFilename}` : '';
+
     return (
         <div className="cart-item">
             <div className="item-image-container">
                 <img
-                    src={process.env.REACT_APP_API_URL + item.image}
+                    src={imageSrc}
                     className="item-image"
                     alt={item.name}
                 />
