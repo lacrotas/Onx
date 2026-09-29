@@ -240,7 +240,7 @@ class itemController {
         let processedVideo = null;
 
         try {
-            const { mainKategoryId, kategoryId, categoryId, name, price, description, specificationsJSONB } = req.body;
+            const { mainKategoryId, kategoryId, categoryId, name, price, description, specificationsJSONB, alias, seo_title, seo_desc, isExist, isShowed } = req.body;
 
             processedImages = req.processedImages || [];
             processedVideo = req.processedVideo || null;
@@ -262,11 +262,14 @@ class itemController {
                 images: processedImages,
                 price: price,
                 name: name,
+                alias: alias && alias.trim() ? alias.trim() : null,
+                seo_title: seo_title && seo_title.trim() ? seo_title.trim() : null,
+                seo_desc: seo_desc && seo_desc.trim() ? seo_desc.trim() : null,
                 video: processedVideo,
                 description: description,
                 specificationsJSONB: specifications,
-                isExist: true,
-                isShowed: true,
+                isExist: isExist !== undefined ? (isExist === 'true' || isExist === true) : true,
+                isShowed: isShowed !== undefined ? (isShowed === 'true' || isShowed === true) : true,
                 rating: "0",
                 reviewNumber: "0"
             });
@@ -344,6 +347,9 @@ class itemController {
 
             if (req.body.itemGroupId !== undefined) updateData.itemGroupId = req.body.itemGroupId;
             if (req.body.name !== undefined) updateData.name = req.body.name;
+            if (req.body.alias !== undefined) updateData.alias = req.body.alias && req.body.alias.trim() ? req.body.alias.trim() : null;
+            if (req.body.seo_title !== undefined) updateData.seo_title = req.body.seo_title && req.body.seo_title.trim() ? req.body.seo_title.trim() : null;
+            if (req.body.seo_desc !== undefined) updateData.seo_desc = req.body.seo_desc && req.body.seo_desc.trim() ? req.body.seo_desc.trim() : null;
             if (req.body.price !== undefined) updateData.price = req.body.price;
             if (req.body.isExist !== undefined) updateData.isExist = req.body.isExist;
             if (req.body.isShowed !== undefined) updateData.isShowed = req.body.isShowed;

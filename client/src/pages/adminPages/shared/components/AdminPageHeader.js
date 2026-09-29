@@ -14,6 +14,7 @@ export default function AdminPageHeader({
     isSaving = false,
     onApplyChanges,
     onCancelChanges,
+    extraActions,
     children // Дополнительные селекты/фильтры
 }) {
     return (
@@ -79,6 +80,9 @@ export default function AdminPageHeader({
                         </button>
                     </div>
                 )}
+
+                {/* Дополнительные действия (например, экспорт) */}
+                {extraActions}
 
                 {/* Кнопка добавления */}
                 {onAdd && (

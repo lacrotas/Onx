@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiEdit2, FiTrash2, FiShoppingBag } from 'react-icons/fi';
+import React, { useState, useEffect, useRef } from 'react';
+import { FiEdit2, FiTrash2, FiShoppingBag, FiChevronDown, FiCheck } from 'react-icons/fi';
 import { fetchAllOrders, updateOrder, deleteOrder } from '../../../http/orderApi';
 import { useAdminTable } from '../shared/hooks/useAdminTable';
 import AdminPageHeader from '../shared/components/AdminPageHeader';
@@ -15,8 +15,15 @@ const COLUMNS = [
     { label: 'Телефон', sortKey: 'phone' },
     { label: 'Оплата' },
     { label: 'Сумма', sortKey: 'price', align: 'right', width: '130px' },
-    { label: 'Статус', sortKey: 'orderStage', align: 'center', width: '140px' },
+    { label: 'Статус', sortKey: 'orderStage', align: 'center', width: '160px' },
     { label: 'Действия', align: 'right', width: '130px' }
+];
+
+const ORDER_STAGES = [
+    { key: 'start', label: 'Новый', variant: 'warning' },
+    { key: 'inProcess', label: 'В обработке', variant: 'info' },
+    { key: 'finished', label: 'Завершен', variant: 'success' },
+    { key: 'canceled', label: 'Отменен', variant: 'danger' }
 ];
 
 const STAGE_LABELS = {
@@ -29,6 +36,9 @@ const STAGE_LABELS = {
 export default function OrderTable() {
     const [orders, setOrders] = useState([]);
     const [selectedStage, setSelectedStage] = useState('all');
+    const [activeStatusDropdownId, setActiveStatusDropdownId] = useState(null);
+    const [updatingStatusId, setUpdatingStatusId] = useState(null);
+    const dropdownMenuRef = useRef(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -67,6 +77,28 @@ export default function OrderTable() {
         loadOrders();
     }, []);
 
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (dropdownMenuRef.current && !dropdownMenuRef.current.contains(e.target)) {
+                setActiveStatusDropdownId(null);
+            }
+        };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setActiveStatusDropdownId(null);
+            }
+        };
+
+        if (activeStatusDropdownId !== null) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [activeStatusDropdownId]);
+
     const loadOrders = async () => {
         setIsLoading(true);
         try {
@@ -77,6 +109,28 @@ export default function OrderTable() {
             console.error('Ошибка загрузки заказов:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleQuickStatusChange = async (orderId, newStage, e) => {
+        if (e) e.stopPropagation();
+        setActiveStatusDropdownId(null);
+
+        const currentOrder = orders.find(o => o.id === orderId);
+        if (!currentOrder || currentOrder.orderStage === newStage) return;
+
+        const previousOrders = [...orders];
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, orderStage: newStage } : o));
+        setUpdatingStatusId(orderId);
+
+        try {
+            await updateOrder(orderId, { orderStage: newStage });
+        } catch (error) {
+            console.error('Ошибка изменения статуса заказа:', error);
+            setOrders(previousOrders);
+            alert('Не удалось изменить статус заказа. Попробуйте еще раз.');
+        } finally {
+            setUpdatingStatusId(null);
         }
     };
 
@@ -188,6 +242,13 @@ export default function OrderTable() {
                     >
                         Завершенные ({orders.filter(o => o.orderStage === 'finished').length})
                     </button>
+                    <button
+                        type="button"
+                        className={`stage-tab-btn ${selectedStage === 'canceled' ? 'active' : ''}`}
+                        onClick={() => setSelectedStage('canceled')}
+                    >
+                        Отмененные ({orders.filter(o => o.orderStage === 'canceled').length})
+                    </button>
                 </div>
             </AdminPageHeader>
 
@@ -199,8 +260,11 @@ export default function OrderTable() {
                 getSortIndicator={getSortIndicator}
                 isLoading={isLoading}
                 emptyMessage="Заказы не найдены"
-                renderRow={(order) => {
+                renderRow={(order, index) => {
                     const stageConfig = STAGE_LABELS[order.orderStage] || { label: order.orderStage || 'Новый', variant: 'neutral' };
+                    const isOpen = activeStatusDropdownId === order.id;
+                    const isUpdating = updatingStatusId === order.id;
+                    const isNearBottom = filteredItems.length > 2 && index >= filteredItems.length - 2;
 
                     return (
                         <tr key={order.id}>
@@ -216,10 +280,49 @@ export default function OrderTable() {
                             <td className="text-right" style={{ fontWeight: 700 }}>
                                 {order.price ? `${order.price} BYN` : '0 BYN'}
                             </td>
-                            <td className="text-center">
-                                <AdminBadge variant={stageConfig.variant} dot>
-                                    {stageConfig.label}
-                                </AdminBadge>
+                            <td className="text-center status-col-cell">
+                                <div
+                                    className="status-select-container"
+                                    ref={isOpen ? dropdownMenuRef : null}
+                                >
+                                    <button
+                                        type="button"
+                                        className={`status-badge-trigger status-${stageConfig.variant} ${isOpen ? 'open' : ''} ${isUpdating ? 'updating' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveStatusDropdownId(prev => prev === order.id ? null : order.id);
+                                        }}
+                                        title="Нажмите, чтобы изменить статус"
+                                        disabled={isUpdating}
+                                    >
+                                        <span className="badge-dot" />
+                                        <span className="badge-text">{stageConfig.label}</span>
+                                        <FiChevronDown className="status-chevron" />
+                                    </button>
+
+                                    {isOpen && (
+                                        <div className={`status-dropdown-menu ${isNearBottom ? 'drop-up' : ''}`}>
+                                            <div className="status-dropdown-header">Сменить статус:</div>
+                                            {ORDER_STAGES.map((stage) => {
+                                                const isCurrent = (order.orderStage || 'start') === stage.key;
+                                                return (
+                                                    <button
+                                                        key={stage.key}
+                                                        type="button"
+                                                        className={`status-dropdown-item ${isCurrent ? 'active' : ''}`}
+                                                        onClick={(e) => handleQuickStatusChange(order.id, stage.key, e)}
+                                                    >
+                                                        <div className="item-content">
+                                                            <span className={`item-dot dot-${stage.variant}`} />
+                                                            <span className="item-label">{stage.label}</span>
+                                                        </div>
+                                                        {isCurrent && <FiCheck className="item-check" />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             </td>
                             <td className="text-right">
                                 <div className="action-buttons-group">

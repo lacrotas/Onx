@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
+import { FiDownload } from 'react-icons/fi';
 import { fetchAllMainCategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
 import { fetchAllItem, postItem, deleteItemById, updateItemById } from '../../../http/itemApi';
 import { fetchAllFiltersByCategoryId, updateFilter } from '../../../http/filterApi';
@@ -25,6 +27,7 @@ const ItemTable = () => {
 
     const [formData, setFormData] = useState({
         name: '',
+        alias: '',
         mainKategoryId: '',
         kategoryId: '',
         price: '',
@@ -270,6 +273,7 @@ const ItemTable = () => {
 
         setFormData({
             name: '',
+            alias: '',
             mainKategoryId: initialMainCategoryId,
             kategoryId: '',
             price: '',
@@ -305,6 +309,7 @@ const ItemTable = () => {
 
         const initialFormData = {
             name: item.name || '',
+            alias: item.alias || '',
             mainKategoryId: currentMainCategoryId,
             kategoryId: currentCategoryId,
             categoryId: currentCategoryId,
@@ -345,6 +350,7 @@ const ItemTable = () => {
 
         const initialFormData = {
             name: item.name + ' (Копия)',
+            alias: item.alias ? `${item.alias}-copy` : '',
             mainKategoryId: currentMainCategoryId,
             kategoryId: currentCategoryId,
             categoryId: currentCategoryId,
@@ -508,6 +514,7 @@ const ItemTable = () => {
         myFormData.append("kategoryId", catId);
         myFormData.append("categoryId", catId);
         myFormData.append("name", formData.name);
+        myFormData.append("alias", (formData.alias || '').trim());
 
         formData.images.forEach(imgObj => {
             myFormData.append('imageStrings', imgObj.url);
@@ -661,6 +668,105 @@ const ItemTable = () => {
         }
     };
 
+    // Выгрузка всех товаров в Excel
+    const handleExportToExcel = () => {
+        if (!items || items.length === 0) {
+            alert('Нет товаров для выгрузки в Excel');
+            return;
+        }
+
+        const origin = window.location.origin;
+
+        const dataToExport = items.map((item) => {
+            const itemCatId = item.categoryId || item.kategoryId;
+            const subCat = allCategories.find(c => String(c.id) === String(itemCatId));
+            const mainCatId = subCat?.parentId || item.mainKategoryId;
+            const mainCat = mainCategories.find(m => String(m.id) === String(mainCatId));
+
+            const mainCategoryName = mainCat ? (mainCat.name || '').trim() : '';
+            const subCategoryName = subCat ? (subCat.name || '').trim() : '';
+
+            // Формирование ссылки на товар
+            let productUrl = '';
+            if (mainCat?.alias && subCat?.alias && item.alias) {
+                productUrl = `${origin}/${mainCat.alias}/${subCat.alias}/${item.alias}`;
+            } else if (subCat?.alias && item.alias) {
+                productUrl = `${origin}/${subCat.alias}/${item.alias}`;
+            } else if (item.alias) {
+                productUrl = `${origin}/itemPreview/${item.alias}`;
+            } else {
+                productUrl = `${origin}/item/${item.id}`;
+            }
+
+            // Очистка HTML тегов из описания
+            const cleanDescription = (item.description || '')
+                .replace(/<[^>]*>?/gm, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            // Читаемый список характеристик
+            let specsString = '';
+            if (item.specificationsJSONB && typeof item.specificationsJSONB === 'object') {
+                specsString = Object.entries(item.specificationsJSONB)
+                    .filter(([_, v]) => v !== undefined && v !== null && String(v).trim() !== '')
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join('; ');
+            }
+
+            // Ссылки на фото
+            const imagesList = Array.isArray(item.images) && item.images.length > 0
+                ? item.images.map(img => `${origin}/static/images/${img}`).join(';\n')
+                : '';
+
+            return {
+                'ID': item.id,
+                'Название': item.name || '',
+                'Главная категория': mainCategoryName,
+                'Подкатегория': subCategoryName,
+                'Цена (BYN)': parseFloat(item.price) || 0,
+                'В наличии': item.isExist ? 'Да' : 'Нет',
+                'Отображается на сайте': item.isShowed ? 'Да' : 'Нет',
+                'Ссылка на товар': productUrl,
+                'Количество фото': Array.isArray(item.images) ? item.images.length : 0,
+                'Ссылки на фото': imagesList,
+                'Видео': item.video ? `${origin}/static/video/${item.video}` : 'Нет',
+                'Характеристики': specsString,
+                'Описание': cleanDescription,
+                'SEO Title': item.seo_title || '',
+                'SEO Description': item.seo_desc || '',
+                'Дата создания': item.createdAt ? new Date(item.createdAt).toLocaleString('ru-RU') : '',
+                'Дата обновления': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ru-RU') : ''
+            };
+        });
+
+        // Создаем лист
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+        // Рассчитываем автоширину колонок
+        const colWidths = Object.keys(dataToExport[0]).map(key => {
+            let maxLen = key.length;
+            dataToExport.forEach(row => {
+                const val = row[key];
+                if (val !== undefined && val !== null) {
+                    const firstLine = String(val).split('\n')[0];
+                    if (firstLine.length > maxLen) {
+                        maxLen = firstLine.length;
+                    }
+                }
+            });
+            return { wch: Math.min(Math.max(maxLen + 3, 10), 60) };
+        });
+        worksheet['!cols'] = colWidths;
+
+        // Создаем книгу и инициируем скачивание
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Товары');
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('ru-RU').replace(/\./g, '-');
+        XLSX.writeFile(workbook, `Товары_ONX_${dateStr}.xlsx`);
+    };
+
     const COLUMNS = [
         { label: 'Категория', sortKey: 'categoryId' },
         { label: 'Фото', width: '100px' },
@@ -685,6 +791,17 @@ const ItemTable = () => {
                 isSaving={isSaving}
                 onApplyChanges={handleApplyChanges}
                 onCancelChanges={cancelChanges}
+                extraActions={
+                    <button
+                        type="button"
+                        className="btn-export-excel"
+                        onClick={handleExportToExcel}
+                        title={`Выгрузить все товары (${items.length} шт.) в Excel (.xlsx)`}
+                    >
+                        <FiDownload />
+                        <span>Экспорт в Excel</span>
+                    </button>
+                }
             >
                 <select
                     value={selectedFilterCategory}

@@ -46,8 +46,20 @@ const MyOrdersPage = () => {
     ];
 
     const getStatusInfo = (stage) => {
-        switch (stage) {
+        const raw = (stage || '').trim();
+        const normalized = raw.toLowerCase();
+
+        switch (normalized) {
             case 'start':
+            case 'new':
+                return {
+                    label: 'Новый',
+                    className: 'status-new',
+                    icon: <FiClock />
+                };
+            case 'inprocess':
+            case 'in_process':
+            case 'processing':
                 return {
                     label: 'В обработке',
                     className: 'status-processing',
@@ -67,14 +79,18 @@ const MyOrdersPage = () => {
                     className: 'status-delivery',
                     icon: <FiTruck />
                 };
+            case 'finished':
             case 'done':
             case 'completed':
+            case 'success':
                 return {
-                    label: 'Выполнен',
+                    label: 'Завершен',
                     className: 'status-completed',
                     icon: <FiCheckCircle />
                 };
+            case 'canceled':
             case 'cancelled':
+            case 'rejected':
                 return {
                     label: 'Отменен',
                     className: 'status-cancelled',
@@ -82,7 +98,7 @@ const MyOrdersPage = () => {
                 };
             default:
                 return {
-                    label: stage || 'Принят',
+                    label: raw || 'Новый',
                     className: 'status-default',
                     icon: <FiClock />
                 };

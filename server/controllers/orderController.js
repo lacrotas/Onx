@@ -131,29 +131,31 @@ class OrderController {
     async updateOrderById(req, res) {
         try {
             const { id } = req.params;
-            const { itemsJsonb, name, adress, comment, phone, payment, orderStage, price } = req.body
+            const { name, adress, comment, phone, payment, orderStage, price, itemsJsonb } = req.body || {};
+            const updateFields = {};
+            if (name !== undefined) updateFields.name = name;
+            if (adress !== undefined) updateFields.adress = adress;
+            if (comment !== undefined) updateFields.comment = comment;
+            if (phone !== undefined) updateFields.phone = phone;
+            if (payment !== undefined) updateFields.payment = payment;
+            if (orderStage !== undefined) updateFields.orderStage = orderStage;
+            if (price !== undefined) updateFields.price = price;
 
-            let specifications = itemsJsonb;
-            if (typeof itemsJsonb === 'string' && itemsJsonb) {
-                try {
-                    specifications = JSON.parse(itemsJsonb);
-                } catch (parseError) {
-                    console.log('JSON parse error:', parseError);
-                    specifications = {};
+            if (itemsJsonb !== undefined) {
+                let specifications = itemsJsonb;
+                if (typeof itemsJsonb === 'string' && itemsJsonb) {
+                    try {
+                        specifications = JSON.parse(itemsJsonb);
+                    } catch (parseError) {
+                        console.log('JSON parse error:', parseError);
+                        specifications = {};
+                    }
                 }
+                updateFields.itemsJsonb = specifications;
             }
 
             const [updatedRowsCount, updatedRows] = await Order.update(
-                {
-                    name: name,
-                    adress: adress,
-                    comment: comment,
-                    phone: phone,
-                    payment: payment,
-                    itemsJsonb: specifications,
-                    orderStage: orderStage,
-                    price: price
-                },
+                updateFields,
                 {
                     returning: true,
                     where: { id }

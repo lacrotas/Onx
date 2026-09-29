@@ -15,6 +15,13 @@ import { fetchAllReview } from '../../../http/reviewApi';
 import { AdminBadge } from '../shared/components/AdminBadge';
 import './AdminSummary.scss';
 
+const STAGE_LABELS = {
+    start: { label: 'Новый', variant: 'warning' },
+    inProcess: { label: 'В обработке', variant: 'info' },
+    finished: { label: 'Завершен', variant: 'success' },
+    canceled: { label: 'Отменен', variant: 'danger' }
+};
+
 export default function AdminSummary({ onNavigate }) {
     const [stats, setStats] = useState({
         itemsCount: 0,
@@ -200,9 +207,14 @@ export default function AdminSummary({ onNavigate }) {
                                         <td className="order-phone">{order.phone || '—'}</td>
                                         <td className="order-price">{order.price ? `${order.price} BYN` : '—'}</td>
                                         <td>
-                                            <AdminBadge variant={order.orderStage === 'finished' ? 'success' : 'warning'} dot>
-                                                {order.orderStage || 'Новый'}
-                                            </AdminBadge>
+                                            {(() => {
+                                                const stage = STAGE_LABELS[order.orderStage] || { label: order.orderStage || 'Новый', variant: 'neutral' };
+                                                return (
+                                                    <AdminBadge variant={stage.variant} dot>
+                                                        {stage.label}
+                                                    </AdminBadge>
+                                                );
+                                            })()}
                                         </td>
                                     </tr>
                                 ))}
