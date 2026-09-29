@@ -1,40 +1,59 @@
-const { Attribute } = require('../models/models');
+const { Attribute, Category } = require('../models/models');
 const ApiError = require('../error/ApiError');
 
 class attributeController {
 
     async getAllAttributeByKategoryId(req, res) {
-        const { categoryId } = req.params
-        const attribute = await Attribute.findAll(
-            { where: { categoryId } }
-        );
+        const categoryId = req.params.categoryId || req.params.kategoryId;
+        const attribute = await Attribute.findAll({
+            where: { categoryId },
+            include: [{ model: Category, attributes: ['id', 'name'] }],
+            order: [['filterIndex', 'ASC'], ['id', 'ASC']]
+        });
         return res.json(attribute);
     }
 
     async getAllAttribute(req, res) {
-        const attribute = await Attribute.findAll();
+        const attribute = await Attribute.findAll({
+            include: [{ model: Category, attributes: ['id', 'name'] }],
+            order: [['filterIndex', 'ASC'], ['id', 'ASC']]
+        });
         return res.json(attribute);
     }
 
     async getAttributeById(req, res) {
-        const { id } = req.params
-        const attribute = await Attribute.findOne(
-            { where: { id } }
-        );
+        const { id } = req.params;
+        const attribute = await Attribute.findOne({
+            where: { id },
+            include: [{ model: Category, attributes: ['id', 'name'] }]
+        });
         return res.json(attribute);
     }
 
     async addAttribute(req, res, next) {
         try {
-            const { name, buttonType, kategoryId, addition, attributeValues } = req.body
+            const { name, buttonType, categoryId, kategoryId, addition, attributeValues, filterIndex } = req.body;
+            const targetCategoryId = categoryId !== undefined && categoryId !== null && categoryId !== ''
+                ? Number(categoryId)
+                : (kategoryId !== undefined && kategoryId !== null && kategoryId !== '' ? Number(kategoryId) : null);
+
+            let parsedAttributeValues = attributeValues;
+            if (typeof attributeValues === 'string') {
+                try {
+                    parsedAttributeValues = JSON.parse(attributeValues);
+                } catch (e) {
+                    parsedAttributeValues = [];
+                }
+            }
 
             const attribute = await Attribute.create({
                 name: name,
                 buttonType: buttonType,
-                kategoryId: kategoryId,
+                categoryId: targetCategoryId,
                 addition: addition,
-                attributeValues: attributeValues || []
-            })
+                attributeValues: parsedAttributeValues || [],
+                filterIndex: filterIndex !== undefined && filterIndex !== '' ? Number(filterIndex) : 0
+            });
             return res.json(attribute);
         } catch (e) {
             next(ApiError.badRequest(e.message));
@@ -43,10 +62,10 @@ class attributeController {
 
     async deleteAttributeById(req, res) {
         try {
-            const { id } = req.params
+            const { id } = req.params;
             const attribute = await Attribute.findOne(
                 { where: { id } }
-            )
+            );
             if (!attribute) {
                 return res.status(404).json({ error: 'Атрибут не найден' });
             }
@@ -64,7 +83,7 @@ class attributeController {
 
         let updateData;
         if (req.is('multipart/form-data')) {
-            const { name, buttonType, addition, specificationsJSONB, attributeValues, filterIndex } = req.body;
+            const { name, buttonType, categoryId, kategoryId, addition, specificationsJSONB, attributeValues, filterIndex } = req.body;
             let parsedAttributeValues = attributeValues;
             if (typeof attributeValues === 'string') {
                 try {
@@ -79,10 +98,21 @@ class attributeController {
                 addition: addition,
                 specificationsJSONB: specificationsJSONB,
                 attributeValues: parsedAttributeValues,
-                filterIndex: filterIndex
+                filterIndex: filterIndex !== undefined && filterIndex !== '' ? Number(filterIndex) : undefined
             };
+            const targetCat = categoryId !== undefined ? categoryId : kategoryId;
+            if (targetCat !== undefined && targetCat !== null && targetCat !== '') {
+                updateData.categoryId = Number(targetCat);
+            }
         } else {
-            updateData = req.body;
+            updateData = { ...req.body };
+            const targetCat = updateData.categoryId !== undefined ? updateData.categoryId : updateData.kategoryId;
+            if (targetCat !== undefined && targetCat !== null && targetCat !== '') {
+                updateData.categoryId = Number(targetCat);
+            }
+            if (updateData.filterIndex !== undefined && updateData.filterIndex !== '') {
+                updateData.filterIndex = Number(updateData.filterIndex);
+            }
             if (updateData.attributeValues && typeof updateData.attributeValues === 'string') {
                 try {
                     updateData.attributeValues = JSON.parse(updateData.attributeValues);

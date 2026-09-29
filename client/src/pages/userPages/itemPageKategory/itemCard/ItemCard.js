@@ -13,12 +13,19 @@ const ItemCard = ({ item, isInCart, onAddToCart, renderStars, categoryName, alia
         ));
     };
 
+    const resolvedMainAlias = mainAlias || item.mainCategoryAlias;
+    const resolvedAlias = alias || item.categoryAlias;
+    const resolvedItemAlias = item.alias || item.id;
+    const targetPath = item.productUrl || (resolvedMainAlias && resolvedAlias
+        ? `/${resolvedMainAlias}/${resolvedAlias}/${resolvedItemAlias}`
+        : (resolvedAlias ? `/${resolvedAlias}/${resolvedItemAlias}` : `/item/${resolvedItemAlias}`));
+
     return (
         <div className={`card ${!item.isExist ? 'out-of-stock' : ''}`}>
             <NavLink
                 className="card-link"
                 to={{
-                    pathname: `/${mainAlias}/${alias}/${item.alias}`,
+                    pathname: targetPath,
                     state: { path: [item.id] }
                 }}
             >

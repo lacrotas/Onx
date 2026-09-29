@@ -20,14 +20,46 @@ function checkId(id) {
 
 export const postOrder = async (item) => {
     const token = localStorage.getItem('token');
+    const headers = token && token !== 'undefined' && token !== 'null'
+        ? { Authorization: `Bearer ${token}` }
+        : {};
     try {
-        const { data } = await $host.post('api/orderRouter/add', item, {
+        const { data } = await $host.post('api/orderRouter/add', item, { headers });
+        return data;
+    } catch (e) {
+        console.error('Ошибка создания заказа:', e);
+        return false;
+    }
+}
+
+export const fetchMyOrders = async () => {
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null') return [];
+    try {
+        const { data } = await $host.get('api/orderRouter/my-orders', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error("Ошибка загрузки заказов пользователя:", e);
+        return [];
+    }
+}
+
+export const linkGuestOrders = async (guestOrderIds) => {
+    const token = localStorage.getItem('token');
+    if (!token || token === 'undefined' || token === 'null' || !Array.isArray(guestOrderIds) || guestOrderIds.length === 0) return false;
+    try {
+        const { data } = await $host.post('api/orderRouter/link-guest-orders', { guestOrderIds }, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
         return data;
     } catch (e) {
+        console.error("Ошибка связки гостевых заказов:", e);
         return false;
     }
 }

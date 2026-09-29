@@ -1,23 +1,24 @@
 // ItemSearchPage.js
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom'; // ← v5
+import { useLocation, NavLink } from 'react-router-dom';
 import Headers from "../../../components/header/Header";
 import Footer from "../../../components/footer/Footer";
 import { fetchAllItemByName } from "../../../http/itemApi";
-import { ITEM_PREVIEW_ROUTE } from "../../appRouter/Const";
-import { NavLink } from "react-router-dom";
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
+import ItemCard from '../itemPageKategory/itemCard/ItemCard';
+import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
+import { ItemCardSkeleton } from '../../../components/skeletons';
+import { FiSearch, FiPackage } from 'react-icons/fi';
 import "./ItemSearchPage.scss";
 
-// Вспомогательная функция для извлечения query-параметра
 function getSearchParam(search, param) {
     const params = new URLSearchParams(search);
     return params.get(param) || '';
 }
 
 const ItemSearchPage = () => {
-    const location = useLocation(); // ← v5
-    const query = getSearchParam(location.search, 'q'); // ← парсим ?q=...
+    const location = useLocation();
+    const query = getSearchParam(location.search, 'q');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -46,98 +47,92 @@ const ItemSearchPage = () => {
         loadItems();
     }, [query]);
 
-    const renderStars = (rating) => {
-        const stars = [];
-        const roundedRating = Math.round(rating || 0);
-        for (let i = 1; i <= 4; i++) {
-            stars.push(
-                <span
-                    key={i}
-                    className={`star ${i <= roundedRating ? 'filled' : 'empty'}`}
-                >
-                    ★
-                </span>
-            );
-        }
-        return stars;
-    };
-
     return (
-        <>
-            <Headers />
+        <div className="search-page-wrapper">
+            <Headers isAdminHeader={false} />
             <div className="item-search-page">
                 <Breadcrumbs
                     items={[
                         { title: "Главная", path: "/" },
-                        { title: `Поиск: "${query}"` }
+                        { title: query ? `Поиск: ${query}` : "Поиск" }
                     ]}
                 />
 
                 <div className="search-main-content">
-                    <h1 className="search-title my_h1">
-                        Результаты поиска: <span className="query-highlight my_h1">"{query}"</span>
-                    </h1>
+                    <div className="search-header-row">
+                        <h1 className="search-title">
+                            {query ? (
+                                <>Результаты поиска <span className="query-highlight">«{query}»</span></>
+                            ) : (
+                                'Поиск товаров'
+                            )}
+                        </h1>
+                        {!loading && items.length > 0 && (
+                            <span className="search-count-badge">
+                                {items.length} {items.length === 1 ? 'товар' : items.length < 5 ? 'товара' : 'товаров'}
+                            </span>
+                        )}
+                    </div>
 
                     <div className="items-section">
                         {loading ? (
-                            <div className="loading">Загрузка товаров...</div>
+                            <div className="search-products-grid">
+                                {Array.from({ length: 8 }).map((_, idx) => (
+                                    <ItemCardSkeleton key={idx} />
+                                ))}
+                            </div>
                         ) : error ? (
-                            <div className="error">{error}</div>
+                            <div className="search-status-box error">
+                                <p>{error}</p>
+                            </div>
                         ) : items.length > 0 ? (
-                            <div className="items-grid">
+                            <div className="search-products-grid">
                                 {items.map(item => (
-                                    <NavLink
-                                        key={item.id}
-                                        to={`${ITEM_PREVIEW_ROUTE}/${item.id}`}
-                                    >
-                                        <div className="item-card">
-                                            <div className="item-image">
-                                                {item.images?.length > 0 ? (
-                                                    <img
-                                                        src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`}
-                                                        alt={item.name}
-                                                        onError={(e) => e.target.src = '/placeholder-image.jpg'}
-                                                    />
-                                                ) : (
-                                                    <div className="no-image">Нет изображения</div>
-                                                )}
-                                            </div>
-                                            <div className="item-rating">
-                                                <div className="stars">
-                                                    {renderStars(item.rating)}
-                                                </div>
-                                            </div>
-                                            <div className="item-info">
-                                                <h3 className="item-name">{item.name}</h3>
-                                                <div className="item-status">
-                                                    {item.isExist ? (
-                                                        <span className="in-stock">В наличии</span>
-                                                    ) : (
-                                                        <span className="out-of-stock">Нет в наличии</span>
-                                                    )}
-                                                </div>
-                                                <div className="item-price">
-                                                    {item.price} руб.
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </NavLink>
+                                    <AddToCart key={item.id} item={item}>
+                                        {({ isInCart, handleAddToCart }) => (
+                                            <ItemCard
+                                                item={item}
+                                                isInCart={isInCart}
+                                                onAddToCart={handleAddToCart}
+                                                categoryName={item.categoryName}
+                                                mainAlias={item.mainCategoryAlias}
+                                                alias={item.categoryAlias}
+                                            />
+                                        )}
+                                    </AddToCart>
                                 ))}
                             </div>
                         ) : query ? (
-                            <div className="no-items">
-                                По запросу <strong>"{query}"</strong> ничего не найдено.
+                            <div className="search-empty-state">
+                                <div className="empty-state-icon">
+                                    <FiSearch size={44} />
+                                </div>
+                                <h3 className="empty-state-title">По запросу «{query}» ничего не найдено</h3>
+                                <p className="empty-state-desc">
+                                    Проверьте правильность написания запроса или попробуйте найти товар через каталог категорий.
+                                </p>
+                                <div className="empty-state-actions">
+                                    <NavLink to="/" className="btn-empty-action">
+                                        На главную
+                                    </NavLink>
+                                </div>
                             </div>
                         ) : (
-                            <div className="no-items">
-                                Введите поисковый запрос.
+                            <div className="search-empty-state">
+                                <div className="empty-state-icon">
+                                    <FiPackage size={44} />
+                                </div>
+                                <h3 className="empty-state-title">Введите поисковый запрос</h3>
+                                <p className="empty-state-desc">
+                                    Воспользуйтесь строкой поиска в шапке сайта, чтобы быстро найти интересующий вас товар.
+                                </p>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
             <Footer />
-        </>
+        </div>
     );
 };
 

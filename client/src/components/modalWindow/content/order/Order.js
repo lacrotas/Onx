@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./Order.scss";
 import { FaUser, FaPhone, FaMapMarkerAlt, FaTruck, FaMoneyBillWave, FaComment, FaCheckCircle } from "react-icons/fa";
 import { postOrder } from "../../../../http/orderApi";
-import { updateBusket } from "../../../../http/busketApi";
+import { updateBusket, updateBusketByUserId } from "../../../../http/busketApi";
 
 function Order({ value, itemsArr, closeModal }) {
     const BASKET_LOCAL_STORAGE_KEY = 'basket';
@@ -139,17 +139,30 @@ function Order({ value, itemsArr, closeModal }) {
                 price: itemsArr.totalValue,
                 orderStage: "start",
             };
-            console.log(orderData.itemsJsonb)
             const data = await postOrder(orderData);
             if (data) {
                 setIsSuccess(true);
-                updateBusket(itemsArr.basketId, { itemsJsonb: [] });
+                if (itemsArr.basketId) {
+                    updateBusket(itemsArr.basketId, { itemsJsonb: [] }).catch(() => {});
+                } else if (itemsArr.userId) {
+                    updateBusketByUserId(itemsArr.userId, { itemsJsonb: [] }).catch(() => {});
+                }
+
+                // Если заказ оформлен без авторизации, сохраняем его ID в localStorage
+                if (!itemsArr.userId && data.id) {
+                    try {
+                        const guestOrders = JSON.parse(localStorage.getItem('guest_orders') || '[]');
+                        if (!guestOrders.includes(data.id)) {
+                            guestOrders.push(data.id);
+                            localStorage.setItem('guest_orders', JSON.stringify(guestOrders));
+                        }
+                    } catch (e) {}
+                }
+
                 localStorage.removeItem(BASKET_LOCAL_STORAGE_KEY);
-                // Отправка в Telegram
-                await sendTelegramNotification(orderData, JSON.parse(orderData.itemsJsonb));
-                // Отправка на почту
-                // await sendEmailNotification(formData, value);
-                window.location.reload();
+                window.dispatchEvent(new Event('cartUpdated'));
+            } else {
+                alert('Не удалось оформить заказ. Пожалуйста, попробуйте еще раз.');
             }
         } catch (error) {
             console.error('Ошибка при оформлении заказа:', error);
@@ -157,140 +170,10 @@ function Order({ value, itemsArr, closeModal }) {
         }
     };
 
-    function generateEmailHtml(orderData, items) {
-        const itemsHtml = items.map(item =>
-            `<tr>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity} шт.</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${item.price * item.quantity} руб</td>
-            </tr>`
-        ).join('');
-
-        const total = items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
-        const deliveryCost = orderData.delivery === 'Доставка' ? 10 : 0;
-        const totalWithDelivery = total + deliveryCost;
-
-        return `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-                <h1 style="color: #2c3e50; text-align: center;">📦 Новый заказ!</h1>
-                
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee;">
-                    <h2 style="color: #2c3e50; margin-top: 0;">Информация о клиенте</h2>
-                    <p><strong>👤 Клиент:</strong> ${orderData.name}</p>
-                    <p><strong>📞 Телефон:</strong> ${orderData.phone}</p>
-                    <p><strong>📍 Адрес:</strong> ${orderData.delivery === 'Самовывоз' ? 'Самовывоз' : orderData.address}</p>
-                    <p><strong>🚚 Способ доставки:</strong> ${orderData.delivery}</p>
-                    <p><strong>💳 Способ оплаты:</strong> ${orderData.payment}</p>
-                    <p><strong>📝 Комментарий:</strong> ${orderData.comment || 'нет'}</p>
-                </div>
-                
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee;">
-                    <h2 style="color: #2c3e50; margin-top: 0;">🛒 Товары</h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                        <thead>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <th style="text-align: left; padding: 8px;">Название</th>
-                                <th style="text-align: center; padding: 8px;">Количество</th>
-                                <th style="text-align: right; padding: 8px;">Сумма</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemsHtml}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; border: 1px solid #d1e7ff;">
-                    <h3 style="color: #2c3e50; margin-top: 0;">💰 Итого к оплате</h3>
-                    <p><strong>Товары:</strong> ${total} руб</p>
-                    <p><strong>Доставка:</strong> ${deliveryCost} руб</p>
-                    <p style="font-size: 1.1em;"><strong>Всего:</strong> ${totalWithDelivery} руб</p>
-                </div>
-                
-                <p style="font-size: 0.9em; color: #7f8c8d; text-align: center; margin-top: 20px;">
-                    Это письмо сформировано автоматически, пожалуйста, не отвечайте на него
-                </p>
-            </div>
-        `;
-    }
-
-    async function sendEmailNotification(orderData, items) {
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_URL}api/order/send-order`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    orderData,
-                    items,
-                    subject: `Новый заказ от ${orderData.name}`,
-                    html: generateEmailHtml(orderData, items)
-                })
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Ошибка сервера при отправке заказа');
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Ошибка отправки email:', {
-                message: error.message,
-                stack: error.stack
-            });
-            throw error;
-        }
-    }
-
-    async function sendTelegramNotification(orderData, items) {
-        const botToken = '8268778878:AAGJFFLFOjoyFtsAcKw1LRI7FM6ZcCi6NFs';
-        const chatId = '-4990488355';
-        const itemsText = items.map(item => {
-            return `- ${item.name} (${item.count} шт.): ${item.price * item.count} руб`;
-        }).join('\n');
-
-        const total = items.reduce((sum, item) => {
-            return sum + (Number(item.price) * item.count);
-        }, 0);
-
-        const message = `
-            📦 *Новый заказ!*
-            
-            👤 *Клиент*: ${orderData.name}
-            📞 *Телефон*: ${orderData.phone}
-            📍 *Адрес*: ${orderData.adress}
-            💳 *Способ оплаты*: ${orderData.payment}
-            📝 *Комментарий*: ${orderData.comment || 'нет'}
-
-            🛒 *Товары*:
-            ${itemsText}
-
-            💰 *Итого*: ${total} руб
-        `;
-
-        try {
-            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    chat_id: chatId,
-                    text: message,
-                    parse_mode: 'Markdown'
-                })
-            });
-        } catch (error) {
-            console.log('Ошибка отправки в Telegram:', error);
-        }
-    }
-
     const closeSuccessModal = () => {
         setIsSuccess(false);
         closeModal();
+        window.location.href = '/';
     };
 
     return (

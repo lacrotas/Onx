@@ -18,6 +18,7 @@ const FilterTable = () => {
     const [editingFilter, setEditingFilter] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
+        categoryId: '',
         kategoryId: '',
         buttonType: 'check',
         addition: '',
@@ -45,7 +46,11 @@ const FilterTable = () => {
             const safeData = Array.isArray(data) ? data : [];
             setCategories(safeData);
             if (safeData.length > 0 && !editingFilter) {
-                setFormData(prev => ({ ...prev, kategoryId: safeData[0].id }));
+                setFormData(prev => ({ 
+                    ...prev, 
+                    categoryId: safeData[0].id,
+                    kategoryId: safeData[0].id 
+                }));
             }
         } catch (error) {
             console.error('Error loading categories:', error);
@@ -63,10 +68,14 @@ const FilterTable = () => {
     const saveFilterValues = async (filterObj, newValuesArray) => {
         setIsSaving(true);
         try {
+            const targetCatId = filterObj.categoryId !== undefined && filterObj.categoryId !== null 
+                ? filterObj.categoryId 
+                : filterObj.kategoryId;
             const payload = {
                 name: filterObj.name,
                 buttonType: filterObj.buttonType,
-                kategoryId: filterObj.kategoryId,
+                categoryId: Number(targetCatId),
+                kategoryId: Number(targetCatId),
                 addition: filterObj.addition || '',
                 attributeValues: newValuesArray,
                 filterIndex: filterObj.filterIndex
@@ -84,24 +93,32 @@ const FilterTable = () => {
 
     const openAddModal = () => {
         setEditingFilter(null);
+        const defaultCatId = selectedFilterCategory !== '' 
+            ? selectedFilterCategory 
+            : (categories.length > 0 ? categories[0].id : '');
         setFormData({
             name: '',
-            kategoryId: categories.length > 0 ? categories[0].id : '',
+            categoryId: defaultCatId,
+            kategoryId: defaultCatId,
             buttonType: 'check',
             addition: '',
-            filterIndex: ''
+            filterIndex: filters.length
         });
         setIsModalOpen(true);
     };
 
     const openEditModal = (filter) => {
         setEditingFilter(filter);
+        const currentCatId = filter.categoryId !== undefined && filter.categoryId !== null 
+            ? filter.categoryId 
+            : (filter.kategoryId !== undefined && filter.kategoryId !== null ? filter.kategoryId : (categories.length > 0 ? categories[0].id : ''));
         setFormData({
-            name: filter.name,
-            kategoryId: filter.kategoryId,
-            buttonType: filter.buttonType,
+            name: filter.name || '',
+            categoryId: currentCatId,
+            kategoryId: currentCatId,
+            buttonType: filter.buttonType || 'check',
             addition: filter.addition || '',
-            filterIndex: filter.filterIndex || ''
+            filterIndex: filter.filterIndex !== undefined && filter.filterIndex !== null ? filter.filterIndex : ''
         });
         setIsModalOpen(true);
     };
@@ -119,20 +136,28 @@ const FilterTable = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        if (name === 'categoryId' || name === 'kategoryId') {
+            setFormData(prev => ({ ...prev, categoryId: value, kategoryId: value }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
         try {
+            const targetCatId = formData.categoryId !== undefined && formData.categoryId !== '' 
+                ? formData.categoryId 
+                : formData.kategoryId;
             const payload = {
                 name: formData.name,
                 buttonType: formData.buttonType,
-                kategoryId: formData.kategoryId,
+                categoryId: Number(targetCatId),
+                kategoryId: Number(targetCatId),
                 addition: formData.addition,
                 attributeValues: editingFilter ? (editingFilter.attributeValues || []) : [],
-                filterIndex: formData.filterIndex
+                filterIndex: formData.filterIndex !== '' ? Number(formData.filterIndex) : (filters.length || 0)
             };
 
             if (editingFilter) {
@@ -155,10 +180,14 @@ const FilterTable = () => {
         e.preventDefault();
         setIsSaving(true);
         try {
+            const targetCatId = formData.categoryId !== undefined && formData.categoryId !== '' 
+                ? formData.categoryId 
+                : formData.kategoryId;
             const payload = {
                 name: formData.name,
                 buttonType: formData.buttonType,
-                kategoryId: formData.kategoryId,
+                categoryId: Number(targetCatId),
+                kategoryId: Number(targetCatId),
                 addition: formData.addition,
                 attributeValues: [],
                 filterIndex: filters.length
@@ -191,14 +220,16 @@ const FilterTable = () => {
 
     const getFilteredAndGroupedData = () => {
         const result = filters.filter(filter => {
-            const matchesSearch = filter.name.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesCategory = selectedFilterCategory === '' || filter.kategoryId === parseInt(selectedFilterCategory);
+            const filterCatId = filter.categoryId !== undefined && filter.categoryId !== null ? filter.categoryId : filter.kategoryId;
+            const matchesSearch = (filter.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = selectedFilterCategory === '' || String(filterCatId) === String(selectedFilterCategory);
             return matchesSearch && matchesCategory;
         });
 
         const grouped = result.reduce((acc, filter) => {
-            const cat = categories.find(c => c.id === filter.kategoryId);
-            const catName = cat ? cat.name : 'Без категории';
+            const filterCatId = filter.categoryId !== undefined && filter.categoryId !== null ? filter.categoryId : filter.kategoryId;
+            const cat = categories.find(c => String(c.id) === String(filterCatId)) || filter.category;
+            const catName = cat && cat.name ? cat.name.trim() : 'Без категории';
 
             if (!acc[catName]) {
                 acc[catName] = [];

@@ -1,5 +1,6 @@
 import { BrowserRouter } from "react-router-dom";
 import AppRouter from "./pages/appRouter/AppRouter";
+import ScrollToTop from "./components/scrollToTop/ScrollToTop";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       </div>
       <div className="App">
         <BrowserRouter>
+          <ScrollToTop />
           <AppRouter />
         </BrowserRouter>
       </div>

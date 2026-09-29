@@ -73,6 +73,7 @@ const ItemGallery = ({ item }) => {
                 <ModalWindow 
                     type="viewImages" 
                     value={item.images} 
+                    initialIndex={currentMediaIndex}
                     setIsModalActive={setIsImageView} 
                 />
             )}

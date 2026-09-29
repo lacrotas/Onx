@@ -1,20 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchBusketByUserId, updateBusket } from '../../../http/busketApi';
+import jwt_decode from 'jwt-decode';
+import { fetchBusketByUserId, updateBusket, updateBusketByUserId } from '../../../http/busketApi';
 import { fetchItemId } from '../../../http/itemApi';
 import Header from '../../../components/header/Header';
 import Footer from '../../../components/footer/Footer';
 import './BusketPage.scss';
 import { NavLink } from 'react-router-dom';
-import { FiTrash2 } from 'react-icons/fi';
+import { FiTrash2, FiInfo } from 'react-icons/fi';
 import ModalWindow from '../../../components/modalWindow/ModalWindow';
 import CustomAlert from '../../../components/customAlert/CustomAlert';
+import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
+import { LOGIN_ROUTE } from '../../appRouter/Const';
 
 const BASKET_LOCAL_STORAGE_KEY = 'basket';
 
 const BusketPage = () => {
     const { userId } = useParams();
-    const isAuth = !!localStorage.getItem('token');
+    const token = localStorage.getItem('token');
+    const isAuth = !!(token && token !== 'undefined' && token !== 'null');
+    
+    const getResolvedUserId = () => {
+        if (userId) return userId;
+        if (isAuth) {
+            try {
+                return jwt_decode(token)?.id || null;
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
+    };
+
+    const resolvedUserId = getResolvedUserId();
     const [basket, setBasket] = useState(null);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,9 +45,9 @@ const BusketPage = () => {
     // Вспомогательная функция для сохранения полного списка товаров в LS
     const saveBasketToLocalStorage = (itemsList) => {
         const basketData = itemsList.map(item => ({
-            itemId: item.id, // Сохраняем ID
-            id: item.id,     // Дублируем для надежности (для разных версий кода)
-            count: item.count
+            itemId: item.id || item.itemId,
+            id: item.id || item.itemId,
+            count: item.count || 1
         }));
         localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(basketData));
     };
@@ -40,7 +58,8 @@ const BusketPage = () => {
             return [];
         }
         try {
-            return JSON.parse(saved);
+            const parsed = JSON.parse(saved);
+            return Array.isArray(parsed) ? parsed : [];
         } catch (e) {
             console.error("Ошибка парсинга корзины из localStorage:", e);
             return [];
@@ -52,11 +71,9 @@ const BusketPage = () => {
         let updated;
 
         if (newCount < 1) {
-            // Удаление
-            updated = current.filter(item => String(item.itemId) !== String(itemId) && String(item.id) !== String(itemId));
+            updated = current.filter(item => String(item.itemId || item.id) !== String(itemId));
         } else {
-            // Обновление
-            const existingIndex = current.findIndex(item => (String(item.itemId) === String(itemId)) || (String(item.id) === String(itemId)));
+            const existingIndex = current.findIndex(item => String(item.itemId || item.id) === String(itemId));
             if (existingIndex >= 0) {
                 current[existingIndex].count = newCount;
                 updated = current;
@@ -74,23 +91,61 @@ const BusketPage = () => {
         try {
             setLoading(true);
             let basketItems = [];
+            const localItems = loadBasketFromLocalStorage();
 
-            if (isAuth && userId) {
-                const basketData = await fetchBusketByUserId(userId);
+            if (isAuth && resolvedUserId) {
+                let basketData = null;
+                try {
+                    basketData = await fetchBusketByUserId(resolvedUserId);
+                } catch (e) {
+                    console.warn("Не удалось получить серверную корзину:", e);
+                }
                 setBasket(basketData);
-                basketItems = basketData?.itemsJsonb || [];
+                const serverItems = basketData?.itemsJsonb || [];
 
-                // Синхронизируем серверную корзину с локальной при загрузке
-                // Это важно, чтобы Header сразу показал правильное число
-                const itemsForLS = basketItems.map(i => ({
-                    itemId: i.itemId || i.id,
-                    id: i.itemId || i.id,
-                    count: i.count
-                }));
-                localStorage.setItem(BASKET_LOCAL_STORAGE_KEY, JSON.stringify(itemsForLS));
-                window.dispatchEvent(new Event('cartUpdated')); // Обновляем хедер при загрузке страницы
+                // Слияние локальной корзины и серверной (не теряем товары)
+                const mergedMap = new Map();
+                serverItems.forEach(item => {
+                    const id = item.itemId || item.id;
+                    if (id) {
+                        mergedMap.set(String(id), {
+                            itemId: id,
+                            id: id,
+                            count: item.count || 1
+                        });
+                    }
+                });
+                localItems.forEach(item => {
+                    const id = item.itemId || item.id;
+                    if (id) {
+                        if (mergedMap.has(String(id))) {
+                            const existing = mergedMap.get(String(id));
+                            mergedMap.set(String(id), {
+                                ...existing,
+                                count: Math.max(existing.count, item.count || 1)
+                            });
+                        } else {
+                            mergedMap.set(String(id), {
+                                itemId: id,
+                                id: id,
+                                count: item.count || 1
+                            });
+                        }
+                    }
+                });
+
+                basketItems = Array.from(mergedMap.values());
+                saveBasketToLocalStorage(basketItems);
+
+                // Синхронизируем обратно на сервер в фоне
+                try {
+                    await updateBusketByUserId(resolvedUserId, { itemsJsonb: basketItems });
+                } catch (syncErr) {
+                    console.warn("Фоновое сохранение корзины на сервер:", syncErr);
+                }
+                window.dispatchEvent(new Event('cartUpdated'));
             } else {
-                basketItems = loadBasketFromLocalStorage();
+                basketItems = localItems;
                 setBasket(null);
             }
 
@@ -103,10 +158,10 @@ const BusketPage = () => {
                         const itemData = await fetchItemId(idToFetch);
                         return {
                             ...itemData,
-                            count: item.count,
+                            count: item.count || 1,
                         };
                     } catch (err) {
-                        console.error(`Ошибка загрузки товара ${item.itemId}:`, err);
+                        console.error(`Ошибка загрузки товара ${item.itemId || item.id}:`, err);
                         return null;
                     }
                 });
@@ -120,10 +175,7 @@ const BusketPage = () => {
                     initialQuantities[item.id] = item.count;
                 });
                 setLocalQuantities(initialQuantities);
-
-                if (!isAuth) {
-                    saveBasketToLocalStorage(validItems);
-                }
+                saveBasketToLocalStorage(validItems);
             } else {
                 setItems([]);
                 setLocalQuantities({});
@@ -143,7 +195,7 @@ const BusketPage = () => {
     useEffect(() => {
         loadBasket();
         // eslint-disable-next-line
-    }, [userId]);
+    }, [resolvedUserId]);
 
     // --- ОБНОВЛЕНИЕ КОЛИЧЕСТВА ---
     const handleQuantityChange = async (itemId, newCount) => {
@@ -151,32 +203,28 @@ const BusketPage = () => {
 
         setLocalQuantities(prev => ({ ...prev, [itemId]: newCount }));
 
-        // Обновляем стейт items, чтобы интерфейс был реактивным
         const updatedItems = items.map(item =>
             item.id === itemId ? { ...item, count: newCount } : item
         );
         setItems(updatedItems);
+        saveBasketToLocalStorage(updatedItems);
 
-        if (isAuth && basket) {
-            // 1. Обновляем на сервере
-            const busketItems = updatedItems.map(item => ({ itemId: item.id, count: item.count }));
-            await updateBusket(basket.id, { itemId: basket.id, itemsJsonb: busketItems });
-
-            // 2. ВАЖНО: Обновляем localStorage, чтобы Header был в курсе (даже если мы авторизованы)
-            saveBasketToLocalStorage(updatedItems);
-        } else {
-            // Обновляем в localStorage (гость)
-            updateQuantityInLocalStorage(itemId, newCount);
+        if (isAuth && resolvedUserId) {
+            const busketItems = updatedItems.map(item => ({
+                itemId: item.id,
+                id: item.id,
+                count: item.count
+            }));
+            updateBusketByUserId(resolvedUserId, { itemsJsonb: busketItems }).catch(err => {
+                console.warn("Ошибка обновления корзины на сервере:", err);
+            });
         }
 
-        // 3. Сообщаем хедеру об изменениях
         window.dispatchEvent(new Event('cartUpdated'));
     };
 
     // --- УДАЛЕНИЕ ТОВАРА ---
     const handleRemoveItem = async (itemId) => {
-
-        // 1. Сначала обновляем UI
         const updatedItems = items.filter(item => item.id !== itemId);
         setItems(updatedItems);
         setLocalQuantities(prev => {
@@ -185,19 +233,19 @@ const BusketPage = () => {
             return newQuantities;
         });
 
-        if (isAuth && basket) {
-            // 2. Обновляем сервер
-            const busketItems = updatedItems.map(item => ({ itemId: item.id, count: item.count }));
-            await updateBusket(basket.id, { itemId: basket.id, itemsJsonb: busketItems });
+        saveBasketToLocalStorage(updatedItems);
 
-            // 3. ВАЖНО: Синхронизируем localStorage для авторизованного юзера
-            saveBasketToLocalStorage(updatedItems);
-        } else {
-            // 2. Обновляем localStorage для гостя
-            updateQuantityInLocalStorage(itemId, 0);
+        if (isAuth && resolvedUserId) {
+            const busketItems = updatedItems.map(item => ({
+                itemId: item.id,
+                id: item.id,
+                count: item.count
+            }));
+            updateBusketByUserId(resolvedUserId, { itemsJsonb: busketItems }).catch(err => {
+                console.warn("Ошибка удаления товара из корзины на сервере:", err);
+            });
         }
 
-        // 4. ГЛАВНОЕ: Отправляем событие для Header
         window.dispatchEvent(new Event('cartUpdated'));
     };
 
@@ -205,14 +253,14 @@ const BusketPage = () => {
     const calculateTotal = () => {
         return items.reduce((total, item) => {
             const price = parseFloat(item.price) || 0;
-            const quantity = localQuantities[item.id] || item.count;
+            const quantity = localQuantities[item.id] || item.count || 1;
             return total + (price * quantity);
         }, 0);
     };
 
     const calculateTotalItems = () => {
         return items.reduce((total, item) => {
-            const quantity = localQuantities[item.id] || item.count;
+            const quantity = localQuantities[item.id] || item.count || 1;
             return total + quantity;
         }, 0);
     };
@@ -221,9 +269,11 @@ const BusketPage = () => {
     const handleCheckout = async () => {
         const itemsOrderInfo = items.map(item => ({
             id: item.id,
+            itemId: item.id,
+            alias: item.alias || item.id,
             name: item.name,
-            images: item.images[0],
-            count: localQuantities[item.id] || item.count,
+            images: item.images && item.images.length > 0 ? item.images[0] : '',
+            count: localQuantities[item.id] || item.count || 1,
             price: item.price
         }));
 
@@ -231,7 +281,7 @@ const BusketPage = () => {
             items: itemsOrderInfo,
             totalValue: calculateTotal(),
             totalCounter: calculateTotalItems(),
-            userId: userId,
+            userId: resolvedUserId || null,
             basketId: basket ? basket.id : null
         });
         setIsModalOpen(true);
@@ -264,7 +314,16 @@ const BusketPage = () => {
             {alertState && <CustomAlert setIsModalActive={setAlertState} text={"Вы действительно хотите удалить этот товар из корзины?"} onConfirm={() => handleRemoveItem(alertState)} />}
             <div className="basket-page">
                 <div className="container">
-                    <h1 className="page-title my_h1">Мои заказы</h1>
+                    <Breadcrumbs items={[{ title: "Главная", path: "/" }, { title: "Корзина" }]} />
+
+                    <div className="basket-header-row">
+                        <h1 className="page-title">Корзина</h1>
+                        {items.length > 0 && (
+                            <span className="basket-count-badge">
+                                {calculateTotalItems()} {calculateTotalItems() === 1 ? 'товар' : calculateTotalItems() < 5 ? 'товара' : 'товаров'}
+                            </span>
+                        )}
+                    </div>
 
                     {items.length === 0 ? (
                         <div className="empty-basket">
@@ -274,88 +333,124 @@ const BusketPage = () => {
                             </NavLink>
                         </div>
                     ) : (
-                        <div className="basket-content">
-                            <div className="basket-items">
-                                {items.map(item => {
-                                    const currentQuantity = localQuantities[item.id] || item.count;
-                                    const totalPrice = (parseFloat(item.price) * currentQuantity).toFixed(2);
+                        <>
+                            {!isAuth && (
+                                <div className="guest-tracker-banner">
+                                    <div className="banner-icon-wrapper">
+                                        <FiInfo className="banner-icon" />
+                                    </div>
+                                    <div className="banner-content">
+                                        <span className="banner-title">Хотите отслеживать статус заказа?</span>
+                                        <span className="banner-desc">
+                                            Чтобы отслеживать статус заказа и сохранять историю покупок в личном кабинете,{' '}
+                                            <NavLink to={{ pathname: LOGIN_ROUTE, search: '?mode=register' }} className="banner-link">зарегистрируйтесь</NavLink> или{' '}
+                                            <NavLink to={{ pathname: LOGIN_ROUTE, search: '?mode=login' }} className="banner-link">войдите</NavLink> у нас на сайте.
+                                        </span>
+                                    </div>
+                                    <NavLink to={{ pathname: LOGIN_ROUTE, search: '?mode=register' }} className="banner-action-btn">
+                                        Зарегистрироваться
+                                    </NavLink>
+                                </div>
+                            )}
 
-                                    return (
-                                        <div key={item.id} className="basket-item">
-                                            <div className="item-image">
-                                                {item.images && item.images.length > 0 ? (
-                                                    <img
-                                                        src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`}
-                                                        alt={item.name}
-                                                        onError={(e) => {
-                                                            e.target.src = '/placeholder-image.jpg';
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="no-image">Нет изображения</div>
-                                                )}
-                                            </div>
-                                            <div className="item-info">
-                                                <h3 className="item-name my_h3">{item.name}</h3>
-                                                <div className='item-info_prise-container'>
-                                                    <div className="item-total my_h3">
-                                                        {totalPrice} р.
-                                                    </div>
-                                                    <div className="item-quantity-control">
-                                                        <div className="quantity-selector">
-                                                            <button
-                                                                className="quantity-btn"
-                                                                onClick={() => handleQuantityChange(item.id, currentQuantity - 1)}
-                                                                disabled={currentQuantity <= 1}
-                                                            >
-                                                                -
-                                                            </button>
-                                                            <span className="quantity-value">{currentQuantity}</span>
-                                                            <button
-                                                                className="quantity-btn"
-                                                                onClick={() => handleQuantityChange(item.id, currentQuantity + 1)}
-                                                            >
-                                                                +
-                                                            </button>
+                            <div className="basket-content">
+                                <div className="basket-items">
+                                    {items.map(item => {
+                                        const currentQuantity = localQuantities[item.id] || item.count || 1;
+                                        const totalPrice = (parseFloat(item.price) * currentQuantity).toFixed(2);
+
+                                        return (
+                                            <div key={item.id} className="basket-item">
+                                                <div className="item-image">
+                                                    {item.images && item.images.length > 0 ? (
+                                                        <img
+                                                            src={`${process.env.REACT_APP_API_URL}static/images/${item.images[0]}`}
+                                                            alt={item.name}
+                                                            onError={(e) => {
+                                                                e.target.src = '/placeholder-image.jpg';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="no-image">Нет изображения</div>
+                                                    )}
+                                                </div>
+                                                <div className="item-info">
+                                                    <h3 className="item-name">{item.name}</h3>
+                                                    <div className="item-price-unit">{item.price} BYN за шт.</div>
+                                                    <div className='item-info_prise-container'>
+                                                        <div className="item-total">
+                                                            {totalPrice} BYN
+                                                        </div>
+                                                        <div className="item-quantity-control">
+                                                            <div className="quantity-selector">
+                                                                <button
+                                                                    className="quantity-btn"
+                                                                    onClick={() => handleQuantityChange(item.id, currentQuantity - 1)}
+                                                                    disabled={currentQuantity <= 1}
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="quantity-value">{currentQuantity}</span>
+                                                                <button
+                                                                    className="quantity-btn"
+                                                                    onClick={() => handleQuantityChange(item.id, currentQuantity + 1)}
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
-
                                                 </div>
+                                                <button
+                                                    className="remove-item-icon"
+                                                    onClick={() => setAlertState(item.id)}
+                                                    title="Удалить товар"
+                                                >
+                                                    <FiTrash2 size={18} />
+                                                </button>
                                             </div>
-                                            <button
-                                                className="remove-item-icon"
-                                                onClick={() => setAlertState(item.id)}
-                                                title="Удалить товар"
-                                            >
-                                                <FiTrash2 size={18} />
-                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="basket-summary-fixed">
+                                    <div className="summary-info">
+                                        <div className="summary-title">Сумма заказа</div>
+                                        <div className="summary-row">
+                                            <span>Товаров ({calculateTotalItems()} шт.):</span>
+                                            <span>{calculateTotal().toFixed(2)} BYN</span>
                                         </div>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="basket-summary-fixed">
-                                <div className="summary-info">
-                                    <div className="summary-row">
-                                        <span className='my_p'>Товаров:</span>
-                                        <span className='my_h3'>{calculateTotalItems()} шт.</span>
+                                        <div className="summary-row">
+                                            <span>Доставка:</span>
+                                            <span>Самовывоз</span>
+                                        </div>
+                                        <div className="summary-row total-row">
+                                            <span>Итого к оплате:</span>
+                                            <span className="total-price">{calculateTotal().toFixed(2)} BYN</span>
+                                        </div>
                                     </div>
-                                    <div className="summary-row total-row">
-                                        <span className='my_p'>Итого:</span>
-                                        <span className="total-price my_h3">{calculateTotal().toFixed(2)} ₽</span>
+
+                                    <div className="basket-actions">
+                                        <button
+                                            className="checkout-btn"
+                                            onClick={handleCheckout}
+                                        >
+                                            Оформить заказ
+                                        </button>
+
+                                        {!isAuth && (
+                                            <div className="guest-summary-notice">
+                                                <FiInfo className="notice-icon" />
+                                                <span>
+                                                    Чтобы отслеживать статус заказа,{' '}
+                                                    <NavLink to={{ pathname: LOGIN_ROUTE, search: '?mode=register' }} className="notice-link">зарегистрируйтесь</NavLink> на сайте.
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-
-                                <div className="basket-actions">
-                                    <button
-                                        className="checkout-btn my_p"
-                                        onClick={handleCheckout}
-                                    >
-                                        Оформить заказ
-                                    </button>
-                                </div>
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
             </div>

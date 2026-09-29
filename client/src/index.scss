@@ -31,8 +31,10 @@ body {
   background: #fbfbfd;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  overflow-y: auto; /* Разрешить вертикальную прокрутку */
-  -webkit-overflow-scrolling: touch; /* Плавный скролл для iOS */
+  overflow-y: auto;
+  /* Разрешить вертикальную прокрутку */
+  -webkit-overflow-scrolling: touch;
+  /* Плавный скролл для iOS */
 }
 
 .App {
@@ -181,7 +183,8 @@ a {
    UI КЛАССЫ (Для интерфейса сайта)
    ========================================= */
 .my_h1 {
-  font-size: 2.5rem; /* 40px - Главные заголовки страниц */
+  font-size: 2.5rem;
+  /* 40px - Главные заголовки страниц */
   font-family: "Inter_Bold", sans-serif;
   line-height: 1.15;
   margin: 0;
@@ -189,7 +192,8 @@ a {
 }
 
 .my_h2 {
-  font-size: 2rem; /* 32px - Заголовки крупных блоков (как "Полное описание") */
+  font-size: 2rem;
+  /* 32px - Заголовки крупных блоков (как "Полное описание") */
   font-family: "Inter_Bold", sans-serif;
   line-height: 1.2;
   margin: 0;
@@ -197,7 +201,8 @@ a {
 }
 
 .my_h3 {
-  font-size: 1.5rem; /* 24px - Заголовки карточек */
+  font-size: 1.5rem;
+  /* 24px - Заголовки карточек */
   font-family: "Inter_Bold", sans-serif;
   line-height: 1.25;
   margin: 0;
@@ -205,7 +210,8 @@ a {
 }
 
 .my_p {
-  font-size: 1rem; /* 16px - Основной текст UI */
+  font-size: 1rem;
+  /* 16px - Основной текст UI */
   font-family: "Roboto", sans-serif;
   line-height: 1.5;
   margin: 0;
@@ -213,7 +219,8 @@ a {
 }
 
 .my_p_small {
-  font-size: 0.875rem; /* 14px - Мелкий текст, сноски, копирайт */
+  font-size: 0.875rem;
+  /* 14px - Мелкий текст, сноски, копирайт */
   font-family: "Roboto", sans-serif;
   line-height: 1.5;
   margin: 0;
@@ -239,47 +246,56 @@ a {
    ========================================= */
 /* h1 в тексте теперь меньше, чем .my_h2, чтобы не ломать иерархию */
 h1 {
-  font-size: 1.5rem; /* 28px */
+  font-size: 1.5rem;
+  /* 28px */
   font-family: "Inter_Bold", sans-serif;
   line-height: 1.2;
-  margin: 0 0 16px 0; /* Отступ снизу для текста из редактора */
+  margin: 0 0 16px 0;
+  /* Отступ снизу для текста из редактора */
 }
 
 h2 {
-  font-size: 1.4rem; /* 24px */
+  font-size: 1.4rem;
+  /* 24px */
   font-family: "Inter_Bold", sans-serif;
   line-height: 1.25;
   margin: 0 0 14px 0;
 }
 
 h3 {
-  font-size: 1.25rem; /* 20px */
+  font-size: 1.25rem;
+  /* 20px */
   font-family: "Inter_Bold", sans-serif;
   line-height: 1.3;
   margin: 0 0 12px 0;
 }
 
 p {
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
+  /* 16px */
   font-family: "Roboto", sans-serif;
-  line-height: 1.6; /* Больше "воздуха" для удобства чтения статей */
-  margin: 0 0 12px 0; /* Обязательно отступ между абзацами */
+  line-height: 1.6;
+  /* Больше "воздуха" для удобства чтения статей */
+  margin: 0 0 12px 0;
+  /* Обязательно отступ между абзацами */
 }
 
-ul, ol {
+ul,
+ol {
   font-family: "Roboto", sans-serif;
   font-size: 1rem;
   line-height: 1.6;
   margin: 0 0 16px 0;
   padding-left: 24px;
   color: #1d1d1f;
-  
+
   li {
     margin-bottom: 6px;
   }
 }
 
-strong, b {
+strong,
+b {
   font-family: "Inter_Bold", sans-serif;
   font-weight: 700;
 }
@@ -289,38 +305,60 @@ strong, b {
    МОБИЛЬНАЯ АДАПТАЦИЯ (<768px)
    ========================================= */
 @media (max-width: 768px) {
+
   /* UI Классы */
   .my_h1 {
-    font-size: 2rem; /* 32px */
+    font-size: 2rem;
+    /* 32px */
   }
+
   .my_h2 {
-    font-size: 1.5rem; /* 24px */
+    font-size: 1.5rem;
+    /* 24px */
   }
+
   .my_h3 {
-    font-size: 1.25rem; /* 20px */
+    font-size: 1.25rem;
+    /* 20px */
   }
+
   .my_p {
-    font-size: 1rem; /* Оставляем 16px - стандарт для читаемости на смартфонах */
+    font-size: 1rem;
+    /* Оставляем 16px - стандарт для читаемости на смартфонах */
   }
+
   .my_p_small {
-    font-size: 0.8125rem; /* 13px */
+    font-size: 0.8125rem;
+    /* 13px */
   }
 
   /* Контентные теги */
   h1 {
-    font-size: 1.2rem; /* 24px */
+    font-size: 1.2rem;
+    /* 24px */
     margin: 0 0 12px 0;
   }
+
   h2 {
-    font-size: 1.15rem; /* 20px */
+    font-size: 1.15rem;
+    /* 20px */
     margin: 0 0 10px 0;
   }
+
   h3 {
-    font-size: 1.125rem; /* 18px */
+    font-size: 1.125rem;
+    /* 18px */
     margin: 0 0 10px 0;
   }
-  p, ul, ol {
+
+  p,
+  ul,
+  ol {
     font-size: 1rem;
     line-height: 1.5;
   }
+}
+
+.mb-2 {
+  margin-bottom: 1rem;
 }

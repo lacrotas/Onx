@@ -69,6 +69,23 @@ export const updateBusket = async (id, item) => {
     }
 }
 
+export const updateBusketByUserId = async (userId, item) => {
+    if (checkId(userId)) {
+        return null;
+    }
+    const token = localStorage.getItem('token');
+    try {
+        const { data } = await $host.put('api/busketRouter/updateByUserId/' + userId, item, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return data;
+    } catch (e) {
+        return false;
+    }
+}
+
 export const deleteBusket = async (id) => {
     if (!id) {
         return null;

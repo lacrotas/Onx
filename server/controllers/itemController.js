@@ -83,8 +83,62 @@ class itemController {
                     }
                 }
             });
-            return res.json(items);
+
+            if (!items || items.length === 0) {
+                return res.json([]);
+            }
+
+            // Находим все категории найденных товаров
+            const categoryIds = [...new Set(items.map(it => it.categoryId).filter(Boolean))];
+            const categories = categoryIds.length > 0 ? await Category.findAll({
+                where: { id: categoryIds }
+            }) : [];
+
+            // Находим родительские (главные) категории
+            const parentIds = [...new Set(categories.map(c => c.parentId).filter(p => p && p > 0))];
+            const mainCategories = parentIds.length > 0 ? await Category.findAll({
+                where: { id: parentIds }
+            }) : [];
+
+            const categoryMap = {};
+            categories.forEach(c => { categoryMap[c.id] = c; });
+
+            const mainCategoryMap = {};
+            mainCategories.forEach(m => { mainCategoryMap[m.id] = m; });
+
+            // Формируем обогащенный список товаров
+            const enrichedItems = items.map(item => {
+                const plainItem = item.get ? item.get({ plain: true }) : { ...item };
+                const cat = categoryMap[plainItem.categoryId];
+                let mainCat = null;
+                if (cat) {
+                    if (cat.parentId && cat.parentId > 0) {
+                        mainCat = mainCategoryMap[cat.parentId];
+                    } else {
+                        mainCat = cat;
+                    }
+                }
+
+                plainItem.categoryAlias = cat?.alias || null;
+                plainItem.categoryName = cat?.name || null;
+                plainItem.mainCategoryAlias = mainCat?.alias || null;
+                plainItem.mainCategoryName = mainCat?.name || null;
+
+                const itemAlias = plainItem.alias || plainItem.id;
+                if (mainCat?.alias && cat?.alias) {
+                    plainItem.productUrl = `/${mainCat.alias}/${cat.alias}/${itemAlias}`;
+                } else if (cat?.alias) {
+                    plainItem.productUrl = `/${cat.alias}/${itemAlias}`;
+                } else {
+                    plainItem.productUrl = `/item/${plainItem.id}`;
+                }
+
+                return plainItem;
+            });
+
+            return res.json(enrichedItems);
         } catch (error) {
+            console.error('Error in getItemsByNameSubstring:', error);
             return res.status(500).json({ message: "Error fetching items", error });
         }
     }

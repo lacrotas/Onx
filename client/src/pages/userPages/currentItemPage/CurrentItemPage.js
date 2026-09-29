@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async'; // Импортируем Helmet
 import { fetchItemId } from '../../../http/itemApi';
 import { fetchCategoryByParam } from '../../../http/KategoryApi';
-import { fetchItemGroupById } from '../../../http/itemGroupApi'; 
+import { fetchItemGroupById } from '../../../http/itemGroupApi';
 import Header from "../../../components/header/Header";
 import Footer from "../../../components/footer/Footer";
 import { ITEM_MAIN_ROUTE, ITEM_KATEGOTY_ROUTE } from "../../appRouter/Const";
@@ -16,6 +16,7 @@ import ItemGallery from './ItemGallery/ItemGallery';
 import ItemVariantsSlider from './ItemVariantsSlider/ItemVariantsSlider';
 import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
 import { ProductDetailSkeleton } from '../../../components/skeletons';
+import NotFoundPage from '../notFoundPage/NotFoundPage';
 
 // Вспомогательная функция для удаления HTML-тегов из описания для meta-тегов
 const stripHtml = (html) => {
@@ -24,11 +25,13 @@ const stripHtml = (html) => {
 };
 
 const CurrentItemPage = () => {
+    const history = useHistory();
     const { allias, mainAllias, itemAllias } = useParams();
     const [item, setItem] = useState(null);
     const [itemGroup, setItemGroup] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [notFound, setNotFound] = useState(false);
     const [mainKategory, setMainKategory] = useState(null);
     const [kategory, setKategory] = useState(null);
     const [openInfor, setOpenInfor] = useState(true);
@@ -36,14 +39,76 @@ const CurrentItemPage = () => {
     const [openReviews, setOpenReviews] = useState(true);
     const [itemFilters, setItemFilters] = useState([]);
 
+    // Определение целевого идентификатора/алиаса товара независимо от маршрута
+    const targetItemParam = itemAllias || ((mainAllias === 'itemPreview' || mainAllias === 'item') ? allias : (allias || mainAllias));
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+    }, [targetItemParam]);
+
     useEffect(() => {
         const loadData = async () => {
+            if (!targetItemParam) {
+                setNotFound(true);
+                setLoading(false);
+                return;
+            }
             setLoading(true);
+            setNotFound(false);
             try {
-                const itemData = await fetchItemId(itemAllias);
-                const categoryData = await fetchCategoryByParam(allias);
-                const mainCategoryData = await fetchCategoryByParam(mainAllias);
-                
+                let itemData = null;
+                try {
+                    itemData = await fetchItemId(targetItemParam);
+                } catch (e) {
+                    itemData = null;
+                }
+
+                if (!itemData) {
+                    setNotFound(true);
+                    setLoading(false);
+                    return;
+                }
+
+                // 1. Загрузка категории товара
+                let categoryData = null;
+                if (allias && allias !== 'itemPreview' && allias !== 'item' && isNaN(allias)) {
+                    try {
+                        categoryData = await fetchCategoryByParam(allias);
+                    } catch (e) {
+                        categoryData = null;
+                    }
+                }
+                if (!categoryData && itemData.categoryId) {
+                    try {
+                        categoryData = await fetchCategoryByParam(itemData.categoryId);
+                    } catch (e) {
+                        categoryData = null;
+                    }
+                }
+
+                // 2. Загрузка главной категории
+                let mainCategoryData = null;
+                if (mainAllias && mainAllias !== 'itemPreview' && mainAllias !== 'item') {
+                    try {
+                        mainCategoryData = await fetchCategoryByParam(mainAllias);
+                    } catch (e) {
+                        mainCategoryData = null;
+                    }
+                }
+                if (!mainCategoryData && categoryData) {
+                    if (categoryData.parentId && categoryData.parentId > 0) {
+                        try {
+                            mainCategoryData = await fetchCategoryByParam(categoryData.parentId);
+                        } catch (e) {
+                            mainCategoryData = null;
+                        }
+                    } else {
+                        mainCategoryData = categoryData;
+                    }
+                }
+
                 if (itemData.itemGroupId) {
                     try {
                         const groupData = await fetchItemGroupById(itemData.itemGroupId);
@@ -58,14 +123,24 @@ const CurrentItemPage = () => {
                 setItem(itemData);
                 setMainKategory(mainCategoryData);
                 setKategory(categoryData);
+
+                // 3. Канонический редирект, если перешли по служебной ссылке (/itemPreview/:id или /item/:id)
+                if (mainCategoryData?.alias && categoryData?.alias) {
+                    const canonicalPath = `/${mainCategoryData.alias}/${categoryData.alias}/${itemData.alias || itemData.id}`;
+                    if (window.location.pathname.startsWith('/itemPreview') || window.location.pathname.startsWith('/item/')) {
+                        history.replace(canonicalPath);
+                    }
+                }
             } catch (err) {
-                setError('Ошибка загрузки');
+                console.error("Ошибка загрузки товара:", err);
+                setNotFound(true);
             } finally {
                 setLoading(false);
             }
         };
-        if (allias) loadData();
-    }, [allias, itemAllias, mainAllias]);
+
+        loadData();
+    }, [targetItemParam, allias, mainAllias]);
 
     const scrollToFullDetails = () => {
         const element = document.getElementById('full-spec');
@@ -74,6 +149,15 @@ const CurrentItemPage = () => {
             window.scrollTo({ top: offset, behavior: "smooth" });
         }
     };
+
+    if (notFound) {
+        return (
+            <NotFoundPage
+                customTitle="Товар не найден"
+                customMessage="Запрашиваемый товар не существует, снят с продажи или был перемещен."
+            />
+        );
+    }
 
     if (loading) {
         return (
@@ -84,7 +168,14 @@ const CurrentItemPage = () => {
             </div>
         );
     }
-    if (error || !item) return <><Header isAdminHeader={false} /><div className="apple-error my_h3">Товар не найден</div><Footer /></>;
+    if (error || !item) {
+        return (
+            <NotFoundPage
+                customTitle="Товар не найден"
+                customMessage="Запрашиваемый товар не существует, снят с продажи или был перемещен."
+            />
+        );
+    }
 
     // Функция парсинга PostgreSQL массива в обычный массив JS
     const parsePostgresArray = (pgArrayStr) => {
@@ -102,9 +193,9 @@ const CurrentItemPage = () => {
     const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
     const imagesList = parsePostgresArray(item?.images);
     const firstImageFilename = imagesList[0] || '';
-    const mainImageUrl = firstImageFilename 
-    ? `${process.env.REACT_APP_API_URL}static/images/${firstImageFilename}` 
-    : `${process.env.REACT_APP_API_URL}logo192.png`;
+    const mainImageUrl = firstImageFilename
+        ? `${process.env.REACT_APP_API_URL}static/images/${firstImageFilename}`
+        : `${process.env.REACT_APP_API_URL}logo192.png`;
     // const mainImageUrl = item.images ? `${process.env.REACT_APP_API_URL}/${item.image}` : '';
 
     // Schema.org: Разметка товара (Product)
@@ -186,7 +277,7 @@ const CurrentItemPage = () => {
                     {mainKategory && kategory && (
                         <Breadcrumbs items={[
                             { title: "Главная", path: "/" },
-                            { title: mainKategory.name, path:  "/" + mainKategory.alias },
+                            { title: mainKategory.name, path: "/" + mainKategory.alias },
                             { title: kategory.name, path: "/" + mainKategory.alias + "/" + kategory.alias },
                             { title: item.name }
                         ]} />
@@ -207,10 +298,12 @@ const CurrentItemPage = () => {
                         </div>
 
                         {itemGroup && (
-                            <ItemVariantsSlider 
-                                items={itemGroup} 
-                                currentId={item.id} 
-                                apiUrl={process.env.REACT_APP_API_URL} 
+                            <ItemVariantsSlider
+                                items={itemGroup}
+                                currentId={item.id}
+                                apiUrl={process.env.REACT_APP_API_URL}
+                                mainAlias={mainKategory?.alias}
+                                categoryAlias={kategory?.alias}
                             />
                         )}
 
@@ -238,7 +331,7 @@ const CurrentItemPage = () => {
 
                         {item.specificationsJSONB && (
                             <div className="apple-preview-specs">
-                                <h3 className="my_h3">Характеристики</h3>
+                                <h3 className="my_h3 mb-2">Характеристики</h3>
                                 {Object.entries(item.specificationsJSONB).slice(0, 5).map(([key, value]) => {
                                     if (value === "") return null;
                                     const filterMatch = itemFilters.find(f => f.name === key);

@@ -4,7 +4,7 @@ import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { ITEM_PREVIEW_ROUTE } from "../../../appRouter/Const";
 import "./ItemVariantsSlider.scss";
 
-const ItemVariantsSlider = ({ items, currentId, apiUrl }) => {
+const ItemVariantsSlider = ({ items, currentId, apiUrl, mainAlias, categoryAlias }) => {
     const history = useHistory();
     const scrollRef = useRef(null);
     const [showLeft, setShowLeft] = useState(false);
@@ -71,6 +71,15 @@ const ItemVariantsSlider = ({ items, currentId, apiUrl }) => {
         }
     };
 
+    const handleItemClick = (variant) => {
+        if (String(variant.id) === String(currentId)) return;
+        if (mainAlias && categoryAlias) {
+            history.push(`/${mainAlias}/${categoryAlias}/${variant.info?.alias || variant.id}`);
+        } else {
+            history.push(`${ITEM_PREVIEW_ROUTE}/${variant.id}`);
+        }
+    };
+
     if (sortedItems.length === 0) return null;
 
     return (
@@ -95,7 +104,7 @@ const ItemVariantsSlider = ({ items, currentId, apiUrl }) => {
                             <div 
                                 key={item.id || idx} 
                                 className={`recommendation-card ${isCurrent ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
-                                onClick={() => !isCurrent && history.push(ITEM_PREVIEW_ROUTE + "/" + item.id)}
+                                onClick={() => !isDisabled && handleItemClick(item)}
                             >
                                 <div className="img-wrapper">
                                     <img 

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, useHistory } from 'react-router-dom';
-import { FiMenu, FiX, FiSearch, FiShoppingCart, FiTruck, FiPhone, FiList, FiUser } from 'react-icons/fi';
+import { FiMenu, FiX, FiSearch, FiShoppingCart, FiTruck, FiPhone, FiList, FiUser, FiPackage } from 'react-icons/fi';
 import './Header.scss';
-import { MAIN_ROUTE, BUSKET_ROUTE, LOGIN_ROUTE, ITEM_SEARCH_ROUTE, AMIN_MAIN_ROUTE } from "../../pages/appRouter/Const";
+import { MAIN_ROUTE, BUSKET_ROUTE, LOGIN_ROUTE, ITEM_SEARCH_ROUTE, AMIN_MAIN_ROUTE, MY_ORDERS_ROUTE } from "../../pages/appRouter/Const";
 import ModalWindow from "../modalWindow/ModalWindow";
 import CatalogInfoSlide from "../catalogInfoSlide/CatalogInfoSlide";
 import jwt_decode from 'jwt-decode';
@@ -303,7 +303,13 @@ export default function Header({ isAdminHeader }) {
                             <FiUser className="user-icon" />
                             <span className="user-name">{getUserLogin()}</span>
                         </div>
-                        {userRole() && <NavLink to={AMIN_MAIN_ROUTE}> <p className='my_p_small user-dropdown_buttons'>Админка</p></NavLink>}
+                        <NavLink to={MY_ORDERS_ROUTE} onClick={() => setIsUserMenuOpen(false)}>
+                            <p className='my_p_small user-dropdown_buttons'>
+                                <FiPackage style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                                Мои заказы
+                            </p>
+                        </NavLink>
+                        {userRole() && <NavLink to={AMIN_MAIN_ROUTE} onClick={() => setIsUserMenuOpen(false)}> <p className='my_p_small user-dropdown_buttons'>Админка</p></NavLink>}
                         <button className="logout-btn" onClick={handleLogout}>Выйти</button>
                     </div>
                 </div>
@@ -339,6 +345,10 @@ export default function Header({ isAdminHeader }) {
                             <FiUser className="icon" />
                             <span>{getUserLogin()}</span>
                         </div>
+                        <NavLink to={MY_ORDERS_ROUTE} onClick={() => setMobileMenuOpen(false)} className="mobile-menu-link">
+                            <FiPackage className="icon" />
+                            Мои заказы
+                        </NavLink>
                         <button className="mobile-logout-btn" onClick={handleLogout}>Выйти</button>
                     </div>
                 )}

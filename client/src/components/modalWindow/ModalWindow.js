@@ -11,14 +11,14 @@ import AddReview from "./content/addReview/AddReview";
 import ViewImages from "./content/viewImages/ViewImages";
 import { useEffect } from 'react'
 
-function ModalWindow({ setIsModalActive, type, value, addImageToArray, itemsArr }) {
+function ModalWindow({ setIsModalActive, type, value, addImageToArray, itemsArr, initialIndex }) {
     useEffect(() => {
         document.body.classList.add('modal-open');
         return () => document.body.classList.remove('modal-open');
     }, []);
 
     return (
-        <div className="modal">
+        <div className={`modal ${type === "viewImages" ? "modal--view-images" : ""}`}>
             <div className="modal_content">
                 {type === "search" ?
                     <Search setIsModalActive={setIsModalActive} />
@@ -39,7 +39,7 @@ function ModalWindow({ setIsModalActive, type, value, addImageToArray, itemsArr 
                                                 : type === "reviewAdd" ?
                                                     <AddReview itemId={value} closeModal={setIsModalActive} />
                                                     : type === "viewImages" ?
-                                                        <ViewImages images={value} setIsModalActive={setIsModalActive} />
+                                                        <ViewImages images={value} initialIndex={initialIndex} setIsModalActive={setIsModalActive} />
                                                         :
                                                         <></>
                 }

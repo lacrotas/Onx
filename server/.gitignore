@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+.env
 
 # Игнорируем все файлы в папках images и video
 static/images/*

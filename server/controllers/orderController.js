@@ -3,6 +3,7 @@ const ApiError = require('../error/ApiError');
 const uuid = require('uuid');
 const path = require('path');
 const fs = require('fs');
+const notificationService = require('../services/notificationService');
 
 class OrderController {
 
@@ -10,28 +11,84 @@ class OrderController {
         try {
             const { userId, itemsJsonb, name, adress, comment, phone, payment, price } = req.body
 
+            // Если пользователь авторизован, берем его ID из токена, иначе переданный или null
+            const resolvedUserId = req.user ? req.user.id : (userId && !isNaN(userId) ? parseInt(userId, 10) : null);
+
             let specifications = itemsJsonb;
             if (typeof itemsJsonb === 'string') {
                 try {
                     specifications = JSON.parse(itemsJsonb);
                 } catch (parseError) {
                     console.log('JSON parse error:', parseError);
-                    specifications = {};
+                    specifications = [];
                 }
             }
 
+            // Обогащаем товары полными ссылками на сайте (ЧПУ: /mainCategory/category/item)
+            const enrichedItems = await notificationService.resolveItemsWithUrls(specifications);
+
             const order = await Order.create({
-                userId: userId,
+                userId: resolvedUserId,
                 name: name,
                 adress: adress,
                 comment: comment,
                 phone: phone,
                 payment: payment,
-                itemsJsonb: specifications,
+                itemsJsonb: enrichedItems,
                 price: price,
                 orderStage: "start"
-            })
+            });
+
+            // Отправка уведомлений в Telegram и на Email
+            notificationService.sendOrderNotifications(order, enrichedItems).catch(err => {
+                console.error('Error in sendOrderNotifications:', err);
+            });
+
             return res.json(order);
+        } catch (e) {
+            next(ApiError.badRequest(e.message));
+        }
+    }
+
+    async getMyOrders(req, res, next) {
+        try {
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({ message: "Не авторизован" });
+            }
+            const orders = await Order.findAll({
+                where: { userId: req.user.id },
+                order: [['createdAt', 'DESC']]
+            });
+            return res.json(orders);
+        } catch (e) {
+            next(ApiError.badRequest(e.message));
+        }
+    }
+
+    async linkGuestOrders(req, res, next) {
+        try {
+            if (!req.user || !req.user.id) {
+                return res.status(401).json({ message: "Не авторизован" });
+            }
+            const { guestOrderIds } = req.body;
+            if (!Array.isArray(guestOrderIds) || guestOrderIds.length === 0) {
+                return res.json({ updated: 0, message: "Нет гостевых заказов для привязки" });
+            }
+            const { Op } = require('sequelize');
+            const validIds = guestOrderIds.map(id => parseInt(id, 10)).filter(id => !isNaN(id) && id > 0);
+            if (validIds.length === 0) {
+                return res.json({ updated: 0 });
+            }
+            const [updated] = await Order.update(
+                { userId: req.user.id },
+                {
+                    where: {
+                        id: { [Op.in]: validIds },
+                        userId: null
+                    }
+                }
+            );
+            return res.json({ updated, message: `Привязано заказов: ${updated}` });
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }

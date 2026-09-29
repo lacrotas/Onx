@@ -353,7 +353,21 @@ export default function OrderTable() {
                             {formData.itemsJsonb.map((item, idx) => (
                                 <div key={idx} className="order-item-card">
                                     <div className="item-info">
-                                        <span className="item-name">{item.name || `Товар #${item.id}`}</span>
+                                        {(item.alias || item.id || item.itemId) ? (
+                                            <a
+                                                href={`/itemPreview/${encodeURIComponent(item.alias || item.id || item.itemId)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="item-name item-link"
+                                                title="Перейти к товару на сайте"
+                                                style={{ color: 'var(--admin-primary)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                            >
+                                                {item.name || `Товар #${item.id || item.itemId}`}
+                                                <span style={{ fontSize: '11px', opacity: 0.7 }}>↗</span>
+                                            </a>
+                                        ) : (
+                                            <span className="item-name">{item.name || `Товар #${item.id}`}</span>
+                                        )}
                                         {item.price && (
                                             <span className="item-price">{item.price} BYN</span>
                                         )}

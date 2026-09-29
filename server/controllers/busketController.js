@@ -103,6 +103,31 @@ class BusketController {
             res.status(500).json({ message: 'Ошибка сервера' });
         }
     }
+
+    async updateBusketByUserId(req, res) {
+        const { userId } = req.params;
+        const { itemsJsonb } = req.body;
+        try {
+            let busket = await Busket.findOne({ where: { userId } });
+            let specifications = itemsJsonb;
+            if (typeof itemsJsonb === 'string' && itemsJsonb) {
+                try {
+                    specifications = JSON.parse(itemsJsonb);
+                } catch (parseError) {
+                    specifications = [];
+                }
+            }
+            if (!busket) {
+                busket = await Busket.create({ userId, itemsJsonb: specifications || [] });
+                return res.json({ message: 'Корзина создана', busket });
+            }
+            await busket.update({ itemsJsonb: specifications || [] });
+            return res.status(200).json({ message: 'Данные успешно обновлены', busket });
+        } catch (error) {
+            console.error('Ошибка при обновлении корзины пользователя:', error);
+            res.status(500).json({ message: 'Ошибка сервера' });
+        }
+    }
 }
 
 module.exports = new BusketController();

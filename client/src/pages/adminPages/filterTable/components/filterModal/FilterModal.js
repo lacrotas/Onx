@@ -37,12 +37,13 @@ const FilterModal = ({
                     <div className="form-group">
                         <label className="my_p">Категория:</label>
                         <select
-                            name="kategoryId"
-                            value={formData.kategoryId}
+                            name="categoryId"
+                            value={formData.categoryId !== undefined && formData.categoryId !== '' ? formData.categoryId : (formData.kategoryId || '')}
                             onChange={handleInputChange}
                             className="form-select my_p"
                             required
                         >
+                            <option value="" disabled>Выберите категорию</option>
                             {categories.map(category => (
                                 <option key={category.id} value={category.id}>
                                     {category.name}

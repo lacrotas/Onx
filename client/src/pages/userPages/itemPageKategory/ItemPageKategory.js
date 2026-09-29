@@ -15,6 +15,7 @@ import ItemCard from './itemCard/ItemCard';
 import FilterSidebar from './filterSidebar/FilterSidebar';
 import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
 import { ProductPageSkeleton, ItemCardSkeleton } from '../../../components/skeletons';
+import NotFoundPage from '../notFoundPage/NotFoundPage';
 
 const ItemPageKategory = () => {
     const { allias, mainAllias } = useParams();
@@ -23,6 +24,7 @@ const ItemPageKategory = () => {
     const [loading, setLoading] = useState(true);
     const [itemsLoading, setItemsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [notFound, setNotFound] = useState(false);
     const [sortOption, setSortOption] = useState('default');
     const [selectedFilters, setSelectedFilters] = useState({});
 
@@ -69,41 +71,68 @@ const ItemPageKategory = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                if (allias) {
-                    const categoryData = await fetchCategoryByParam(allias);
-                    const mainCategoryData = await fetchCategoryByParam(mainAllias);
-                    setCategory(categoryData);
-                    setMainCategory(mainCategoryData);
-                    if (mainCategoryData) {
-                        const allCategoryData = await fetchCategoryByParentId(mainCategoryData.id);
-                        setAllCategory(allCategoryData);
-                    }
+                setLoading(true);
+                setNotFound(false);
 
-                    if (categoryData) {
-                        setItemsLoading(true);
-                        try {
-                            const data = await fetchAllItemByKategoryId(categoryData.id);
-                            const filterData = await fetchAllFiltersByCategoryId(categoryData.id);
-                            setFilters(filterData);
-                            setItems(Array.isArray(data) ? data : []);
-                        } catch (err) {
-                            setError('Ошибка загрузки товаров');
-                            setItems([]);
-                        } finally {
-                            setItemsLoading(false);
-                        }
-                    }
+                if (!allias || !mainAllias) {
+                    setNotFound(true);
+                    return;
+                }
+
+                let categoryData = null;
+                let mainCategoryData = null;
+
+                try {
+                    categoryData = await fetchCategoryByParam(allias);
+                } catch (e) {
+                    categoryData = null;
+                }
+
+                try {
+                    mainCategoryData = await fetchCategoryByParam(mainAllias);
+                } catch (e) {
+                    mainCategoryData = null;
+                }
+
+                // Проверяем существование обеих категорий и принадлежность подкатегории
+                if (!categoryData || !mainCategoryData) {
+                    setNotFound(true);
+                    return;
+                }
+
+                if (categoryData.parentId !== mainCategoryData.id) {
+                    setNotFound(true);
+                    return;
+                }
+
+                setCategory(categoryData);
+                setMainCategory(mainCategoryData);
+
+                const allCategoryData = await fetchCategoryByParentId(mainCategoryData.id);
+                setAllCategory(Array.isArray(allCategoryData) ? allCategoryData : []);
+
+                setItemsLoading(true);
+                try {
+                    const data = await fetchAllItemByKategoryId(categoryData.id);
+                    const filterData = await fetchAllFiltersByCategoryId(categoryData.id);
+                    setFilters(filterData);
+                    setItems(Array.isArray(data) ? data : []);
+                } catch (err) {
+                    console.error('Ошибка загрузки товаров категории:', err);
+                    setItems([]);
+                } finally {
+                    setItemsLoading(false);
                 }
             } catch (err) {
                 console.error('Ошибка загрузки:', err);
-                setError('Ошибка загрузки данных');
+                setNotFound(true);
             } finally {
                 setLoading(false);
             }
         };
 
         loadData();
-    }, [allias]);
+    }, [allias, mainAllias]);
 
     const sortItems = (itemsToSort) => {
         const sortedItems = [...itemsToSort];
@@ -201,6 +230,15 @@ const ItemPageKategory = () => {
         }
         return stars;
     };
+
+    if (notFound) {
+        return (
+            <NotFoundPage
+                customTitle="Подкатегория не найдена"
+                customMessage={`Раздел не найден по адресу /${mainAllias}/${allias}. Возможно, он был перемещен или удален.`}
+            />
+        );
+    }
 
     if (loading) {
         return (

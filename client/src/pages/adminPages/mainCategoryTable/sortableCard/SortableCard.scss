@@ -20,9 +20,24 @@
         transform: scale(0.97);
     }
 
-    @media (min-width: 768px) { &.span-2 { grid-column: span 2; } }
-    @media (min-width: 1024px) { &.span-3 { grid-column: span 3; } }
-    @media (min-width: 1360px) { &.span-4 { grid-column: span 4; } }
+    @media (min-width: 768px) { 
+        &.span-2 { 
+            grid-column: span 2; 
+            .cat-overlay .cat-title { font-size: 26px; }
+        } 
+    }
+    @media (min-width: 1024px) { 
+        &.span-3 { 
+            grid-column: span 3; 
+            .cat-overlay .cat-title { font-size: 28px; }
+        } 
+    }
+    @media (min-width: 1360px) { 
+        &.span-4 { 
+            grid-column: span 4; 
+            .cat-overlay .cat-title { font-size: 28px; }
+        } 
+    }
 
     .drag-handle {
         width: 100%;
@@ -34,14 +49,14 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        opacity: 0.75;
+        opacity: 0.88;
         transition: transform 0.5s ease, opacity 0.3s ease;
         display: block;
     }
 
     &:hover .cat-img {
         transform: scale(1.05);
-        opacity: 0.6;
+        opacity: 0.8;
     }
 
     .card-controls {
@@ -58,27 +73,27 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(8px);
             border: 1px solid $admin-border;
             display: flex;
             align-items: center;
             justify-content: center;
             color: $admin-text-main;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             cursor: pointer;
             transition: $admin-transition;
 
             &:hover { 
                 transform: scale(1.1);
-                background: rgba(99, 102, 241, 0.9);
-                border-color: rgba(99, 102, 241, 0.5);
+                background: $admin-primary;
+                border-color: $admin-primary;
                 color: #fff;
             }
 
             &.delete:hover {
-                background: rgba(239, 68, 68, 0.9);
-                border-color: rgba(239, 68, 68, 0.5);
+                background: $admin-danger;
+                border-color: $admin-danger;
                 color: #fff;
             }
         }
@@ -120,12 +135,12 @@
                     }
 
                     &:hover {
-                        background: rgba(255, 255, 255, 0.08);
+                        background: #f5f5f7;
                         color: $admin-text-main;
                     }
 
                     &.selected {
-                        background: rgba(99, 102, 241, 0.2);
+                        background: rgba(0, 113, 227, 0.1);
                         color: $admin-primary;
                         font-weight: 600;
                     }
@@ -135,7 +150,9 @@
 
         .ctrl-btn.active {
             transform: scale(1.1);
-            background: rgba(99, 102, 241, 0.9);
+            background: $admin-primary;
+            border-color: $admin-primary;
+            color: #fff;
         }
     }
     
@@ -148,22 +165,28 @@
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 24px;
+        padding: 36px 24px 22px;
         box-sizing: border-box;
-        background: linear-gradient(to top, rgba(11, 15, 25, 0.95), rgba(11, 15, 25, 0.5) 60%, transparent);
-        color: $admin-text-main;
+        background: linear-gradient(to top, rgba(10, 14, 23, 0.96) 0%, rgba(10, 14, 23, 0.75) 50%, rgba(10, 14, 23, 0.25) 80%, transparent 100%);
+        color: #ffffff;
         pointer-events: none;
 
         .cat-title {
-            margin-bottom: 4px;
-            font-size: 18px;
+            margin-bottom: 6px;
+            font-size: 24px;
             font-weight: 700;
-            color: $admin-text-main;
+            color: #ffffff !important;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+            letter-spacing: -0.01em;
+            line-height: 1.25;
         }
 
         .cat-subtitle {
-            color: $admin-text-secondary;
-            font-size: 12px;
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-size: 13.5px;
+            font-weight: 500;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+            letter-spacing: 0.01em;
         }
     }
 }
@@ -184,7 +207,15 @@
         }
 
         .cat-overlay {
-            padding: 16px;
+            padding: 24px 16px 16px;
+
+            .cat-title {
+                font-size: 20px;
+            }
+
+            .cat-subtitle {
+                font-size: 12.5px;
+            }
         }
     }
 }

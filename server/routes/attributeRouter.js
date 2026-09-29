@@ -7,7 +7,7 @@ const validateParams = require('../middleware/validateParams');
 
 router.get('/getAllByCategoryId/:categoryId',
     validateParams([
-        { param: 'kategoryId', type: 'integer', min: 1, name: 'ID категории' }
+        { param: 'categoryId', type: 'integer', min: 1, name: 'ID категории' }
     ]),
     attributeController.getAllAttributeByKategoryId);
 router.get('/getById/:id',

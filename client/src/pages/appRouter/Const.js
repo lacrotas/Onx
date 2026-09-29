@@ -6,6 +6,8 @@ export const ITEM_MAIN_ROUTE = '/itemMain';
 export const ITEM_KATEGOTY_ROUTE = '/itemKategory';
 export const LOGIN_ROUTE = '/login';
 export const ITEM_PREVIEW_ROUTE = '/itemPreview';
+export const MY_ORDERS_ROUTE = '/my-orders';
+export const NOT_FOUND_ROUTE = '/404';
 
 /*admin*/
 export const AMIN_MAIN_ROUTE = '/admin';

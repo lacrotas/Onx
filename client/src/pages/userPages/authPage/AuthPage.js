@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useHistory, NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useHistory, useLocation, NavLink } from 'react-router-dom';
 import { 
     FiMail, 
     FiLock, 
@@ -12,11 +12,44 @@ import {
     FiShield 
 } from 'react-icons/fi';
 import { registration, signIn } from '../../../http/userApi';
+import { linkGuestOrders } from '../../../http/orderApi';
 import './AuthPage.scss';
 
 const AuthPage = () => {
     const history = useHistory();
-    const [isLoginMode, setIsLoginMode] = useState(true);
+    const location = useLocation();
+    
+    const [isLoginMode, setIsLoginMode] = useState(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('mode') === 'register' || location.state?.mode === 'register') {
+            return false;
+        }
+        return true;
+    });
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('mode') === 'register' || location.state?.mode === 'register') {
+            setIsLoginMode(false);
+        } else if (params.get('mode') === 'login' || location.state?.mode === 'login') {
+            setIsLoginMode(true);
+        }
+    }, [location]);
+
+    const linkStoredGuestOrders = async () => {
+        try {
+            const guestOrdersRaw = localStorage.getItem('guest_orders');
+            if (guestOrdersRaw) {
+                const guestOrders = JSON.parse(guestOrdersRaw);
+                if (Array.isArray(guestOrders) && guestOrders.length > 0) {
+                    await linkGuestOrders(guestOrders);
+                    localStorage.removeItem('guest_orders');
+                }
+            }
+        } catch (e) {
+            console.warn("Ошибка связывания заказов:", e);
+        }
+    };
 
     // Поля форм
     const [loginData, setLoginData] = useState({
@@ -133,6 +166,7 @@ const AuthPage = () => {
         setLoading(true);
         try {
             await signIn(loginData.mail.trim(), loginData.password);
+            await linkStoredGuestOrders();
             window.location.href = '/';
         } catch (err) {
             const msg = err.response?.data?.message || 'Неверный email или пароль';
@@ -169,6 +203,7 @@ const AuthPage = () => {
             // Автоматически авторизуем пользователя после создания аккаунта
             try {
                 await signIn(registerData.mail.trim().toLowerCase(), registerData.password);
+                await linkStoredGuestOrders();
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 600);

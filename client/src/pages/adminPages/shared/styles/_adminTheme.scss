@@ -16,52 +16,52 @@ $admin-font-medium: "Inter_Medium", -apple-system, BlinkMacSystemFont, "Segoe UI
 $admin-font-regular: "Inter_Regular", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
 // ==============================================================================
-// 2. ЦВЕТОВАЯ ПАЛИТРА (COLORS)
+// 2. ЦВЕТОВАЯ ПАЛИТРА (COLORS) - СВЕТЛЫЙ СТИЛЬ В ТОНАХ КЛИЕНТА
 // ==============================================================================
-$admin-bg: #0b0f19;              // Главный фон страницы
-$admin-bg-sidebar: #0f172a;      // Фон боковой панели, шапки, карточек и таблиц
-$admin-bg-card: #151e32;         // Фон внутренних блоков и модалок
-$admin-bg-card-hover: #1b2640;   // Фон при наведении
-$admin-bg-input: #101728;        // Фон полей ввода, селектов и тегов
-$admin-bg-overlay: rgba(5, 8, 16, 0.75); // Затемнение под модальными окнами
+$admin-bg: #fbfbfd;              // Главный фон страницы (как в body и на страницах клиента)
+$admin-bg-sidebar: #ffffff;      // Белый фон бокового меню, шапки, карточек и таблиц
+$admin-bg-card: #ffffff;         // Фон модальных окон и блоков
+$admin-bg-card-hover: #f5f5f7;   // Фон при наведении
+$admin-bg-input: #f5f5f7;        // Фон полей ввода, селектов и тегов
+$admin-bg-overlay: rgba(15, 23, 42, 0.45); // Затемнение под модальными окнами
 
 // Границы и разделители
-$admin-border: rgba(255, 255, 255, 0.08);
-$admin-border-focus: rgba(99, 102, 241, 0.5);
-$admin-border-hover: rgba(255, 255, 255, 0.16);
+$admin-border: #e2e8f0;          // Светло-серые границы (как в карточках)
+$admin-border-focus: rgba(0, 113, 227, 0.5);
+$admin-border-hover: #cbd5e1;
 
-// Акценты и градиенты
-$admin-primary: #6366f1;
-$admin-primary-hover: #4f46e5;
-$admin-primary-glow: rgba(99, 102, 241, 0.25);
-$admin-accent-gradient: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
-$admin-gradient-subtle: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 100%);
+// Акценты и градиенты (клиентский Apple Blue #0071e3 и #2563eb из логотипа)
+$admin-primary: #0071e3;
+$admin-primary-hover: #0077ed;
+$admin-primary-glow: rgba(0, 113, 227, 0.2);
+$admin-accent-gradient: linear-gradient(135deg, #0071e3 0%, #2563eb 100%);
+$admin-gradient-subtle: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0) 100%);
 
-// Статусные цвета
-$admin-success: #10b981;
-$admin-success-bg: rgba(16, 185, 129, 0.12);
-$admin-warning: #f59e0b;
-$admin-warning-bg: rgba(245, 158, 11, 0.12);
-$admin-danger: #ef4444;
-$admin-danger-bg: rgba(239, 68, 68, 0.12);
-$admin-info: #38bdf8;
-$admin-info-bg: rgba(56, 189, 248, 0.12);
+// Статусные цвета (как в клиентской части MyOrdersPage)
+$admin-success: #34c759;
+$admin-success-bg: rgba(52, 199, 89, 0.12);
+$admin-warning: #ff9500;
+$admin-warning-bg: rgba(255, 149, 0, 0.12);
+$admin-danger: #ff3b30;
+$admin-danger-bg: rgba(255, 59, 48, 0.1);
+$admin-info: #0071e3;
+$admin-info-bg: rgba(0, 113, 227, 0.1);
 
-// Иерархия текста
-$admin-text-main: #f8fafc;       // Основной яркий белый текст
-$admin-text-secondary: #94a3b8;  // Второстепенный текст (серый)
-$admin-text-muted: #64748b;      // Приглушённый текст (подписи, даты)
-$admin-text-disabled: #475569;   // Отключенный текст
+// Иерархия текста (как на клиенте: #1d1d1f, #6e6e73, #86868b)
+$admin-text-main: #1d1d1f;       // Основной текст UI
+$admin-text-secondary: #6e6e73;  // Второстепенный текст
+$admin-text-muted: #86868b;      // Приглушённый текст (подписи, даты)
+$admin-text-disabled: #aeaeb2;   // Отключенный текст
 
 // Скругления и тени
-$admin-radius-sm: 6px;
-$admin-radius-md: 10px;
-$admin-radius-lg: 14px;
+$admin-radius-sm: 8px;
+$admin-radius-md: 12px;
+$admin-radius-lg: 16px;
 $admin-radius-xl: 20px;
 
-$admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-$admin-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-$admin-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+$admin-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+$admin-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+$admin-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
 $admin-shadow-glow: 0 0 20px $admin-primary-glow;
 
 // Анимации
@@ -208,7 +208,7 @@ $admin-transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 // 4. МИКСИНЫ И ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ
 // ==============================================================================
 @mixin glass-panel {
-    background: rgba(21, 30, 50, 0.85);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid $admin-border;
@@ -223,10 +223,10 @@ $admin-transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         background: transparent;
     }
     &::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.15);
+        background: rgba(0, 0, 0, 0.15);
         border-radius: 999px;
         &:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.25);
         }
     }
 }
@@ -249,12 +249,12 @@ $admin-transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     box-sizing: border-box;
 }
 
-// Стандартный тёмный селект панели управления
+// Стандартный селект панели управления
 .admin-form-select {
     height: var(--admin-input-height, 40px);
     padding: 0 34px 0 14px;
     background-color: $admin-bg-input;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236e6e73'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 16px;
@@ -277,11 +277,11 @@ $admin-transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
     &:focus {
         border-color: $admin-border-focus;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
     }
 
     option {
-        background: $admin-bg-sidebar;
+        background: #ffffff;
         color: $admin-text-main;
         padding: 8px 12px;
     }

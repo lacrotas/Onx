@@ -75,9 +75,6 @@ const requireOwnerOrAdmin = async (req, res, next) => {
             return res.status(404).json({ message: "Пользователь не найден" });
         }
         
-        console.log('User ID:', user.id, 'Type:', typeof user.id);
-        console.log('Target ID:', targetUserId, 'Type:', typeof targetUserId);
-        
         if (user.role === 'admin' || user.id.toString() === targetUserId.toString()) {
             return next();
         }
@@ -89,9 +86,57 @@ const requireOwnerOrAdmin = async (req, res, next) => {
     }
 };
 
+const optionalAuth = (req, res, next) => {
+    if (req.method === "OPTIONS") {
+        return next();
+    }
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (token && token !== 'undefined' && token !== 'null') {
+            const decoded = jwt.verify(token, process.env.SECRET_KEY);
+            req.user = decoded;
+        } else {
+            req.user = null;
+        }
+        next();
+    } catch (e) {
+        req.user = null;
+        next();
+    }
+};
+
+const requireBusketOwnerOrAdmin = async (req, res, next) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ message: "Не авторизован" });
+        }
+        if (req.user.role === 'admin') {
+            return next();
+        }
+        const busketId = req.params.id;
+        if (busketId) {
+            const { Busket } = require('../models/models');
+            const busket = await Busket.findOne({ where: { id: busketId } });
+            if (busket && busket.userId && busket.userId.toString() === req.user.id.toString()) {
+                return next();
+            }
+        }
+        const userIdParam = req.params.userId || req.body.userId;
+        if (userIdParam && userIdParam.toString() === req.user.id.toString()) {
+            return next();
+        }
+        return res.status(403).json({ message: "Доступ запрещен к корзине" });
+    } catch (e) {
+        console.error('Ошибка в middleware requireBusketOwnerOrAdmin:', e);
+        return res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    }
+};
+
 module.exports = {
     authenticateToken,
+    optionalAuth,
     requireAdmin,
     requireUserOrAdmin,
-    requireOwnerOrAdmin
+    requireOwnerOrAdmin,
+    requireBusketOwnerOrAdmin
 };
