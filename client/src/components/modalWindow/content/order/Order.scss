@@ -171,6 +171,112 @@
     }
 }
 
+.payment-group,
+.delivery-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .input-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #555;
+        font-weight: 500;
+
+        .input-icon {
+            color: #33A9FF;
+            font-size: 16px;
+        }
+    }
+
+    .payment-options,
+    .delivery-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .payment-option,
+    .delivery-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 16px;
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #fff;
+        user-select: none;
+        transition: all 0.25s ease;
+        position: relative;
+
+        &:hover {
+            border-color: #33A9FF;
+            background: #f7fbff;
+        }
+
+        &.selected {
+            border-color: #33A9FF;
+            background: #f0f8ff;
+            box-shadow: 0 2px 8px rgba(51, 169, 255, 0.15);
+        }
+
+        &:focus-within {
+            box-shadow: 0 0 0 3px rgba(51, 169, 255, 0.2);
+            border-color: #33A9FF;
+        }
+
+        .payment-radio-input,
+        .delivery-radio-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+        }
+
+        .custom-checkbox-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+
+            .check-mark-icon {
+                font-size: 11px;
+                color: #ffffff;
+                opacity: 0;
+                transform: scale(0.5);
+                transition: all 0.2s ease;
+            }
+        }
+
+        &.selected .custom-checkbox-box {
+            background: #33A9FF;
+            border-color: #33A9FF;
+
+            .check-mark-icon {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .payment-option-text,
+        .delivery-option-text {
+            font-size: 15px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+    }
+}
+
 .order-summary {
     margin-top: 20px;
     display: flex;
@@ -225,6 +331,7 @@
             background: #33A9FF;
             color: white;
             border: none;
+            margin-left: auto;
 
             &:hover {
                 background: #2e86de;
@@ -246,6 +353,7 @@
         justify-content: center;
         gap: 10px;
         transition: all 0.3s ease;
+        margin-left: auto;
 
         &:hover {
             background: linear-gradient(to right, #2e86de, #33A9FF);
@@ -300,6 +408,7 @@
         .nav-btn,
         .submit-btn {
             width: 100%;
+            margin-left: 0;
         }
     }
 }

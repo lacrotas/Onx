@@ -1,6 +1,6 @@
 import { useState } from "react";
 import "./Order.scss";
-import { FaUser, FaPhone, FaMapMarkerAlt, FaTruck, FaMoneyBillWave, FaComment, FaCheckCircle } from "react-icons/fa";
+import { FaUser, FaPhone, FaMapMarkerAlt, FaTruck, FaMoneyBillWave, FaComment, FaCheckCircle, FaCheck } from "react-icons/fa";
 import { postOrder } from "../../../../http/orderApi";
 import { updateBusket, updateBusketByUserId } from "../../../../http/busketApi";
 
@@ -13,7 +13,7 @@ function Order({ value, itemsArr, closeModal }) {
         phone: '',
         address: '',
         delivery: 'Самовывоз',
-        payment: 'Картой',
+        payment: 'Банковской картой при получении',
         comment: ''
     });
     const [errors, setErrors] = useState({});
@@ -69,6 +69,10 @@ function Order({ value, itemsArr, closeModal }) {
         // Очищаем ошибку при изменении поля
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+
+        if (name === 'delivery' && value === 'Самовывоз' && errors.address) {
+            setErrors(prev => ({ ...prev, address: '' }));
         }
     };
 
@@ -258,7 +262,7 @@ function Order({ value, itemsArr, closeModal }) {
                         <div className="select-group">
                             <label className="input-label">
                                 <FaTruck className="input-icon" />
-                                <span className="title_bold title_bold">Способ доставки</span>
+                                <span className="title_bold">Способ доставки</span>
                             </label>
                             <select
                                 name="delivery"
@@ -309,20 +313,42 @@ function Order({ value, itemsArr, closeModal }) {
                 {/* Шаг 3: Оплата */}
                 {step === 3 && (
                     <div className="form-section">
-                        <div className="select-group">
+                        <div className="payment-group">
                             <label className="input-label">
                                 <FaMoneyBillWave className="input-icon" />
                                 <span className="title_bold">Способ оплаты</span>
                             </label>
-                            <select
-                                name="payment"
-                                value={formData.payment}
-                                onChange={handleChange}
-                                className="form-select common_reg"
-                            >
-                                <option value="Картой">Картой онлайн</option>
-                                <option value="Наличными">Наличными при получении</option>
-                            </select>
+                            <div className="payment-options">
+                                <label className={`payment-option ${formData.payment === 'Банковской картой при получении' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="Банковской картой при получении"
+                                        checked={formData.payment === 'Банковской картой при получении'}
+                                        onChange={handleChange}
+                                        className="payment-radio-input"
+                                    />
+                                    <span className="custom-checkbox-box">
+                                        <FaCheck className="check-mark-icon" />
+                                    </span>
+                                    <span className="payment-option-text common_reg">Банковской картой при получении</span>
+                                </label>
+
+                                <label className={`payment-option ${formData.payment === 'Наличными при получении' ? 'selected' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="Наличными при получении"
+                                        checked={formData.payment === 'Наличными при получении'}
+                                        onChange={handleChange}
+                                        className="payment-radio-input"
+                                    />
+                                    <span className="custom-checkbox-box">
+                                        <FaCheck className="check-mark-icon" />
+                                    </span>
+                                    <span className="payment-option-text common_reg">Наличными при получении</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div className="order-summary">

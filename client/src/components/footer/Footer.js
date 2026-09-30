@@ -79,7 +79,7 @@ function Footer() {
                 </div>
 
                 <div className="footer_bottom">
-                    <p className="copyright my_p_small">© Maxistore 2024 | Все права защищены</p>
+                    <p className="copyright my_p_small">© Onxstore 2024 | Все права защищены</p>
                     <p className="developer my_p_small">Разработано для вас</p>
                 </div>
             </footer>

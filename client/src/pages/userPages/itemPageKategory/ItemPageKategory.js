@@ -16,6 +16,7 @@ import FilterSidebar from './filterSidebar/FilterSidebar';
 import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
 import { ProductPageSkeleton, ItemCardSkeleton } from '../../../components/skeletons';
 import NotFoundPage from '../notFoundPage/NotFoundPage';
+import { Helmet } from 'react-helmet-async';
 
 const ItemPageKategory = () => {
     const { allias, mainAllias } = useParams();
@@ -240,20 +241,78 @@ const ItemPageKategory = () => {
         );
     }
 
-    if (loading) {
-        return (
-            <>
-                <Header isAdminHeader={false} />
-                <ProductPageSkeleton count={6} />
-                <Footer />
-            </>
-        );
-    }
-    if (error) return <><Header isAdminHeader={false} /><div className="error">{error}</div><Footer /></>;
+    const categoryTitle = (category?.name || "").trim();
+    const mainCategoryTitle = (mainCategory?.name || "").trim();
+
+    const seoTitle = (category?.seo_title && category.seo_title.trim())
+        ? category.seo_title.trim()
+        : (categoryTitle
+            ? `${categoryTitle}${mainCategoryTitle ? ` — ${mainCategoryTitle}` : ''} | Купить в Минске и Беларуси в ONX.BY`
+            : "Каталог товаров — интернет-магазин ONX.BY");
+
+    const seoDescription = (category?.seo_desc && category.seo_desc.trim())
+        ? category.seo_desc.trim()
+        : (categoryTitle
+            ? `Купить ${categoryTitle.toLowerCase()} в интернет-магазине ONX.BY по выгодным ценам. Большой ассортимент, официальная гарантия, характеристики и быстрая доставка по Минску и всей Беларуси!`
+            : "Широкий ассортимент товаров с официальной гарантией и доставкой по Минску и Беларуси в интернет-магазине ONX.BY.");
+
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://onx.by/${mainAllias}/${allias}`;
+    const imageUrl = category?.image ? `${process.env.REACT_APP_API_URL}static/images/${category.image}` : 'https://onx.by/logo192.png';
+
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Главная",
+                "item": typeof window !== 'undefined' ? window.location.origin : 'https://onx.by'
+            },
+            mainCategoryTitle && {
+                "@type": "ListItem",
+                "position": 2,
+                "name": mainCategoryTitle,
+                "item": `${typeof window !== 'undefined' ? window.location.origin : 'https://onx.by'}/${mainAllias}`
+            },
+            categoryTitle && {
+                "@type": "ListItem",
+                "position": 3,
+                "name": categoryTitle,
+                "item": currentUrl
+            }
+        ].filter(Boolean)
+    };
+
     return (
         <>
+            <Helmet>
+                <title>{seoTitle}</title>
+                <meta name="description" content={seoDescription} />
+                <link rel="canonical" href={currentUrl} />
+
+                {/* Open Graph */}
+                <meta property="og:type" content="website" />
+                <meta property="og:title" content={seoTitle} />
+                <meta property="og:description" content={seoDescription} />
+                <meta property="og:url" content={currentUrl} />
+                {imageUrl && <meta property="og:image" content={imageUrl} />}
+                <meta property="og:site_name" content="ONX.BY" />
+
+                {/* Schema.org */}
+                <script type="application/ld+json">
+                    {JSON.stringify(breadcrumbSchema)}
+                </script>
+            </Helmet>
+
             <Header isAdminHeader={false} />
-            <div className="category-page-wrapper">
+
+            {loading ? (
+                <ProductPageSkeleton count={6} />
+            ) : error ? (
+                <div className="error">{error}</div>
+            ) : (
+                <div className="category-page-wrapper">
                 <div
                     onClick={() => setMobileFilters(false)}
                     className={mobileFilters ? 'filters-list_back open' : 'filters-list_back close'}
@@ -385,6 +444,7 @@ const ItemPageKategory = () => {
                     </main>
                 </div>
             </div>
+            )}
             <Footer />
         </>
     );

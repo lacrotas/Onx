@@ -18,6 +18,7 @@ import Breadcrumbs from "../../../components/breadcrumbs/Breadcrumbs";
 import ModalWindow from '../../../components/modalWindow/ModalWindow';
 import { CategoryPageSkeleton } from '../../../components/skeletons';
 import NotFoundPage from '../notFoundPage/NotFoundPage';
+import { Helmet } from 'react-helmet-async';
 import "./ItemPageMainKategory.scss";
 
 const ItemPageMainKategory = () => {
@@ -106,10 +107,59 @@ const ItemPageMainKategory = () => {
         );
     }
 
-    const categoryTitle = (mainCategories?.name || "Категория").trim();
+    const categoryTitle = (mainCategories?.name || "").trim();
+
+    const seoTitle = (mainCategories?.seo_title && mainCategories.seo_title.trim())
+        ? mainCategories.seo_title.trim()
+        : (categoryTitle ? `${categoryTitle} — купить в интернет-магазине ONX с доставкой по Беларуси` : "Каталог товаров — интернет-магазин ONX.BY");
+
+    const seoDescription = (mainCategories?.seo_desc && mainCategories.seo_desc.trim())
+        ? mainCategories.seo_desc.trim()
+        : (categoryTitle ? `Каталог товаров категории "${categoryTitle}" в интернет-магазине ONX.BY. Большой выбор, честные цены, официальная гарантия и быстрая доставка по Минску и Беларуси!` : "Широкий ассортимент качественных товаров по выгодным ценам в интернет-магазине ONX.BY с доставкой по Беларуси.");
+
+    const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://onx.by/${allias}`;
+    const imageUrl = mainCategories?.image ? `${process.env.REACT_APP_API_URL}static/images/${mainCategories.image}` : 'https://onx.by/logo192.png';
+
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Главная",
+                "item": typeof window !== 'undefined' ? window.location.origin : 'https://onx.by'
+            },
+            categoryTitle && {
+                "@type": "ListItem",
+                "position": 2,
+                "name": categoryTitle,
+                "item": currentUrl
+            }
+        ].filter(Boolean)
+    };
 
     return (
         <>
+            <Helmet>
+                <title>{seoTitle}</title>
+                <meta name="description" content={seoDescription} />
+                <link rel="canonical" href={currentUrl} />
+
+                {/* Open Graph */}
+                <meta property="og:type" content="website" />
+                <meta property="og:title" content={seoTitle} />
+                <meta property="og:description" content={seoDescription} />
+                <meta property="og:url" content={currentUrl} />
+                {imageUrl && <meta property="og:image" content={imageUrl} />}
+                <meta property="og:site_name" content="ONX.BY" />
+
+                {/* Schema.org */}
+                <script type="application/ld+json">
+                    {JSON.stringify(breadcrumbSchema)}
+                </script>
+            </Helmet>
+
             {isModalActive && (
                 <ModalWindow setIsModalActive={setIsModalActive} type={modalType} />
             )}
@@ -123,7 +173,7 @@ const ItemPageMainKategory = () => {
                     <div className="container">
                         <Breadcrumbs items={[
                             { title: "Главная", path: "/" },
-                            { title: categoryTitle }
+                            { title: categoryTitle || "Категория" }
                         ]} />
 
                         {/* --- HERO HEADER --- */}
@@ -133,9 +183,9 @@ const ItemPageMainKategory = () => {
                                     <FiGrid size={15} />
                                     <span>Каталог направлений</span>
                                 </div> */}
-                                <h1 className="hero-title">{categoryTitle}</h1>
+                                <h1 className="hero-title">{categoryTitle || "Категория"}</h1>
                                 <p className="hero-description">
-                                    "Выберите необходимый раздел для перехода к ассортименту товаров, удобным фильтрам и техническим характеристикам."
+                                    Выберите необходимый раздел для перехода к ассортименту товаров, удобным фильтрам и техническим характеристикам.
                                 </p>
                             </div>
 
@@ -239,7 +289,7 @@ const ItemPageMainKategory = () => {
                         )}
 
                         {/* --- ADVANTAGES / TRUST SECTION --- */}
-                        <section className="category-advantages-section">
+                        {/* <section className="category-advantages-section">
                             <div className="advantage-card">
                                 <div className="advantage-icon">
                                     <FiTruck size={22} />
@@ -287,7 +337,7 @@ const ItemPageMainKategory = () => {
                                     </p>
                                 </div>
                             </div>
-                        </section>
+                        </section> */}
 
                         {/* --- CTA / CONSULTATION BANNER --- */}
                         <section className="category-cta-banner">
