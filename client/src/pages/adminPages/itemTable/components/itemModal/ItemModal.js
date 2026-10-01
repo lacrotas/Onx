@@ -111,13 +111,13 @@ const ItemModal = ({
                             />
                         </div>
                         <div className="form-group">
-                            <label className="my_p">Штрихкод (внутренний / прайсы / ИИ):</label>
+                            <label className="my_p">Артикул:</label>
                             <input
                                 type="text"
                                 name="barcode"
                                 value={formData.barcode || ''}
                                 onChange={handleInputChange}
-                                placeholder="например: 4810123456789"
+                                placeholder="например: ART-12345 или 4810123456789"
                                 className="form-input my_p"
                             />
                         </div>

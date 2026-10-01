@@ -76,7 +76,7 @@ const ItemImportModal = ({
         const templateData = [
             {
                 'ID': 1,
-                'Штрихкод': '4810123456789',
+                'Артикул': '4810123456789',
                 'Название (для справки)': 'Офисное кресло Comfort',
                 'Цена (BYN)': 250,
                 'В наличии (Да/Нет)': 'Да',
@@ -84,7 +84,7 @@ const ItemImportModal = ({
             },
             {
                 'ID': 2,
-                'Штрихкод': '4810987654321',
+                'Артикул': '4810987654321',
                 'Название (для справки)': 'Компьютерный стол Matrix',
                 'Цена (BYN)': 340,
                 'В наличии (Да/Нет)': 'Нет',
@@ -162,7 +162,7 @@ const ItemImportModal = ({
 
         rows.forEach((row, index) => {
             const rawId = findValueByKeys(row, ['id', 'ид', 'id товара', 'ид товара', 'код товара', 'код', 'id (обязательно)']);
-            const rawBarcode = findValueByKeys(row, ['штрихкод', 'штрих-код', 'штрих код', 'barcode', 'штрихкод товара']);
+            const rawBarcode = findValueByKeys(row, ['артикул', 'арт', 'article', 'артикул товара', 'штрихкод', 'штрих-код', 'штрих код', 'barcode', 'штрихкод товара']);
             const rawName = findValueByKeys(row, ['название', 'наименование', 'name', 'название товара', 'товар']);
             const rawPrice = findValueByKeys(row, ['цена', 'цена byn', 'price', 'стоимость', 'цена (byn)']);
             const rawStock = findValueByKeys(row, ['в наличии', 'наличие', 'в наличии (да/нет)', 'isexist', 'статус наличия']);
@@ -359,7 +359,7 @@ const ItemImportModal = ({
                         <div>
                             <h2>Импорт и массовое обновление товаров</h2>
                             <p className="modal-subtitle">
-                                Загрузка прайс-листов Excel (.xlsx, .csv) с обновлением цен, наличия, видимости и штрихкодов
+                                Загрузка прайс-листов Excel (.xlsx, .csv) с обновлением цен, наличия, видимости и артикулов
                             </p>
                         </div>
                     </div>
@@ -494,7 +494,7 @@ const ItemImportModal = ({
                                             checked={updateBarcode}
                                             onChange={e => setUpdateBarcode(e.target.checked)}
                                         />
-                                        <span>Штрихкод (для прайсов/ИИ)</span>
+                                        <span>Артикул</span>
                                     </label>
                                 </div>
                             </div>
@@ -509,7 +509,7 @@ const ItemImportModal = ({
                                             {updatePrice && <th>Цена</th>}
                                             {updateStock && <th>В наличии</th>}
                                             {updateVisibility && <th>Видимость</th>}
-                                            {updateBarcode && <th>Штрихкод</th>}
+                                            {updateBarcode && <th>Артикул</th>}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -520,7 +520,7 @@ const ItemImportModal = ({
                                                         <div className="item-title">{item.name}</div>
                                                         <div className="item-meta">
                                                             <span>ID: {item.id}</span>
-                                                            {item.barcode && <span> • ШК: {item.barcode}</span>}
+                                                            {item.barcode && <span> • Арт: {item.barcode}</span>}
                                                         </div>
                                                     </td>
                                                     <td>

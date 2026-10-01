@@ -16,7 +16,7 @@ import './ItemExportModal.scss';
 // Все доступные поля для выгрузки в Excel
 const EXPORT_COLUMNS = [
     { key: 'id', label: 'ID', defaultChecked: true, required: true, highlight: true },
-    { key: 'barcode', label: 'Штрихкод (для прайсов и ИИ)', defaultChecked: true, highlight: true },
+    { key: 'barcode', label: 'Артикул', defaultChecked: true, highlight: true },
     { key: 'name', label: 'Название', defaultChecked: true },
     { key: 'mainCategory', label: 'Главная категория', defaultChecked: true },
     { key: 'subCategory', label: 'Подкатегория', defaultChecked: true },
@@ -289,7 +289,7 @@ const ItemExportModal = ({
                 const rowObj = {};
 
                 if (selectedFields.has('id')) rowObj['ID'] = item.id;
-                if (selectedFields.has('barcode')) rowObj['Штрихкод'] = item.barcode || '';
+                if (selectedFields.has('barcode')) rowObj['Артикул'] = item.barcode || '';
                 if (selectedFields.has('name')) rowObj['Название'] = item.name || '';
                 if (selectedFields.has('mainCategory')) rowObj['Главная категория'] = mainCategoryName;
                 if (selectedFields.has('subCategory')) rowObj['Подкатегория'] = subCategoryName;
@@ -534,7 +534,7 @@ const ItemExportModal = ({
                                     type="button"
                                     className="btn-text-action"
                                     onClick={handleSelectBasicFields}
-                                    title="ID, Штрихкод, Название, Категория, Цена, Наличие, Видимость"
+                                    title="ID, Артикул, Название, Категория, Цена, Наличие, Видимость"
                                 >
                                     Только основные
                                 </button>

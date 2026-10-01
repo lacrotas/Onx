@@ -798,7 +798,7 @@ const ItemTable = () => {
         },
         { label: 'Категория', sortKey: 'categoryId' },
         { label: 'Фото', width: '100px' },
-        { label: 'Название / Штрихкод', sortKey: 'name' },
+        { label: 'Название / Артикул', sortKey: 'name' },
         { label: 'Цена', sortKey: 'price', width: '145px' },
         { label: 'Наличие', width: '110px' },
         { label: 'Показан', width: '110px' },

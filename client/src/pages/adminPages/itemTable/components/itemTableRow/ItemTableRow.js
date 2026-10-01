@@ -40,8 +40,8 @@ const ItemTableRow = ({
             <td className="item-title-col">
                 <div className="item-main-name" title={item.name}>{item.name}</div>
                 {item.barcode && (
-                    <div className="item-barcode-tag" title="Внутренний идентификатор (штрихкод для прайсов и ИИ)">
-                        ШК: <span>{item.barcode}</span>
+                    <div className="item-barcode-tag" title="Артикул товара">
+                        Арт: <span>{item.barcode}</span>
                     </div>
                 )}
             </td>
