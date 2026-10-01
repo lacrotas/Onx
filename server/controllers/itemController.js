@@ -240,7 +240,7 @@ class itemController {
         let processedVideo = null;
 
         try {
-            const { mainKategoryId, kategoryId, categoryId, name, price, description, specificationsJSONB, alias, seo_title, seo_desc, isExist, isShowed } = req.body;
+            const { mainKategoryId, kategoryId, categoryId, name, barcode, price, description, specificationsJSONB, alias, seo_title, seo_desc, isExist, isShowed } = req.body;
 
             processedImages = req.processedImages || [];
             processedVideo = req.processedVideo || null;
@@ -262,6 +262,7 @@ class itemController {
                 images: processedImages,
                 price: price,
                 name: name,
+                barcode: barcode && barcode.trim() ? barcode.trim() : null,
                 alias: alias && alias.trim() ? alias.trim() : null,
                 seo_title: seo_title && seo_title.trim() ? seo_title.trim() : null,
                 seo_desc: seo_desc && seo_desc.trim() ? seo_desc.trim() : null,
@@ -347,6 +348,7 @@ class itemController {
 
             if (req.body.itemGroupId !== undefined) updateData.itemGroupId = req.body.itemGroupId;
             if (req.body.name !== undefined) updateData.name = req.body.name;
+            if (req.body.barcode !== undefined) updateData.barcode = req.body.barcode && req.body.barcode.trim() ? req.body.barcode.trim() : null;
             if (req.body.alias !== undefined) updateData.alias = req.body.alias && req.body.alias.trim() ? req.body.alias.trim() : null;
             if (req.body.seo_title !== undefined) updateData.seo_title = req.body.seo_title && req.body.seo_title.trim() ? req.body.seo_title.trim() : null;
             if (req.body.seo_desc !== undefined) updateData.seo_desc = req.body.seo_desc && req.body.seo_desc.trim() ? req.body.seo_desc.trim() : null;
@@ -422,6 +424,59 @@ class itemController {
                 } catch (e) { console.error(e); }
             }
             res.status(500).json({ message: 'Ошибка сервера', error: error.message });
+        }
+    }
+
+    async bulkUpdateItems(req, res) {
+        try {
+            const { items } = req.body;
+            if (!Array.isArray(items) || items.length === 0) {
+                return res.status(400).json({ message: "Список товаров пуст" });
+            }
+
+            let updatedCount = 0;
+            const errors = [];
+
+            for (const itemData of items) {
+                const { id, barcode, price, isExist, isShowed } = itemData;
+
+                if (!id) {
+                    errors.push({ item: itemData, error: "Не указан обязательный ID товара" });
+                    continue;
+                }
+
+                const whereClause = { id: Number(id) };
+
+                const updateFields = {};
+                if (price !== undefined && price !== null && price !== '') {
+                    updateFields.price = String(price);
+                }
+                if (isExist !== undefined) {
+                    updateFields.isExist = isExist === true || isExist === 'true' || isExist === 1 || isExist === '1';
+                }
+                if (isShowed !== undefined) {
+                    updateFields.isShowed = isShowed === true || isShowed === 'true' || isShowed === 1 || isShowed === '1';
+                }
+                if (barcode !== undefined && id) {
+                    updateFields.barcode = barcode ? String(barcode).trim() : null;
+                }
+
+                if (Object.keys(updateFields).length > 0) {
+                    const [count] = await Item.update(updateFields, { where: whereClause });
+                    if (count > 0) {
+                        updatedCount += count;
+                    }
+                }
+            }
+
+            return res.json({
+                message: `Успешно обновлено ${updatedCount} товаров`,
+                updatedCount,
+                errors: errors.length > 0 ? errors : undefined
+            });
+        } catch (error) {
+            console.error('Error in bulkUpdateItems:', error);
+            return res.status(500).json({ message: "Ошибка сервера при массовом обновлении", error: error.message });
         }
     }
 }

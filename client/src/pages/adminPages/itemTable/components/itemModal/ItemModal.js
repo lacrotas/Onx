@@ -98,16 +98,29 @@ const ItemModal = ({
                         </div>
                     </div>
 
-                    <div className="form-group full-width">
-                        <label className="my_p">URL:</label>
-                        <input
-                            type="text"
-                            name="alias"
-                            value={formData.alias || ''}
-                            onChange={handleInputChange}
-                            placeholder="например: calviano-comfort"
-                            className="form-input my_p"
-                        />
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label className="my_p">URL (alias):</label>
+                            <input
+                                type="text"
+                                name="alias"
+                                value={formData.alias || ''}
+                                onChange={handleInputChange}
+                                placeholder="например: calviano-comfort"
+                                className="form-input my_p"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="my_p">Штрихкод (внутренний / прайсы / ИИ):</label>
+                            <input
+                                type="text"
+                                name="barcode"
+                                value={formData.barcode || ''}
+                                onChange={handleInputChange}
+                                placeholder="например: 4810123456789"
+                                className="form-input my_p"
+                            />
+                        </div>
                     </div>
 
                     <div className="form-row checkbox-row">

@@ -45,5 +45,6 @@ router.put('/update/:id',
     processMultipleImages('images', 'images'),
     processVideo('video', 'video'),
     itemController.updateItemById);
+router.post('/bulkUpdate', authenticateToken, requireAdmin, itemController.bulkUpdateItems);
 
 module.exports = router;

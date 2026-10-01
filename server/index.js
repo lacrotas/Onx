@@ -172,6 +172,11 @@ const start = async () => {
     try {
         await sequelize.authenticate();
         await sequelize.sync();
+        try {
+            await sequelize.query('ALTER TABLE items ADD COLUMN IF NOT EXISTS barcode VARCHAR(255);');
+        } catch (colErr) {
+            console.error('Error ensuring barcode column:', colErr.message);
+        }
         app.listen(PORT, () => console.log(`server start on port ${PORT}`));
     } catch (e) {
         console.log(e);

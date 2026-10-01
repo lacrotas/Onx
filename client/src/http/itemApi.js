@@ -112,3 +112,24 @@ export const updateItemById = async (id, item) => {
         }
     }
 }
+
+export const bulkUpdateItems = async (items) => {
+    if (!items || !items.length) return null;
+    try {
+        const token = localStorage.getItem('token');
+        const { data } = await $host.post('api/itemRouter/bulkUpdate', { items }, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return data;
+    } catch (e) {
+        console.error("Bulk update error:", e);
+        if (e.response && e.response.status === 401) {
+            alert("Вы не авторизованы");
+        } else {
+            alert("Ошибка при массовом обновлении товаров");
+        }
+        return false;
+    }
+};

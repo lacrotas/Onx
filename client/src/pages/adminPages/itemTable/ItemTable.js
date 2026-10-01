@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import * as XLSX from 'xlsx';
-import { FiDownload } from 'react-icons/fi';
+import { FiDownload, FiUpload, FiDollarSign, FiX } from 'react-icons/fi';
 import { fetchAllMainCategory, fetchAllKategory, fetchAllKategoryByMainKategoryId } from '../../../http/KategoryApi';
 import { fetchAllItem, postItem, deleteItemById, updateItemById } from '../../../http/itemApi';
 import { fetchAllFiltersByCategoryId, updateFilter } from '../../../http/filterApi';
@@ -8,6 +7,9 @@ import AdminPageHeader from '../shared/components/AdminPageHeader';
 import { AdminTable } from '../shared/components/AdminTable';
 import ItemTableRow from './components/itemTableRow/ItemTableRow';
 import ItemModal from './components/itemModal/ItemModal';
+import ItemExportModal from './components/itemExportModal/ItemExportModal';
+import ItemImportModal from './components/itemImportModal/ItemImportModal';
+import ItemBulkPriceModal from './components/itemBulkPriceModal/ItemBulkPriceModal';
 import Loader from '../../../components/loader/Loader';
 import "./ItemTable.scss";
 
@@ -25,9 +27,18 @@ const ItemTable = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
 
+    // Модальные окна импорта/экспорта и массового изменения цен
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);
+
+    // Выбранные чекбоксами товары для массовых операций
+    const [selectedItemIds, setSelectedItemIds] = useState(new Set());
+
     const [formData, setFormData] = useState({
         name: '',
         alias: '',
+        barcode: '',
         mainKategoryId: '',
         kategoryId: '',
         price: '',
@@ -236,7 +247,99 @@ const ItemTable = () => {
     const cancelChanges = () => {
         if (window.confirm('Отменить все несохраненные изменения в таблице?')) {
             setModifiedItems({});
+            setSelectedItemIds(new Set());
         }
+    };
+
+    // Массовый выбор элементов таблицы
+    const handleToggleSelect = (id) => {
+        setSelectedItemIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    };
+
+    const handleToggleSelectAll = () => {
+        if (selectedItemIds.size === filteredItems.length && filteredItems.length > 0) {
+            setSelectedItemIds(new Set());
+        } else {
+            const next = new Set();
+            filteredItems.forEach(item => next.add(item.id));
+            setSelectedItemIds(next);
+        }
+    };
+
+    const handleDeselectAll = () => {
+        setSelectedItemIds(new Set());
+    };
+
+    // Массовое изменение статуса «В наличии» для выбранных чекбоксами товаров
+    const handleBulkSetStock = (isExist) => {
+        setModifiedItems(prev => {
+            const next = { ...prev };
+            selectedItemIds.forEach(id => {
+                const item = items.find(i => i.id === id);
+                const currentChanges = next[id] || {};
+                const newChanges = { ...currentChanges, isExist };
+                if (item && Boolean(item.isExist) === Boolean(isExist)) {
+                    delete newChanges.isExist;
+                }
+                if (Object.keys(newChanges).length === 0) {
+                    delete next[id];
+                } else {
+                    next[id] = newChanges;
+                }
+            });
+            return next;
+        });
+    };
+
+    // Массовое изменение видимости для выбранных чекбоксами товаров
+    const handleBulkSetVisibility = (isShowed) => {
+        setModifiedItems(prev => {
+            const next = { ...prev };
+            selectedItemIds.forEach(id => {
+                const item = items.find(i => i.id === id);
+                const currentChanges = next[id] || {};
+                const newChanges = { ...currentChanges, isShowed };
+                if (item && Boolean(item.isShowed) === Boolean(isShowed)) {
+                    delete newChanges.isShowed;
+                }
+                if (Object.keys(newChanges).length === 0) {
+                    delete next[id];
+                } else {
+                    next[id] = newChanges;
+                }
+            });
+            return next;
+        });
+    };
+
+    // Массовое изменение цен для выбранных чекбоксами товаров
+    const handleApplyBulkPrices = (updates) => {
+        setModifiedItems(prev => {
+            const next = { ...prev };
+            Object.entries(updates).forEach(([idStr, { price }]) => {
+                const id = Number(idStr);
+                const item = items.find(i => i.id === id);
+                const currentChanges = next[id] || {};
+                const newChanges = { ...currentChanges, price };
+                if (item && String(item.price) === String(price)) {
+                    delete newChanges.price;
+                }
+                if (Object.keys(newChanges).length === 0) {
+                    delete next[id];
+                } else {
+                    next[id] = newChanges;
+                }
+            });
+            return next;
+        });
     };
 
     // редактирование цены/наличия/показа и отправка на сервер
@@ -250,12 +353,14 @@ const ItemTable = () => {
                 if (changes.isExist !== undefined) myFormData.append("isExist", changes.isExist);
                 if (changes.isShowed !== undefined) myFormData.append("isShowed", changes.isShowed);
                 if (changes.price !== undefined) myFormData.append("price", changes.price);
+                if (changes.barcode !== undefined) myFormData.append("barcode", changes.barcode);
 
                 return updateItemById(itemId, myFormData);
             });
 
             await Promise.all(updatePromises);
             setModifiedItems({});
+            setSelectedItemIds(new Set());
             await loadItems();
             setTimeout(() => { alert("Изменения успешно сохранены!") }, 200);
         } catch (error) {
@@ -274,6 +379,7 @@ const ItemTable = () => {
         setFormData({
             name: '',
             alias: '',
+            barcode: '',
             mainKategoryId: initialMainCategoryId,
             kategoryId: '',
             price: '',
@@ -310,6 +416,7 @@ const ItemTable = () => {
         const initialFormData = {
             name: item.name || '',
             alias: item.alias || '',
+            barcode: item.barcode || '',
             mainKategoryId: currentMainCategoryId,
             kategoryId: currentCategoryId,
             categoryId: currentCategoryId,
@@ -351,6 +458,7 @@ const ItemTable = () => {
         const initialFormData = {
             name: item.name + ' (Копия)',
             alias: item.alias ? `${item.alias}-copy` : '',
+            barcode: '',
             mainKategoryId: currentMainCategoryId,
             kategoryId: currentCategoryId,
             categoryId: currentCategoryId,
@@ -515,6 +623,7 @@ const ItemTable = () => {
         myFormData.append("categoryId", catId);
         myFormData.append("name", formData.name);
         myFormData.append("alias", (formData.alias || '').trim());
+        myFormData.append("barcode", (formData.barcode || '').trim());
 
         formData.images.forEach(imgObj => {
             myFormData.append('imageStrings', imgObj.url);
@@ -668,114 +777,35 @@ const ItemTable = () => {
         }
     };
 
-    // Выгрузка всех товаров в Excel
-    const handleExportToExcel = () => {
-        if (!items || items.length === 0) {
-            alert('Нет товаров для выгрузки в Excel');
-            return;
-        }
-
-        const origin = window.location.origin;
-
-        const dataToExport = items.map((item) => {
-            const itemCatId = item.categoryId || item.kategoryId;
-            const subCat = allCategories.find(c => String(c.id) === String(itemCatId));
-            const mainCatId = subCat?.parentId || item.mainKategoryId;
-            const mainCat = mainCategories.find(m => String(m.id) === String(mainCatId));
-
-            const mainCategoryName = mainCat ? (mainCat.name || '').trim() : '';
-            const subCategoryName = subCat ? (subCat.name || '').trim() : '';
-
-            // Формирование ссылки на товар
-            let productUrl = '';
-            if (mainCat?.alias && subCat?.alias && item.alias) {
-                productUrl = `${origin}/${mainCat.alias}/${subCat.alias}/${item.alias}`;
-            } else if (subCat?.alias && item.alias) {
-                productUrl = `${origin}/${subCat.alias}/${item.alias}`;
-            } else if (item.alias) {
-                productUrl = `${origin}/itemPreview/${item.alias}`;
-            } else {
-                productUrl = `${origin}/item/${item.id}`;
-            }
-
-            // Очистка HTML тегов из описания
-            const cleanDescription = (item.description || '')
-                .replace(/<[^>]*>?/gm, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-
-            // Читаемый список характеристик
-            let specsString = '';
-            if (item.specificationsJSONB && typeof item.specificationsJSONB === 'object') {
-                specsString = Object.entries(item.specificationsJSONB)
-                    .filter(([_, v]) => v !== undefined && v !== null && String(v).trim() !== '')
-                    .map(([k, v]) => `${k}: ${v}`)
-                    .join('; ');
-            }
-
-            // Ссылки на фото
-            const imagesList = Array.isArray(item.images) && item.images.length > 0
-                ? item.images.map(img => `${origin}/static/images/${img}`).join(';\n')
-                : '';
-
-            return {
-                'ID': item.id,
-                'Название': item.name || '',
-                'Главная категория': mainCategoryName,
-                'Подкатегория': subCategoryName,
-                'Цена (BYN)': parseFloat(item.price) || 0,
-                'В наличии': item.isExist ? 'Да' : 'Нет',
-                'Отображается на сайте': item.isShowed ? 'Да' : 'Нет',
-                'Ссылка на товар': productUrl,
-                'Количество фото': Array.isArray(item.images) ? item.images.length : 0,
-                'Ссылки на фото': imagesList,
-                'Видео': item.video ? `${origin}/static/video/${item.video}` : 'Нет',
-                'Характеристики': specsString,
-                'Описание': cleanDescription,
-                'SEO Title': item.seo_title || '',
-                'SEO Description': item.seo_desc || '',
-                'Дата создания': item.createdAt ? new Date(item.createdAt).toLocaleString('ru-RU') : '',
-                'Дата обновления': item.updatedAt ? new Date(item.updatedAt).toLocaleString('ru-RU') : ''
-            };
-        });
-
-        // Создаем лист
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-
-        // Рассчитываем автоширину колонок
-        const colWidths = Object.keys(dataToExport[0]).map(key => {
-            let maxLen = key.length;
-            dataToExport.forEach(row => {
-                const val = row[key];
-                if (val !== undefined && val !== null) {
-                    const firstLine = String(val).split('\n')[0];
-                    if (firstLine.length > maxLen) {
-                        maxLen = firstLine.length;
-                    }
-                }
-            });
-            return { wch: Math.min(Math.max(maxLen + 3, 10), 60) };
-        });
-        worksheet['!cols'] = colWidths;
-
-        // Создаем книгу и инициируем скачивание
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Товары');
-
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('ru-RU').replace(/\./g, '-');
-        XLSX.writeFile(workbook, `Товары_ONX_${dateStr}.xlsx`);
-    };
+    const isAllSelected = filteredItems.length > 0 && selectedItemIds.size === filteredItems.length;
+    const isPartiallySelected = selectedItemIds.size > 0 && !isAllSelected;
 
     const COLUMNS = [
+        {
+            key: 'checkbox',
+            label: (
+                <input
+                    type="checkbox"
+                    className="row-checkbox"
+                    checked={isAllSelected}
+                    ref={el => { if (el) el.indeterminate = isPartiallySelected; }}
+                    onChange={handleToggleSelectAll}
+                    title="Выбрать все"
+                />
+            ),
+            width: '45px',
+            align: 'center'
+        },
         { label: 'Категория', sortKey: 'categoryId' },
         { label: 'Фото', width: '100px' },
-        { label: 'Название', sortKey: 'name' },
+        { label: 'Название / Штрихкод', sortKey: 'name' },
         { label: 'Цена', sortKey: 'price', width: '145px' },
         { label: 'Наличие', width: '110px' },
         { label: 'Показан', width: '110px' },
         { label: 'Действия', align: 'right', width: '250px' }
     ];
+
+    const selectedItemsList = items.filter(i => selectedItemIds.has(i.id));
 
     return (
         <div className="admin-page-container admin-item-editor">
@@ -792,15 +822,26 @@ const ItemTable = () => {
                 onApplyChanges={handleApplyChanges}
                 onCancelChanges={cancelChanges}
                 extraActions={
-                    <button
-                        type="button"
-                        className="btn-export-excel"
-                        onClick={handleExportToExcel}
-                        title={`Выгрузить все товары (${items.length} шт.) в Excel (.xlsx)`}
-                    >
-                        <FiDownload />
-                        <span>Экспорт в Excel</span>
-                    </button>
+                    <div className="table-header-extra-buttons">
+                        <button
+                            type="button"
+                            className="btn-export-excel"
+                            onClick={() => setIsExportModalOpen(true)}
+                            title="Выгрузить товары в Excel (.xlsx)"
+                        >
+                            <FiDownload />
+                            <span>Экспорт в Excel</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-import-excel"
+                            onClick={() => setIsImportModalOpen(true)}
+                            title="Импорт товаров и обновление цен/наличия из Excel (.xlsx, .csv)"
+                        >
+                            <FiUpload />
+                            <span>Импорт из Excel</span>
+                        </button>
+                    </div>
                 }
             >
                 <select
@@ -815,6 +856,75 @@ const ItemTable = () => {
                 </select>
             </AdminPageHeader>
 
+            {/* Плавающая панель массовых действий с выбранными товарами */}
+            {selectedItemIds.size > 0 && (
+                <div className="admin-bulk-toolbar">
+                    <div className="bulk-selection-info">
+                        Выбрано: <strong>{selectedItemIds.size}</strong> из {filteredItems.length} товаров
+                    </div>
+                    <div className="bulk-toolbar-actions">
+                        <div className="bulk-group">
+                            <span className="bulk-group-label">В наличии:</span>
+                            <button
+                                type="button"
+                                className="btn-bulk-action in-stock"
+                                onClick={() => handleBulkSetStock(true)}
+                                title="Сделать все выбранные товары «В наличии»"
+                            >
+                                ✓ В наличии
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-bulk-action out-stock"
+                                onClick={() => handleBulkSetStock(false)}
+                                title="Снять все выбранные товары с наличия"
+                            >
+                                ✕ Нет в наличии
+                            </button>
+                        </div>
+
+                        <div className="bulk-group">
+                            <span className="bulk-group-label">Видимость:</span>
+                            <button
+                                type="button"
+                                className="btn-bulk-action show"
+                                onClick={() => handleBulkSetVisibility(true)}
+                                title="Отображать все выбранные товары на сайте"
+                            >
+                                👁 Отображать
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-bulk-action hide"
+                                onClick={() => handleBulkSetVisibility(false)}
+                                title="Скрыть все выбранные товары с сайта"
+                            >
+                                👁‍🗨 Скрыть
+                            </button>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="btn-bulk-action price"
+                            onClick={() => setIsBulkPriceModalOpen(true)}
+                        >
+                            <FiDollarSign />
+                            <span>Изменить цены...</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            className="btn-bulk-clear"
+                            onClick={handleDeselectAll}
+                            title="Снять выбор"
+                        >
+                            <FiX />
+                            <span>Снять выбор</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <AdminTable
                 columns={COLUMNS}
                 data={filteredItems}
@@ -828,6 +938,8 @@ const ItemTable = () => {
                         key={item.id}
                         item={item}
                         modifiedItem={modifiedItems[item.id]}
+                        isSelected={selectedItemIds.has(item.id)}
+                        onToggleSelect={handleToggleSelect}
                         getMainCategoryName={getMainCategoryName}
                         getCategoryName={getCategoryName}
                         handleQuickEdit={handleQuickEdit}
@@ -862,6 +974,32 @@ const ItemTable = () => {
                 filtersForCategory={filtersForCategory}
                 handleSpecificationChange={handleSpecificationChange}
                 handleSubmitWithoutClose={handleSubmitWithoutClose}
+            />
+
+            {/* Модальное окно гибкого экспорта по категориям */}
+            <ItemExportModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
+                items={items}
+                mainCategories={mainCategories}
+                allCategories={allCategories}
+                currentFilteredItems={filteredItems}
+            />
+
+            {/* Модальное окно импорта товаров и обновления данных */}
+            <ItemImportModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                catalogItems={items}
+                onImportSuccess={loadItems}
+            />
+
+            {/* Модальное окно массового изменения цен */}
+            <ItemBulkPriceModal
+                isOpen={isBulkPriceModalOpen}
+                onClose={() => setIsBulkPriceModalOpen(false)}
+                selectedItems={selectedItemsList}
+                onApplyPrices={handleApplyBulkPrices}
             />
 
             {/* Глобальный лоадер */}

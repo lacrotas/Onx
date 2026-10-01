@@ -4,6 +4,8 @@ import './ItemTableRow.scss';
 const ItemTableRow = ({
     item,
     modifiedItem,
+    isSelected = false,
+    onToggleSelect,
     getMainCategoryName,
     getCategoryName,
     handleQuickEdit,
@@ -11,8 +13,20 @@ const ItemTableRow = ({
     openDuplicateModal,
     handleDelete
 }) => {
+    const currentPrice = modifiedItem?.price !== undefined ? modifiedItem.price : item.price;
+    const currentIsExist = modifiedItem?.isExist !== undefined ? modifiedItem.isExist : item.isExist;
+    const currentIsShowed = modifiedItem?.isShowed !== undefined ? modifiedItem.isShowed : item.isShowed;
+
     return (
-        <tr className={modifiedItem ? 'modified-row' : ''}>
+        <tr className={`${modifiedItem ? 'modified-row' : ''} ${isSelected ? 'selected-row' : ''}`}>
+            <td className="checkbox-cell" onClick={e => e.stopPropagation()}>
+                <input 
+                    type="checkbox" 
+                    className="row-checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggleSelect && onToggleSelect(item.id)}
+                />
+            </td>
             <td>{getCategoryName(item.categoryId || item.kategoryId)}</td>
             <td>
                 <div className="table-img-box">
@@ -23,13 +37,20 @@ const ItemTableRow = ({
                     )}
                 </div>
             </td>
-            <td className="truncate-text" title={item.name}>{item.name}</td>
+            <td className="item-title-col">
+                <div className="item-main-name" title={item.name}>{item.name}</div>
+                {item.barcode && (
+                    <div className="item-barcode-tag" title="Внутренний идентификатор (штрихкод для прайсов и ИИ)">
+                        ШК: <span>{item.barcode}</span>
+                    </div>
+                )}
+            </td>
             <td>
                 <div className="price-input-wrapper">
                     <input 
                         type="number"
                         className="quick-price-input"
-                        value={modifiedItem?.price !== undefined ? modifiedItem.price : item.price}
+                        value={currentPrice}
                         onChange={(e) => handleQuickEdit(item.id, 'price', e.target.value)}
                     />
                     <span>₽</span>
@@ -39,8 +60,8 @@ const ItemTableRow = ({
                 <label className="toggle-switch">
                     <input 
                         type="checkbox" 
-                        checked={item.isExist} 
-                        onChange={() => handleQuickEdit(item.id, 'isExist', !item.isExist)} 
+                        checked={Boolean(currentIsExist)} 
+                        onChange={() => handleQuickEdit(item.id, 'isExist', !currentIsExist)} 
                     />
                     <span className="slider"></span>
                 </label>
@@ -49,8 +70,8 @@ const ItemTableRow = ({
                 <label className="toggle-switch">
                     <input 
                         type="checkbox" 
-                        checked={item.isShowed} 
-                        onChange={() => handleQuickEdit(item.id, 'isShowed', !item.isShowed)} 
+                        checked={Boolean(currentIsShowed)} 
+                        onChange={() => handleQuickEdit(item.id, 'isShowed', !currentIsShowed)} 
                     />
                     <span className="slider"></span>
                 </label>

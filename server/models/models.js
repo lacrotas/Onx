@@ -73,12 +73,12 @@ const Attribute = sequelize.define('attribute', {
 const Item = sequelize.define('item', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     categoryId: { type: DataTypes.INTEGER },
-    alias: { type: DataTypes.STRING },
+    alias: { type: DataTypes.STRING, unique: true },
     seo_title: { type: DataTypes.STRING },
     seo_desc: { type: DataTypes.STRING },
     itemGroupId: { type: DataTypes.INTEGER, allowNull: true },
-    alias: { type: DataTypes.STRING, unique: true },
     name: { type: DataTypes.STRING },
+    barcode: { type: DataTypes.STRING, allowNull: true },
     images: {
         type: DataTypes.ARRAY(DataTypes.STRING),
         defaultValue: []

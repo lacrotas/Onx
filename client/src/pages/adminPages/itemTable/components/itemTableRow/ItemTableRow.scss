@@ -5,9 +5,13 @@ tr {
     &.modified-row {
         background: rgba($admin-warning, 0.08);
     }
+    &.selected-row {
+        background: rgba(0, 113, 227, 0.06);
+    }
     
     &:last-child td { border-bottom: none; }
     &:hover td { background-color: #f8fafc; }
+    &.selected-row:hover td { background-color: rgba(0, 113, 227, 0.09); }
 }
 
 td {
@@ -16,6 +20,45 @@ td {
     vertical-align: middle;
     color: $admin-text-main;
     font-size: var(--admin-table-td-fs, 16.5px);
+
+    &.checkbox-cell {
+        padding: 0 0 0 16px;
+        text-align: center;
+        width: 45px;
+    }
+
+    &.item-title-col {
+        max-width: 320px;
+
+        .item-main-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: var(--admin-table-title-fs, 17px);
+            font-weight: 600;
+            color: $admin-text-main;
+        }
+
+        .item-barcode-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            padding: 2px 7px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 11.5px;
+            font-family: monospace;
+            color: #64748b;
+            font-weight: 500;
+
+            span {
+                color: #0f172a;
+                font-weight: 600;
+            }
+        }
+    }
 
     &.truncate-text {
         max-width: 320px;
@@ -26,6 +69,14 @@ td {
         font-weight: 600;
         color: $admin-text-main;
     }
+}
+
+.row-checkbox {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: $admin-primary;
+    vertical-align: middle;
 }
 
 .table-img-box {
