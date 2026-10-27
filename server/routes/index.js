@@ -30,10 +30,11 @@ router.use('/itemGroupRouter', itemGroupRouter);
 // unlinket routes
 const sliderRouter = require('./sliderRouter');
 const qwestionRouter = require('./qwestionRouter');
-
+const feedRouter = require('./feedRouter');
 
 router.use('/sliderRouter', sliderRouter);
 router.use('/qwestionRouter', qwestionRouter);
+router.use('/feed', feedRouter);
 
 
 module.exports = router;

@@ -60,10 +60,14 @@ const getFirstImageFilename = (images) => {
     return '';
 };
 
+// --- ПУБЛИЧНЫЕ XML-ФИДЫ ДЛЯ GOOGLE MERCHANT И РЕКЛАМЫ ---
+const feedController = require('./controllers/feedController');
+app.get(['/google-merchant.xml', '/feed.xml'], (req, res) => feedController.getGoogleMerchantFeed(req, res));
+
 // --- УНИВЕРСАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ БОТОВ (TELEGRAM, WHATSAPP, VK) ---
 app.use(async (req, res, next) => {
-    // Пропускаем служебные запросы к API и статике
-    if (req.path.startsWith('/api') || req.path.startsWith('/static')) {
+    // Пропускаем служебные запросы к API, фидам и статике
+    if (req.path.startsWith('/api') || req.path.startsWith('/static') || req.path.endsWith('.xml')) {
         return next();
     }
 
