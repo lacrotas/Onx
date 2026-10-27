@@ -642,7 +642,12 @@ const ItemTable = () => {
 
     const updateFilterAttributeValues = async (newSpecifications) => {
         try {
-            const allFilters = await fetchAllFiltersByCategoryId(formData.kategoryId);
+            const currentCatId = formData.kategoryId || formData.categoryId;
+            if (!currentCatId || !newSpecifications) return;
+
+            const allFilters = await fetchAllFiltersByCategoryId(currentCatId);
+            if (!allFilters || !Array.isArray(allFilters)) return;
+
             const updatePromises = [];
 
             for (const filter of allFilters) {
@@ -661,20 +666,27 @@ const ItemTable = () => {
                 const initialSize = allValues.size;
 
                 const newValue = newSpecifications[filter.name];
-                if (newValue !== undefined && newValue !== null && newValue !== '') {
-                    allValues.add(String(newValue));
+                if (newValue !== undefined && newValue !== null && String(newValue).trim() !== '') {
+                    allValues.add(String(newValue).trim());
                 }
 
                 if (allValues.size > initialSize) {
                     const attributeValues = Array.from(allValues);
-                    const myFormData = new FormData();
-                    myFormData.append('name', filter.name);
-                    myFormData.append('buttonType', filter.buttonType);
-                    myFormData.append('kategoryId', filter.kategoryId);
-                    myFormData.append('addition', filter.addition || '');
-                    myFormData.append('attributeValues', JSON.stringify(attributeValues));
+                    const targetCatId = filter.categoryId !== undefined && filter.categoryId !== null 
+                        ? filter.categoryId 
+                        : (filter.kategoryId || currentCatId);
 
-                    updatePromises.push(updateFilter(filter.id, myFormData));
+                    const payload = {
+                        name: filter.name,
+                        buttonType: filter.buttonType,
+                        categoryId: Number(targetCatId),
+                        kategoryId: Number(targetCatId),
+                        addition: filter.addition || '',
+                        attributeValues: attributeValues,
+                        filterIndex: filter.filterIndex
+                    };
+
+                    updatePromises.push(updateFilter(filter.id, payload));
                 }
             }
 
@@ -750,21 +762,30 @@ const ItemTable = () => {
                     const categoryItems = items.filter(item => item.id !== id && (item.categoryId === itemCatId || item.kategoryId === itemCatId));
                     const allFilters = await fetchAllFiltersByCategoryId(itemCatId);
 
-                    for (const filter of allFilters) {
-                        const allValues = new Set();
-                        categoryItems.forEach(item => {
-                            if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
-                                allValues.add(item.specificationsJSONB[filter.name]);
-                            }
-                        });
-                        const attributeValues = Array.from(allValues);
-                        const myFormData = new FormData();
-                        myFormData.append('name', filter.name);
-                        myFormData.append('buttonType', filter.buttonType);
-                        myFormData.append('kategoryId', filter.kategoryId);
-                        myFormData.append('addition', filter.addition || '');
-                        myFormData.append('attributeValues', JSON.stringify(attributeValues));
-                        await updateFilter(filter.id, myFormData);
+                    if (allFilters && Array.isArray(allFilters)) {
+                        for (const filter of allFilters) {
+                            const allValues = new Set();
+                            categoryItems.forEach(item => {
+                                if (item.specificationsJSONB && item.specificationsJSONB[filter.name]) {
+                                    allValues.add(item.specificationsJSONB[filter.name]);
+                                }
+                            });
+                            const attributeValues = Array.from(allValues);
+                            const targetCatId = filter.categoryId !== undefined && filter.categoryId !== null 
+                                ? filter.categoryId 
+                                : (filter.kategoryId || itemCatId);
+
+                            const payload = {
+                                name: filter.name,
+                                buttonType: filter.buttonType,
+                                categoryId: Number(targetCatId),
+                                kategoryId: Number(targetCatId),
+                                addition: filter.addition || '',
+                                attributeValues: attributeValues,
+                                filterIndex: filter.filterIndex
+                            };
+                            await updateFilter(filter.id, payload);
+                        }
                     }
                 }
                 await loadItems();

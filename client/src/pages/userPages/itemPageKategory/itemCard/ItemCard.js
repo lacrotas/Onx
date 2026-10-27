@@ -71,9 +71,6 @@ const ItemCard = ({ item, isInCart, onAddToCart, renderStars, categoryName, alia
                 </button>
             ) : (
                 <></>
-                // <button className="btn-add btn-notify">
-                //     <FiBell size={16} /> Уведомить
-                // </button>
             )}
         </div>
     );

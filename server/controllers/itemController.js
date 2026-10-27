@@ -245,7 +245,10 @@ class itemController {
             processedImages = req.processedImages || [];
             processedVideo = req.processedVideo || null;
 
-            const targetCategoryId = categoryId || kategoryId;
+            const targetCat = categoryId !== undefined && categoryId !== null && categoryId !== '' ? categoryId : kategoryId;
+            const targetCategoryId = targetCat !== undefined && targetCat !== null && targetCat !== '' && targetCat !== 'undefined' && targetCat !== 'null' && !isNaN(parseInt(targetCat, 10))
+                ? parseInt(targetCat, 10)
+                : null;
 
             let specifications = specificationsJSONB;
             if (typeof specificationsJSONB === 'string' && specificationsJSONB) {
@@ -258,7 +261,7 @@ class itemController {
             }
 
             const item = await Item.create({
-                categoryId: targetCategoryId ? parseInt(targetCategoryId, 10) : null,
+                categoryId: targetCategoryId,
                 images: processedImages,
                 price: price,
                 name: name,
@@ -341,8 +344,11 @@ class itemController {
 
             // --- ДОБАВЛЕННЫЕ ПОЛЯ КАТЕГОРИЙ ---
             const targetCategoryId = req.body.categoryId !== undefined ? req.body.categoryId : req.body.kategoryId;
-            if (targetCategoryId !== undefined) {
-                updateData.categoryId = targetCategoryId ? parseInt(targetCategoryId, 10) : null;
+            if (targetCategoryId !== undefined && targetCategoryId !== null && targetCategoryId !== '' && targetCategoryId !== 'undefined' && targetCategoryId !== 'null') {
+                const parsedCat = parseInt(targetCategoryId, 10);
+                if (!isNaN(parsedCat)) {
+                    updateData.categoryId = parsedCat;
+                }
             }
             // ----------------------------------
 

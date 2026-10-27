@@ -33,9 +33,10 @@ class attributeController {
     async addAttribute(req, res, next) {
         try {
             const { name, buttonType, categoryId, kategoryId, addition, attributeValues, filterIndex } = req.body;
-            const targetCategoryId = categoryId !== undefined && categoryId !== null && categoryId !== ''
-                ? Number(categoryId)
-                : (kategoryId !== undefined && kategoryId !== null && kategoryId !== '' ? Number(kategoryId) : null);
+            const targetCat = categoryId !== undefined ? categoryId : kategoryId;
+            const targetCategoryId = targetCat !== undefined && targetCat !== null && targetCat !== '' && targetCat !== 'undefined' && targetCat !== 'null' && !isNaN(Number(targetCat))
+                ? Number(targetCat)
+                : null;
 
             let parsedAttributeValues = attributeValues;
             if (typeof attributeValues === 'string') {
@@ -52,7 +53,7 @@ class attributeController {
                 categoryId: targetCategoryId,
                 addition: addition,
                 attributeValues: parsedAttributeValues || [],
-                filterIndex: filterIndex !== undefined && filterIndex !== '' ? Number(filterIndex) : 0
+                filterIndex: filterIndex !== undefined && filterIndex !== '' && !isNaN(Number(filterIndex)) ? Number(filterIndex) : 0
             });
             return res.json(attribute);
         } catch (e) {
@@ -97,22 +98,31 @@ class attributeController {
                 buttonType: buttonType,
                 addition: addition,
                 specificationsJSONB: specificationsJSONB,
-                attributeValues: parsedAttributeValues,
-                filterIndex: filterIndex !== undefined && filterIndex !== '' ? Number(filterIndex) : undefined
+                attributeValues: parsedAttributeValues
             };
+            if (filterIndex !== undefined && filterIndex !== '' && !isNaN(Number(filterIndex))) {
+                updateData.filterIndex = Number(filterIndex);
+            }
             const targetCat = categoryId !== undefined ? categoryId : kategoryId;
-            if (targetCat !== undefined && targetCat !== null && targetCat !== '') {
+            if (targetCat !== undefined && targetCat !== null && targetCat !== '' && targetCat !== 'undefined' && targetCat !== 'null' && !isNaN(Number(targetCat))) {
                 updateData.categoryId = Number(targetCat);
             }
         } else {
             updateData = { ...req.body };
             const targetCat = updateData.categoryId !== undefined ? updateData.categoryId : updateData.kategoryId;
-            if (targetCat !== undefined && targetCat !== null && targetCat !== '') {
+            if (targetCat !== undefined && targetCat !== null && targetCat !== '' && targetCat !== 'undefined' && targetCat !== 'null' && !isNaN(Number(targetCat))) {
                 updateData.categoryId = Number(targetCat);
+            } else {
+                delete updateData.categoryId;
             }
-            if (updateData.filterIndex !== undefined && updateData.filterIndex !== '') {
+            delete updateData.kategoryId;
+
+            if (updateData.filterIndex !== undefined && updateData.filterIndex !== '' && !isNaN(Number(updateData.filterIndex))) {
                 updateData.filterIndex = Number(updateData.filterIndex);
+            } else {
+                delete updateData.filterIndex;
             }
+
             if (updateData.attributeValues && typeof updateData.attributeValues === 'string') {
                 try {
                     updateData.attributeValues = JSON.parse(updateData.attributeValues);
