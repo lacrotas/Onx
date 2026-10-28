@@ -17,6 +17,7 @@ import ItemVariantsSlider from './ItemVariantsSlider/ItemVariantsSlider';
 import AddToCart from '../../../customUI/addToCartButton/AddToCartButton';
 import { ProductDetailSkeleton } from '../../../components/skeletons';
 import NotFoundPage from '../notFoundPage/NotFoundPage';
+import { logViewItem } from '../../../utils/analytics';
 
 // Вспомогательная функция для удаления HTML-тегов из описания для meta-тегов
 const stripHtml = (html) => {
@@ -123,6 +124,7 @@ const CurrentItemPage = () => {
                 setItem(itemData);
                 setMainKategory(mainCategoryData);
                 setKategory(categoryData);
+                logViewItem(itemData, categoryData?.name);
 
                 // 3. Канонический редирект, если перешли по служебной ссылке (/itemPreview/:id или /item/:id)
                 if (mainCategoryData?.alias && categoryData?.alias) {

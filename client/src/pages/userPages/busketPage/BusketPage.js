@@ -12,6 +12,7 @@ import ModalWindow from '../../../components/modalWindow/ModalWindow';
 import CustomAlert from '../../../components/customAlert/CustomAlert';
 import Breadcrumbs from '../../../components/breadcrumbs/Breadcrumbs';
 import { LOGIN_ROUTE } from '../../appRouter/Const';
+import { logViewCart, logBeginCheckout } from '../../../utils/analytics';
 
 const BASKET_LOCAL_STORAGE_KEY = 'basket';
 
@@ -169,6 +170,10 @@ const BusketPage = () => {
                 const loadedItems = await Promise.all(itemsPromises);
                 const validItems = loadedItems.filter(item => item !== null);
                 setItems(validItems);
+                try {
+                    const totalVal = validItems.reduce((sum, it) => sum + (parseFloat(it.price) || 0) * (it.count || 1), 0);
+                    logViewCart(validItems, totalVal);
+                } catch (e) {}
 
                 const initialQuantities = {};
                 validItems.forEach(item => {
@@ -285,6 +290,7 @@ const BusketPage = () => {
             basketId: basket ? basket.id : null
         });
         setIsModalOpen(true);
+        logBeginCheckout(itemsOrderInfo, calculateTotal());
     };
 
     if (loading) {

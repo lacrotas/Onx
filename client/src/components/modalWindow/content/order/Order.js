@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Order.scss";
 import { FaUser, FaPhone, FaMapMarkerAlt, FaTruck, FaMoneyBillWave, FaComment, FaCheckCircle, FaCheck } from "react-icons/fa";
 import { postOrder } from "../../../../http/orderApi";
 import { updateBusket, updateBusketByUserId } from "../../../../http/busketApi";
+import { logBeginCheckout, logPurchase } from "../../../../utils/analytics";
 
 function Order({ value, itemsArr, closeModal }) {
     const BASKET_LOCAL_STORAGE_KEY = 'basket';
@@ -18,6 +19,14 @@ function Order({ value, itemsArr, closeModal }) {
     });
     const [errors, setErrors] = useState({});
     const [isSuccess, setIsSuccess] = useState(false);
+
+    useEffect(() => {
+        const items = itemsArr?.items || (Array.isArray(value) ? value : []);
+        const total = itemsArr?.totalValue || 0;
+        if (items && items.length > 0) {
+            logBeginCheckout(items, total);
+        }
+    }, [itemsArr, value]);
 
     // --- Логика форматирования номера ---
     const formatPhoneNumber = (input) => {
@@ -132,28 +141,34 @@ function Order({ value, itemsArr, closeModal }) {
         }
 
         try {
+            const currentItems = itemsArr?.items || (Array.isArray(value) ? value : []) || [];
+            const currentTotal = itemsArr?.totalValue || 0;
+            const currentUserId = itemsArr?.userId || null;
+            const currentBasketId = itemsArr?.basketId || null;
+
             const orderData = {
-                userId: itemsArr.userId,
-                itemsJsonb: JSON.stringify(itemsArr.items),
+                userId: currentUserId,
+                itemsJsonb: JSON.stringify(currentItems),
                 name: formData.name,
                 adress: formData.address == "" ? "самовывоз" : formData.address,
                 comment: formData.comment,
                 phone: formData.phone,
                 payment: formData.payment,
-                price: itemsArr.totalValue,
+                price: currentTotal,
                 orderStage: "start",
             };
             const data = await postOrder(orderData);
             if (data) {
                 setIsSuccess(true);
-                if (itemsArr.basketId) {
+                logPurchase(data.id || Date.now(), currentItems, currentTotal);
+                if (currentBasketId) {
                     updateBusket(itemsArr.basketId, { itemsJsonb: [] }).catch(() => {});
-                } else if (itemsArr.userId) {
+                } else if (currentUserId) {
                     updateBusketByUserId(itemsArr.userId, { itemsJsonb: [] }).catch(() => {});
                 }
 
                 // Если заказ оформлен без авторизации, сохраняем его ID в localStorage
-                if (!itemsArr.userId && data.id) {
+                if (!currentUserId && data.id) {
                     try {
                         const guestOrders = JSON.parse(localStorage.getItem('guest_orders') || '[]');
                         if (!guestOrders.includes(data.id)) {

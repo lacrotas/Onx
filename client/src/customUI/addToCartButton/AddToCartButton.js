@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom';
 import jwt_decode from 'jwt-decode';
 import { updateBusketByUserId } from '../../http/busketApi';
 import { BUSKET_ROUTE } from '../../pages/appRouter/Const';
+import { logAddToCart } from '../../utils/analytics';
 
 const AddToCartButton = ({ item, children }) => {
     const history = useHistory();
@@ -72,6 +73,7 @@ const AddToCartButton = ({ item, children }) => {
             localStorage.setItem('basket', JSON.stringify(localBasket));
             setIsInCart(true);
             window.dispatchEvent(new Event('cartUpdated'));
+            logAddToCart(item, count);
 
             // 2. Если пользователь авторизован, фоново синхронизируем с сервером
             const token = localStorage.getItem('token');
