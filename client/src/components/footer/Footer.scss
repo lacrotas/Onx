@@ -96,6 +96,8 @@
     .link_hover {
       position: relative;
       color: #fff;
+      text-decoration: none;
+      display: inline-block;
 
       &::after {
         content: '';
@@ -174,6 +176,7 @@
 
     &_container {
       flex-direction: row;
+      flex-wrap: wrap;
       align-items: flex-start;
       justify-content: flex-start;
       gap: 30px;

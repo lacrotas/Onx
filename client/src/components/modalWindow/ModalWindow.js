@@ -9,6 +9,8 @@ import AddAttributeValue from "./content/addAttributevalue/AddAttributeValue";
 import ReductImage from "./content/reductImage/ReductImage";
 import AddReview from "./content/addReview/AddReview";
 import ViewImages from "./content/viewImages/ViewImages";
+import Returns from "./content/returns/Returns";
+import Privacy from "./content/privacy/Privacy";
 import { useEffect } from 'react'
 
 function ModalWindow({ setIsModalActive, type, value, addImageToArray, itemsArr, initialIndex }) {
@@ -40,6 +42,10 @@ function ModalWindow({ setIsModalActive, type, value, addImageToArray, itemsArr,
                                                     <AddReview itemId={value} closeModal={setIsModalActive} />
                                                     : type === "viewImages" ?
                                                         <ViewImages images={value} initialIndex={initialIndex} setIsModalActive={setIsModalActive} />
+                                                        : type === "returns" ?
+                                                            <Returns closeModal={setIsModalActive} />
+                                                            : type === "privacy" ?
+                                                                <Privacy closeModal={setIsModalActive} />
                                                         :
                                                         <></>
                 }

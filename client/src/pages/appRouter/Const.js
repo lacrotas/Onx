@@ -8,6 +8,8 @@ export const LOGIN_ROUTE = '/login';
 export const ITEM_PREVIEW_ROUTE = '/itemPreview';
 export const MY_ORDERS_ROUTE = '/my-orders';
 export const NOT_FOUND_ROUTE = '/404';
+export const RETURNS_ROUTE = '/returns';
+export const PRIVACY_ROUTE = '/privacy';
 
 /*admin*/
 export const AMIN_MAIN_ROUTE = '/admin';

@@ -59,6 +59,22 @@ function Footer() {
 
 
 
+                    <div className="footer_column">
+                        <h3 className="footer_title my_p">Информация</h3>
+                        <ul className="footer_links">
+                            <li className="footer_link" onClick={() => openModal("returns")}>
+                                <a href="/returns" onClick={(e) => { e.preventDefault(); openModal("returns"); }} className="link_hover my_p">
+                                    Правила возврата
+                                </a>
+                            </li>
+                            <li className="footer_link" onClick={() => openModal("privacy")}>
+                                <a href="/privacy" onClick={(e) => { e.preventDefault(); openModal("privacy"); }} className="link_hover my_p">
+                                    Политика конфиденциальности
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
                     <div className="footer_column footer_column--left">
                         <h3 className="footer_title my_p">Контакты</h3>
                         <div className="contact_info">

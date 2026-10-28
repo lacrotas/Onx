@@ -4,7 +4,7 @@ import {
     SLIDE_ADD_ROUTE, KATEGORY_REDUCT_ROUTE, CURRENT_KATEGORY_REDUCT_ROUTE, LOGIN_ROUTE, CURRENT_POD_KATEGORY_REDUCT_ROUTE,
     FILTER_REDUCT_ROUTE, CURRENT_KATEGORY_FILTER_REDUCT_ROUTE, ITEM_REDUCT_ROUTE, NEW_ITEM_POST_ROUTE, NEW_ITEM_REDUCT_ROUTE,
     QWESTION_REDUCT_ROUTE, REVIEW_REDUCT_ROUTE, CURRENT_POD_KATEGORY_FILTER_REDUCT_ROUTE, ITEM_SEARCH_ROUTE, ITEM_MAIN_ROUTE,
-    ITEM_KATEGOTY_ROUTE, MY_ORDERS_ROUTE, NOT_FOUND_ROUTE
+    ITEM_KATEGOTY_ROUTE, MY_ORDERS_ROUTE, NOT_FOUND_ROUTE, RETURNS_ROUTE, PRIVACY_ROUTE
 } from './Const';
 import BusketPage from "../userPages/busketPage/BusketPage";
 // import ItemPage from "../userPages/itemPage/ItemPage";
@@ -17,6 +17,8 @@ import CurrentItemPage from "../userPages/currentItemPage/CurrentItemPage";
 import AuthPage from "../userPages/authPage/AuthPage";
 import MyOrdersPage from "../userPages/myOrdersPage/MyOrdersPage";
 import NotFoundPage from "../userPages/notFoundPage/NotFoundPage";
+import ReturnsPage from "../userPages/infoPages/ReturnsPage";
+import PrivacyPage from "../userPages/infoPages/PrivacyPage";
 
 export const publicRoutes = [
     {
@@ -42,6 +44,22 @@ export const publicRoutes = [
     {
         path: MY_ORDERS_ROUTE,
         Component: MyOrdersPage
+    },
+    {
+        path: RETURNS_ROUTE,
+        Component: ReturnsPage
+    },
+    {
+        path: '/return-policy',
+        Component: ReturnsPage
+    },
+    {
+        path: PRIVACY_ROUTE,
+        Component: PrivacyPage
+    },
+    {
+        path: '/privacy-policy',
+        Component: PrivacyPage
     },
     {
         path: ITEM_SEARCH_ROUTE,
